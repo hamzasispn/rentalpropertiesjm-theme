@@ -15,10 +15,10 @@ if (!is_user_logged_in()) {
 $current_user = wp_get_current_user();
 $user_subscription = property_theme_get_user_subscription($current_user->ID);
 
-if (!$user_subscription) {
-    wp_die('You must have an active subscription to create properties. <a href="' . home_url('/pricing') . '">View pricing plans</a>', 'No Active Subscription', array('response' => 403));
-}
+if ($user_subscription){
+?>
 
+<?php
 $is_edit = isset($_GET['property_id']) && intval($_GET['property_id']) > 0;
 $property_id = $is_edit ? intval($_GET['property_id']) : 0;
 $property = $is_edit ? get_post($property_id) : null;
@@ -1226,3 +1226,15 @@ document.addEventListener('DOMContentLoaded', function() {
     src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAUPkXXwkGt0xC5ongE7-62nzz6l7D3Nf4&libraries=places,marker&v=beta"
     async>
 </script>
+<?php
+}else{
+    ?>
+    <div class="max-w-3xl mx-auto my-12 p-6 bg-white rounded-lg shadow text-center">
+        <h2 class="text-2xl font-bold mb-4">No Active Subscription</h2>
+        <p class="mb-6">You must have an active subscription to create properties.</p>
+        <a href="<?php echo home_url('/pricing'); ?>"
+            class="inline-block px-6 py-3 bg-[var(--primary-color)] text-white rounded-lg hover:bg-blue-700 font-semibold">
+            View Pricing Plans
+        </a>
+    </div>
+    <?php }?>

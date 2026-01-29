@@ -18,7 +18,7 @@ $logo = get_option('mytheme_logo');
 $user_id = get_current_user_id();
 $user = wp_get_current_user();
 $stats = property_theme_get_subscription_stats($user_id);
-$subscription = property_theme_get_user_subscription($user_id);
+$subscription = property_theme_get_user_subscription($user_id) ?? array();
 
 ?>
 
@@ -116,7 +116,7 @@ $subscription = property_theme_get_user_subscription($user_id);
                     <div class="flex justify-between items-start mb-6">
                         <div>
                             <h2 class="text-2xl font-bold text-slate-900">
-                                <?php echo esc_html($stats['plan']['name'] ?? 'No Plan'); ?> Plan
+                                <?php echo esc_html($stats['plan']['name'] ?? 'No Plan'); ?>
                             </h2>
                             <p class="text-slate-600 mt-1">Your current subscription</p>
                         </div>
@@ -130,13 +130,13 @@ $subscription = property_theme_get_user_subscription($user_id);
                         <div class="border-l-4 border-blue-600 pl-4">
                             <p class="text-slate-600 text-sm">Properties</p>
                             <p class="text-3xl font-bold text-slate-900 mt-1">
-                                <span><?php echo esc_html($stats['published_properties']); ?></span>/<span><?php echo esc_html($stats['plan']['max_properties']); ?></span>
+                                <span><?php echo esc_html($stats['published_properties'] ?? '0'); ?></span>/<span><?php echo esc_html($stats['plan']['max_properties'] ?? '0'); ?></span>
                             </p>
                         </div>
                         <div class="border-l-4 border-amber-600 pl-4">
                             <p class="text-slate-600 text-sm">Featured (this month)</p>
                             <p class="text-3xl font-bold text-slate-900 mt-1">
-                                <span><?php echo esc_html($stats['featured_this_month']); ?></span>/<span><?php echo esc_html($stats['plan']['featured_limit']); ?></span>
+                                <span><?php echo esc_html($stats['featured_this_month'] ?? '0'); ?></span>/<span><?php echo esc_html($stats['plan']['featured_limit'] ?? '0'); ?></span>
                             </p>
                         </div>
                         <div class="border-l-4 border-green-600 pl-4">
@@ -234,7 +234,7 @@ $subscription = property_theme_get_user_subscription($user_id);
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <div class="bg-white rounded-lg shadow p-6">
                         <h3 class="text-slate-600 text-sm font-semibold">Total Views</h3>
-                        <p class="text-4xl font-bold text-slate-900 mt-2"><?php echo esc_html($stats['total_views']); ?>
+                        <p class="text-4xl font-bold text-slate-900 mt-2"><?php echo esc_html($stats['total_views'] ?? '0'); ?>
                         </p>
                     </div>
                     <div class="bg-white rounded-lg shadow p-6">
@@ -445,6 +445,7 @@ $subscription = property_theme_get_user_subscription($user_id);
         </form>
     </div>
 </div>
+
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://js.stripe.com/v3/"></script>
