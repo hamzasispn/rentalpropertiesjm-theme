@@ -1,0 +1,24 @@
+{
+  "name": "property_listing",
+  "version": "1.0.0",
+  "description": "",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "vite",
+    "build": "vite build",
+    "watch": "vite build --watch"
+  },
+  "type": "commonjs",
+  "devDependencies": {
+    "autoprefixer": "^10.4.22",
+    "postcss": "^8.5.6",
+    "sass-embedded": "^1.93.3",
+    "tailwindcss": "^3.4.18",
+    "vite": "^7.2.4"
+  },
+  "dependencies": {
+    "alpinejs": "^3.15.2",
+    "axios": "^1.13.2",
+    "swiper": "^12.0.3"
+  }
+}

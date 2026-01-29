@@ -1,0 +1,89 @@
+/* Mapbox Geocoder Styling for Jamaica Properties */
+
+.mapboxgl-ctrl-geocoder {
+  font-family: inherit;
+  max-width: 100%;
+}
+
+.mapboxgl-ctrl-geocoder--input {
+  font-size: 14px;
+  padding: 12px 16px;
+  border-radius: 6px;
+  border: 1px solid #d1d5db;
+  background-color: white;
+  transition: all 0.2s;
+}
+
+.mapboxgl-ctrl-geocoder--input:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  border-color: #3b82f6;
+}
+
+.mapboxgl-ctrl-geocoder--pin-right {
+  right: 0;
+}
+
+.mapboxgl-ctrl-geocoder--suggestion {
+  font-size: 13px;
+  padding: 10px 16px;
+}
+
+.mapboxgl-ctrl-geocoder--suggestion:hover {
+  background-color: #f3f4f6;
+}
+
+.mapboxgl-ctrl-geocoder--suggestion.active {
+  background-color: #e0e7ff;
+  color: #3b82f6;
+}
+
+.mapboxgl-ctrl-geocoder--suggestion-title {
+  font-weight: 600;
+  color: #111827;
+}
+
+.mapboxgl-ctrl-geocoder--suggestion-address {
+  font-size: 12px;
+  color: #6b7280;
+  margin-top: 2px;
+}
+
+/* Jamaica-specific marker styling */
+#property-marker {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  animation: markerBounce 0.6s ease-out;
+}
+
+@keyframes markerBounce {
+  0% {
+    transform: translateY(-20px);
+    opacity: 0;
+  }
+  100% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* Map container styling */
+.property-map-container {
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.mapboxgl-canvas-container {
+  border-radius: 8px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .mapboxgl-ctrl-geocoder {
+    margin: 0;
+  }
+
+  .mapboxgl-ctrl-geocoder--input {
+    font-size: 16px; /* Prevents zoom on mobile */
+  }
+}
