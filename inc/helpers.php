@@ -66,7 +66,7 @@ function property_theme_check_filetype($data, $file, $filename, $mimes, $real_mi
 add_filter( 'cron_schedules', 'property_theme_add_every_minute_interval' );
 function property_theme_add_every_minute_interval( $schedules ) {
     $schedules['every_minute'] = array(
-        'interval' => 60, // Interval in seconds (60 seconds = 1 minute)
+        'interval' => 60, 
         'display'  => __( 'Every Minute' )
     );
     return $schedules;

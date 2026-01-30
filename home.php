@@ -168,7 +168,7 @@ get_header();
                 </div>
             </div>
         </div>
-        <a class="w-fit btn-primary mx-auto">
+        <a href="<?= home_url() ?>/login" class="w-fit btn-primary mx-auto">
             List Your Property Today
         </a>
 
@@ -219,7 +219,7 @@ get_header();
                     <span>Easy Dashboard — manage, renew, or upgrade listings anytime</span>
                 </li>
             </ul>
-            <a class="w-fit btn-primary mt-[1.875vw]">
+            <a href="<?= home_url() ?>/login" class="w-fit btn-primary mt-[1.875vw]">
                 Start Listing Now
             </a>
         </div>
@@ -473,8 +473,8 @@ get_header();
                 <h5 class="text-white text-[2.5vw] font-bold mb-[0.833vw] text-center w-[41.042vw] mx-auto leading-[1]">
                     Talk to our experts or Browse through more properties.</h5>
                 <div class="flex items-center justify-center gap-3">
-                    <a href="" class="btn-primary !bg-white !text-[var(--primary-color)]">Talk to an Expert</a>
-                    <a href="" class="btn-secondary">Browse Properties</a>
+                    <a href="<?= home_url() ?>/contact" class="btn-primary !bg-white !text-[var(--primary-color)]">Talk to an Expert</a>
+                    <a href="<?= home_url() ?>/properties" class="btn-secondary">Browse Properties</a>
                 </div>
             </div>
         </div>
