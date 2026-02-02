@@ -22,7 +22,7 @@
         <a href="<?php if (!$user_subscription) {
             echo home_url('/pricing');
         } else {
-            echo home_url('/add-property');
+            echo home_url('/dashboard/#add-property');
         } ?>"
             class="btn-primary">List
             Property Now</a>

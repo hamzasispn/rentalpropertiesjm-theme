@@ -17,7 +17,7 @@
             </svg>
         </a>
 
-        <a href="<?php echo (!$user_subscription) ? home_url('/pricing') : home_url('/add-property'); ?>" class="btn-primary px-[1.2vw] py-[0.6vw] text-[1vw] font-semibold rounded-lg transition-all hover:shadow-lg">
+        <a href="<?php echo (!$user_subscription) ? home_url('/dashboard/#billing') : home_url('/dashboard/#add-property'); ?>" class="btn-primary px-[1.2vw] py-[0.6vw] text-[1vw] font-semibold rounded-lg transition-all hover:shadow-lg">
             List Property Now
         </a>
     <?php else: ?>

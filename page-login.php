@@ -39,7 +39,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['login_submit'])) {
         }
     }
 }
-
+$logo = get_option('mytheme_logo');
 get_header();
 ?>
 
@@ -49,11 +49,11 @@ get_header();
         <div class="bg-white rounded-lg shadow-lg p-8">
             <!-- Header -->
             <div class="text-center mb-8">
-                <div class="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <span class="text-white font-bold text-lg">P</span>
+                <div class="flex items-center w-[50%] justify-center mx-auto mb-4">
+                    <img src="<?= esc_url($logo); ?>" alt="Logo" class="h-[7.5vw] sm:h-[5vw] lg:h-[60px] object-contain">
                 </div>
                 <h1 class="text-3xl font-bold text-slate-900">Welcome Back</h1>
-                <p class="text-slate-600 mt-2">Sign in to your PropertyHub account</p>
+                <p class="text-slate-600 mt-2">Sign in to your Rental Properties JM account</p>
             </div>
 
             <!-- Error Message -->
@@ -82,10 +82,10 @@ get_header();
                         <input type="checkbox" name="remember" class="w-4 h-4 rounded border-slate-300">
                         <span class="text-sm text-slate-700">Remember me</span>
                     </label>
-                    <a href="<?php echo wp_lostpassword_url(); ?>" class="text-sm text-blue-600 hover:underline">Forgot password?</a>
+                    <a href="<?php echo wp_lostpassword_url(); ?>" class="text-sm text-[var(--primary-color)] hover:underline">Forgot password?</a>
                 </div>
 
-                <button type="submit" name="login_submit" class="w-full px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-bold">Sign In</button>
+                <button type="submit" name="login_submit" class="w-full px-4 py-3 bg-[var(--primary-color)] text-white rounded-lg hover:bg-blue-700 transition font-bold">Sign In</button>
             </form>
 
             <!-- Divider -->
@@ -112,7 +112,7 @@ get_header();
 
             <!-- Signup Link -->
             <div class="text-center mt-6 pt-6 border-t border-slate-200">
-                <p class="text-slate-600">Don't have an account? <a href="<?php echo home_url('/register'); ?>" class="text-blue-600 hover:underline font-semibold">Create one now</a></p>
+                <p class="text-slate-600">Don't have an account? <a href="<?php echo home_url('/register'); ?>" class="text-[var(--primary-color)] hover:underline font-semibold">Create one now</a></p>
             </div>
         </div>
     </div>

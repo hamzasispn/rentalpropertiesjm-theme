@@ -1,11 +1,9 @@
 <?php
 /**
  * Archive template for properties with advanced filtering
- * UPDATED: Top bar filters, single range sliders, Google autocomplete locations, infinite scroll
  */
 get_header();
 
-// Call the function to get Jamaica cities dynamically
 $cities_data = get_jamaica_cities();
 
 $filter_params = array(

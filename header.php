@@ -41,24 +41,7 @@ $text_secondary = get_option('mytheme_color_text_secondary');
     <?php
     $logo = get_option('mytheme_logo');
     ?>
-    <?php if (!is_page(8)): ?>
-        <!-- <header class="top-0 left-0 w-full pt-[1.875vw] pb-[1.615vw] z-10 bg-transparent absolute">
-            <div class="bg-white rounded-br-[24px] absolute top-0 left-0 w-[21.51vw] h-full -z-10"></div>
-            <nav class="w-[80%] mx-auto flex flex-wrap items-center justify-between">
-                <div class="logo w-[9.948vw]">
-                    <a href="< ?= home_url(); ?>">
-                        < ?php if ($logo): ?>
-                            <img src="< ?php echo esc_url($logo); ?>" alt="Logo" class="h-[60px] object-contain">
-                        < ?php else: ?>
-                            <span class="text-2xl font-bold text-slate-900">PropertyHub</span>
-                        < ?php endif; ?>
-                    </a>
-                </div>
-
-                < ?php get_template_part('template-parts/component', 'main-menu'); ?>
-                < ?php get_template_part('template-parts/component', 'cta-button'); ?>
-            </nav>
-        </header> -->
+    <?php if ( ! is_page([8, 26, 28]) ) : ?>
         <?php get_template_part('template-parts/header/component', 'header', array('logo' => $logo)); ?>
     <?php endif; ?>
 
