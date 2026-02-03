@@ -66,11 +66,11 @@ img {
     // .menu-main-menu-container
 
     .btn-primary {
-        @apply py-[0.833vw] px-[1.25vw] bg-[var(--primary-color)] rounded-[12px] text-[var(--text-secondary-color)] text-[1.041vw] font-semibold hover:bg-[var(--secondary-color)] transition-colors duration-150;
+        @apply py-[3.765vw] px-[5.647vw] text-[3.765vw] md:py-[0.833vw] md:px-[1.25vw] bg-[var(--primary-color)] rounded-[12px] text-[var(--text-secondary-color)] md:text-[1.041vw] font-semibold hover:bg-[var(--secondary-color)] transition-colors duration-150;
     }
 
     .btn-secondary {
-        @apply py-[0.833vw] px-[1.25vw] bg-transparent border border-solid border-[var(--text-secondary-color)] rounded-[12px] text-[var(--text-secondary-color)] text-[1.041vw] font-semibold;
+        @apply py-[3.765vw] px-[5.647vw] text-[3.765vw] md:py-[0.833vw] md:px-[1.25vw] bg-transparent border border-solid border-[var(--text-secondary-color)] rounded-[12px] text-[var(--text-secondary-color)] md:text-[1.041vw] font-semibold;
     }
 
     .dashboard-page * {
