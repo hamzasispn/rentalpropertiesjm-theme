@@ -4,7 +4,7 @@
  */
 ?>
 
-<footer class="bg-slate-900 text-slate-300 py-12">
+<footer class="bg-slate-900 text-slate-300 py-12 md:mt-[3.125vw] mt-[13.882vw]">
     <div class="max-w-6xl mx-auto px-4">
         <div class="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
             <div>

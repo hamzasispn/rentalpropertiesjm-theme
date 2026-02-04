@@ -185,66 +185,8 @@ get_header();
 
     </div>
 
-    <div class="flex md:flex-row items-center flex-col md:gap-4 gap-8 w-[90%] mx-auto md:pt-[3.125vw] pt-[13.882vw]">
-        <div class="flex flex-col gap-4 lg:w-1/2 w-full">
-            <h5 class="text-[#1A1A1A] text-[8.471vw] leading-[1] md:text-[2.5vw] font-bold mb-[0.833vw]">Why Property
-                Owners and Buyers Trust Us?</h5>
-            <ul class="flex flex-col gap-[0.833vw] mt-[1.25vw]">
-                <li class="flex items-start gap-2 text-[3.765vw] md:text-[0.833vw]">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="md:w-[1.25vw] md:h-[1.25vw] w-[5.647vw] h-[5.647vw]"
-                        viewBox="0 0 24 24" fill="none">
-                        <path fill-rule="evenodd" clip-rule="evenodd"
-                            d="M12 21C13.1819 21 14.3522 20.7672 15.4442 20.3149C16.5361 19.8626 17.5282 19.1997 18.364 18.364C19.1997 17.5282 19.8626 16.5361 20.3149 15.4442C20.7672 14.3522 21 13.1819 21 12C21 10.8181 20.7672 9.64778 20.3149 8.55585C19.8626 7.46392 19.1997 6.47177 18.364 5.63604C17.5282 4.80031 16.5361 4.13738 15.4442 3.68508C14.3522 3.23279 13.1819 3 12 3C9.61305 3 7.32387 3.94821 5.63604 5.63604C3.94821 7.32387 3 9.61305 3 12C3 14.3869 3.94821 16.6761 5.63604 18.364C7.32387 20.0518 9.61305 21 12 21ZM11.768 15.64L16.768 9.64L15.232 8.36L10.932 13.519L8.707 11.293L7.293 12.707L10.293 15.707L11.067 16.481L11.768 15.64Z"
-                            fill="#132364" />
-                    </svg>
-                    <span class="flex-1">Verified Listings — every property checked for accuracy</span>
-                </li>
-                <li class="flex items-start gap-2 text-[3.765vw] md:text-[0.833vw]">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="md:w-[1.25vw] md:h-[1.25vw] w-[5.647vw] h-[5.647vw]"
-                        viewBox="0 0 24 24" fill="none">
-                        <path fill-rule="evenodd" clip-rule="evenodd"
-                            d="M12 21C13.1819 21 14.3522 20.7672 15.4442 20.3149C16.5361 19.8626 17.5282 19.1997 18.364 18.364C19.1997 17.5282 19.8626 16.5361 20.3149 15.4442C20.7672 14.3522 21 13.1819 21 12C21 10.8181 20.7672 9.64778 20.3149 8.55585C19.8626 7.46392 19.1997 6.47177 18.364 5.63604C17.5282 4.80031 16.5361 4.13738 15.4442 3.68508C14.3522 3.23279 13.1819 3 12 3C9.61305 3 7.32387 3.94821 5.63604 5.63604C3.94821 7.32387 3 9.61305 3 12C3 14.3869 3.94821 16.6761 5.63604 18.364C7.32387 20.0518 9.61305 21 12 21ZM11.768 15.64L16.768 9.64L15.232 8.36L10.932 13.519L8.707 11.293L7.293 12.707L10.293 15.707L11.067 16.481L11.768 15.64Z"
-                            fill="#132364" />
-                    </svg>
-                    <span class="flex-1">No Spam, No Free Ads — only genuine listings from real owners</span>
-                </li>
-                <li class="flex items-start gap-2 text-[3.765vw] md:text-[0.833vw]">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="md:w-[1.25vw] md:h-[1.25vw] w-[5.647vw] h-[5.647vw]"
-                        viewBox="0 0 24 24" fill="none">
-                        <path fill-rule="evenodd" clip-rule="evenodd"
-                            d="M12 21C13.1819 21 14.3522 20.7672 15.4442 20.3149C16.5361 19.8626 17.5282 19.1997 18.364 18.364C19.1997 17.5282 19.8626 16.5361 20.3149 15.4442C20.7672 14.3522 21 13.1819 21 12C21 10.8181 20.7672 9.64778 20.3149 8.55585C19.8626 7.46392 19.1997 6.47177 18.364 5.63604C17.5282 4.80031 16.5361 4.13738 15.4442 3.68508C14.3522 3.23279 13.1819 3 12 3C9.61305 3 7.32387 3.94821 5.63604 5.63604C3.94821 7.32387 3 9.61305 3 12C3 14.3869 3.94821 16.6761 5.63604 18.364C7.32387 20.0518 9.61305 21 12 21ZM11.768 15.64L16.768 9.64L15.232 8.36L10.932 13.519L8.707 11.293L7.293 12.707L10.293 15.707L11.067 16.481L11.768 15.64Z"
-                            fill="#132364" />
-                    </svg>
-                    <span class="flex-1">Transparent Pricing — choose exactly what you pay for</span>
-                </li>
-                <li class="flex items-start gap-2 text-[3.765vw] md:text-[0.833vw]">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="md:w-[1.25vw] md:h-[1.25vw] w-[5.647vw] h-[5.647vw]"
-                        viewBox="0 0 24 24" fill="none">
-                        <path fill-rule="evenodd" clip-rule="evenodd"
-                            d="M12 21C13.1819 21 14.3522 20.7672 15.4442 20.3149C16.5361 19.8626 17.5282 19.1997 18.364 18.364C19.1997 17.5282 19.8626 16.5361 20.3149 15.4442C20.7672 14.3522 21 13.1819 21 12C21 10.8181 20.7672 9.64778 20.3149 8.55585C19.8626 7.46392 19.1997 6.47177 18.364 5.63604C17.5282 4.80031 16.5361 4.13738 15.4442 3.68508C14.3522 3.23279 13.1819 3 12 3C9.61305 3 7.32387 3.94821 5.63604 5.63604C3.94821 7.32387 3 9.61305 3 12C3 14.3869 3.94821 16.6761 5.63604 18.364C7.32387 20.0518 9.61305 21 12 21ZM11.768 15.64L16.768 9.64L15.232 8.36L10.932 13.519L8.707 11.293L7.293 12.707L10.293 15.707L11.067 16.481L11.768 15.64Z"
-                            fill="#132364" />
-                    </svg>
-                    <span class="flex-1">Boost Options — make your property stand out</span>
-                </li>
-                <li class="flex items-start gap-2 text-[3.765vw] md:text-[0.833vw]">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="md:w-[1.25vw] md:h-[1.25vw] w-[5.647vw] h-[5.647vw]"
-                        viewBox="0 0 24 24" fill="none">
-                        <path fill-rule="evenodd" clip-rule="evenodd"
-                            d="M12 21C13.1819 21 14.3522 20.7672 15.4442 20.3149C16.5361 19.8626 17.5282 19.1997 18.364 18.364C19.1997 17.5282 19.8626 16.5361 20.3149 15.4442C20.7672 14.3522 21 13.1819 21 12C21 10.8181 20.7672 9.64778 20.3149 8.55585C19.8626 7.46392 19.1997 6.47177 18.364 5.63604C17.5282 4.80031 16.5361 4.13738 15.4442 3.68508C14.3522 3.23279 13.1819 3 12 3C9.61305 3 7.32387 3.94821 5.63604 5.63604C3.94821 7.32387 3 9.61305 3 12C3 14.3869 3.94821 16.6761 5.63604 18.364C7.32387 20.0518 9.61305 21 12 21ZM11.768 15.64L16.768 9.64L15.232 8.36L10.932 13.519L8.707 11.293L7.293 12.707L10.293 15.707L11.067 16.481L11.768 15.64Z"
-                            fill="#132364" />
-                    </svg>
-                    <span class="flex-1">Easy Dashboard — manage, renew, or upgrade listings anytime</span>
-                </li>
-            </ul>
-            <a href="<?= home_url() ?>/login" class="w-fit btn-primary mt-[1.875vw]">
-                Start Listing Now
-            </a>
-        </div>
-        <div class="lg:w-1/2 w-full">
-            <img src="<?php echo get_template_directory_uri(); ?>/assets/section-3.png" alt="Why Choose Us Illustration"
-                class="rounded-2xl" />
-        </div>
-    </div>
+    <!-- Why Choose Us Section -->
+    <?php get_template_part('template-parts/sections/section', 'why-choose-us'); ?>
 
     <div class="flex flex-col gap-8 w-[90%] md:pt-[3.125vw] pt-[13.882vw] mx-auto">
         <div class="flex flex-col gap-3 mx-auto text-center mb-[2.708vw]">
@@ -266,59 +208,16 @@ get_header();
         </div>
 
     </div>
-    <div class="flex flex-col gap-8 w-[90%] md:pt-[3.125vw] pt-[13.882vw] mx-auto">
-        <div class="flex flex-col gap-3 mx-auto text-center mb-[2.708vw]">
-            <h5 class="text-[#1A1A1A] text-[8.471vw] leading-[1] md:text-[2.5vw] font-bold mb-[0.833vw] text-center">Find the Right Property for You
-            </h5>
-            <p class="text-center w-full md:w-[40.438vw] text-[#1A1A1A] font-inter text-[3.765vw] md:text-[1.042vw] mx-auto">Whether you’re buying,
-                selling, or renting,
-                explore a wide range of property types across the U.S.  From cozy apartments to luxury estates and
-                commercial investments — we make it easy to list or discover properties that match your goals.</p>
-        </div>
-        <div class="flex lg:flex-row flex-col gap-10 ">
-            <div class="w-full lg:w-[45%]">
-                <img src="<?php echo get_template_directory_uri(); ?>/assets/home.png" alt="home" class="h-full" />
-            </div>
-            <div class="w-full lg:w-[55%] grid grid-cols-2 gap-4">
-                <?php for ($i = 0; $i < 7; $i++): ?>
-                    <div class="flex flex-col gap-4 md:w-[19.219vw]">
-                        <div class="bg-white rounded-lg shadow-lg p-[2vw] md:p-[0.825vw] flex gap-4 items-center w-full">
-                            <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                <path
-                                    d="M6.504 2C5.124 2 4.004 3.12 4.004 4.5L4 21.5C4 22.88 5.12 24 6.5 24H10V20.87C10 20.1822 10.142 19.5018 10.4169 18.8714C10.6919 18.2409 11.094 17.674 11.598 17.206L12.902 15.996C12.7104 15.9771 12.5283 15.9032 12.3777 15.7834C12.227 15.6635 12.1142 15.5027 12.0527 15.3202C11.9912 15.1378 11.9837 14.9414 12.031 14.7548C12.0784 14.5682 12.1786 14.3992 12.3197 14.2682C12.4608 14.1372 12.6367 14.0496 12.8262 14.0161C13.0158 13.9826 13.2111 14.0045 13.3885 14.0793C13.5659 14.154 13.718 14.2784 13.8265 14.4375C13.935 14.5965 13.9952 14.7835 14 14.976L17.28 11.932C17.9063 11.3508 18.7022 10.9853 19.5512 10.8892C20.4002 10.7931 21.2577 10.9714 21.998 11.398C21.9717 10.7531 21.697 10.1435 21.2314 9.6965C20.7658 9.24955 20.1454 8.99998 19.5 9H18.506C18.3734 9 18.2462 8.94732 18.1524 8.85355C18.0587 8.75979 18.006 8.63261 18.006 8.5L18.01 4.502C18.01 3.122 16.89 2 15.51 2H6.504ZM9 8C8.73478 8 8.48043 7.89464 8.29289 7.70711C8.10536 7.51957 8 7.26522 8 7C8 6.73478 8.10536 6.48043 8.29289 6.29289C8.48043 6.10536 8.73478 6 9 6C9.26522 6 9.51957 6.10536 9.70711 6.29289C9.89464 6.48043 10 6.73478 10 7C10 7.26522 9.89464 7.51957 9.70711 7.70711C9.51957 7.89464 9.26522 8 9 8ZM10 11C10 11.2652 9.89464 11.5196 9.70711 11.7071C9.51957 11.8946 9.26522 12 9 12C8.73478 12 8.48043 11.8946 8.29289 11.7071C8.10536 11.5196 8 11.2652 8 11C8 10.7348 8.10536 10.4804 8.29289 10.2929C8.48043 10.1054 8.73478 10 9 10C9.26522 10 9.51957 10.1054 9.70711 10.2929C9.89464 10.4804 10 10.7348 10 11ZM9 16C8.73478 16 8.48043 15.8946 8.29289 15.7071C8.10536 15.5196 8 15.2652 8 15C8 14.7348 8.10536 14.4804 8.29289 14.2929C8.48043 14.1054 8.73478 14 9 14C9.26522 14 9.51957 14.1054 9.70711 14.2929C9.89464 14.4804 10 14.7348 10 15C10 15.2652 9.89464 15.5196 9.70711 15.7071C9.51957 15.8946 9.26522 16 9 16ZM14 7C14 7.26522 13.8946 7.51957 13.7071 7.70711C13.5196 7.89464 13.2652 8 13 8C12.7348 8 12.4804 7.89464 12.2929 7.70711C12.1054 7.51957 12 7.26522 12 7C12 6.73478 12.1054 6.48043 12.2929 6.29289C12.4804 6.10536 12.7348 6 13 6C13.2652 6 13.5196 6.10536 13.7071 6.29289C13.8946 6.48043 14 6.73478 14 7ZM13 12C12.7348 12 12.4804 11.8946 12.2929 11.7071C12.1054 11.5196 12 11.2652 12 11C12 10.7348 12.1054 10.4804 12.2929 10.2929C12.4804 10.1054 12.7348 10 13 10C13.2652 10 13.5196 10.1054 13.7071 10.2929C13.8946 10.4804 14 10.7348 14 11C14 11.2652 13.8946 11.5196 13.7071 11.7071C13.5196 11.8946 13.2652 12 13 12ZM21.36 13.4C20.9902 13.057 20.5044 12.8664 20 12.8664C19.4956 12.8664 19.0098 13.057 18.64 13.4L12.96 18.674C12.6572 18.9549 12.4156 19.2952 12.2504 19.6738C12.0852 20.0524 11.9999 20.461 12 20.874V28C12 28.5304 12.2107 29.0391 12.5858 29.4142C12.9609 29.7893 13.4696 30 14 30H17C17.5304 30 18.0391 29.7893 18.4142 29.4142C18.7893 29.0391 19 28.5304 19 28V26H21V28C21 28.5304 21.2107 29.0391 21.5858 29.4142C21.9609 29.7893 22.4696 30 23 30H26C26.5304 30 27.0391 29.7893 27.4142 29.4142C27.7893 29.0391 28 28.5304 28 28V20.872C28.0001 20.459 27.9148 20.0504 27.7496 19.6718C27.5844 19.2932 27.3428 18.9529 27.04 18.672L21.36 13.4ZM14.32 20.14L20 14.864L25.68 20.14C25.7808 20.2335 25.8612 20.3467 25.9163 20.4727C25.9713 20.5986 25.9998 20.7345 26 20.872V28H23V26C23 25.4696 22.7893 24.9609 22.4142 24.5858C22.0391 24.2107 21.5304 24 21 24H19C18.4696 24 17.9609 24.2107 17.5858 24.5858C17.2107 24.9609 17 25.4696 17 26V28H14V20.872C14.0002 20.7345 14.0287 20.5986 14.0837 20.4727C14.1388 20.3467 14.2192 20.2335 14.32 20.14Z"
-                                    fill="#132364" />
-                            </svg>
 
+    <!-- About Us Section -->
+    <?php get_template_part('template-parts/sections/section', 'about-us'); ?>
 
-                            <h6 class="text-[3.3vw] md:text-[1.042vw] font-semibold text-[#1A1A1A]">
-                                Residential Properties
-                            </h6>
-                        </div>
-
-                        <p class="text-[#1A1A1A] text-[3.765vw] md:text-[0.833vw] mx-auto font-inter mb-[1.588vw]">
-                            Perfect for families, individuals, or investors seeking comfortable living spaces.
-                        </p>
-
-                        <ul
-                            class="list-disc flex flex-col text-black mt-2 pl-6 text-[2.765vw] md:text-[0.833vw] font-medium">
-                            <li>Single-Family Homes</li>
-                            <li>Townhouses & Duplexes</li>
-                            <li>Condos & Apartments</li>
-                            <li>Vacation Rentals & Cabins</li>
-                            <li>Multi-Family Homes</li>
-                        </ul>
-                    </div>
-                <?php endfor; ?>
-            </div>
-        </div>
-
-    </div>
     <div class="flex flex-col gap-8 w-[90%] md:pt-[3.125vw] pt-[13.882vw] mx-auto">
         <div class="flex items-end justify-between mb-[2.608vw]">
             <div class="flex flex-col">
                 <h5 class="text-[#1A1A1A] text-[2.5vw] font-bold mb-[0.833vw]">Property Tips & Market Insights</h5>
                 <p class="text-[#1A1A1A] font-inter text-[1.042vw]">
-                    Stay informed with the latest updates on Pakistan’s real estate trends.
+                    Stay informed with the latest updates on Jamaica's real estate trends.
                 </p>
             </div>
             <button
@@ -333,7 +232,8 @@ get_header();
                     class="w-full h-48 object-cover rounded-2xl" />
                 <h6 class="text-[16px] font-semibold text-[#132364] pl-2"> 17 Jan 2022</h6>
                 <div class="flex items-center gap-4  px-2">
-                    <h6 class="text-lg font-semibold text-[#101828] pl-2">Top 5 Investment Areas in Lahore for 2025</h6>
+                    <h6 class="text-lg font-semibold text-[#101828] pl-2">Top 5 Investment Areas in Kingston for 2025
+                    </h6>
                     <svg xmlns="http://www.w3.org/2000/svg" width="37" height="34" viewBox="0 0 24 24" fill="none">
                         <path d="M7 17L17 7M17 7H7M17 7V17" stroke="#101828" stroke-width="2" stroke-linecap="round"
                             stroke-linejoin="round" />
@@ -399,7 +299,8 @@ get_header();
         <div class="flex items-center animate-marquee">
             <template x-for="t in 3" :key="t">
                 <template x-for="i in 7" :key="i">
-                    <div class="w-[32.471vw] h-[15.765vw] md:w-[7.187vw] md:h-[3.49vw] ml-[18.824vw] md:ml-[3.333vw] flex-shrink-0">
+                    <div
+                        class="w-[32.471vw] h-[15.765vw] md:w-[7.187vw] md:h-[3.49vw] ml-[18.824vw] md:ml-[3.333vw] flex-shrink-0">
                         <img src="<?= get_template_directory_uri(); ?>/assets/LOGO.svg" alt="Logo"
                             class="w-full h-full object-contain" />
                     </div>
@@ -408,7 +309,8 @@ get_header();
         </div>
     </section>
 
-    <section class="mt-[7vw] mb-[7vw] md:mt-[4.271vw] md:mb-[4.271vw] pt-[5.781vw] pb-[3.802vw] w-[90%] mx-auto rounded-[1.042vw] bg-cover bg-center h-[50vh] md:h-auto flex justify-center items-center"
+    <section
+        class="mt-[7vw] mb-[7vw] md:mt-[4.271vw] md:mb-[4.271vw] pt-[5.781vw] pb-[3.802vw] w-[90%] mx-auto rounded-[1.042vw] bg-cover bg-center h-[50vh] md:h-auto flex justify-center items-center"
         style="background-image: url('<?php echo get_template_directory_uri(); ?>/assets/bg-newsletter.jpg');">
         <div class="flex justify-center items-center">
             <div class="flex flex-col md:gap-3 gap-8">
@@ -416,7 +318,8 @@ get_header();
                     class="px-[5.647vw] md:px-[1.25vw] py-[8px] rounded-[14px] font-bold text-[var(--primary-color)] bg-white text-[14px] font-inter mx-auto">
                     Looking for More?
                 </button>
-                <h5 class="text-white text-[7.294vw] w-[90vw] md:text-[2.5vw] font-bold mb-[0.833vw] text-center md:w-[41.042vw] mx-auto leading-[1]">
+                <h5
+                    class="text-white text-[7.294vw] w-[90vw] md:text-[2.5vw] font-bold mb-[0.833vw] text-center md:w-[41.042vw] mx-auto leading-[1]">
                     Talk to our experts or Browse through more properties.</h5>
                 <div class="flex items-center md:flex-row flex-col justify-center gap-3">
                     <a href="<?= home_url() ?>/contact" class="btn-primary !bg-white !text-[var(--primary-color)]">Talk
