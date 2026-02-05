@@ -1,10 +1,16 @@
 <?php
 // Get all plans for upgrade option
 $all_plans = get_posts(array(
-        'post_type' => 'subscription_plan',
-        'post_status' => 'publish',
-        'numberposts' => -1,
+    'post_type' => 'subscription_plan',
+    'post_status' => 'publish',
+    'numberposts' => -1,
 ));
+
+$stats = isset($args['subscription']) ? array('subscription' => $args['subscription']) : array('subscription' => null);
+
+if ($stats['subscription'] && $stats['subscription']->status === 'canceled') {
+    $stats['subscription'] = null;
+}
 
 $plans_data = array_map(function ($plan) {
     return property_theme_get_plan($plan->ID);
@@ -28,27 +34,34 @@ foreach ($plans_data as $plan) {
     ?>
 
 
+
     <div
-            class="!mt-[0px] !mx-[0px] !mb-[0px] px-[6.833vw] md:px-[0.833vw] md:w-auto w-full <?= $is_best_seller ? 'bg-[var(--primary-color)]' : 'bg-white'; ?> pb-6 pt-[12.2vw] md:pt-[2.2vw] relative overflow-hidden shadow-lg rounded-[16px] flex flex-col gap-4 <?php echo $is_current ? 'border-2 border-blue-600' : ''; ?>">
+        class="!mt-[0px] !mx-[0px] !mb-[0px] px-[6.833vw] md:px-[0.833vw] md:w-auto w-full <?= $is_best_seller ? 'bg-[var(--primary-color)]' : 'bg-white'; ?> pb-6 pt-[12.2vw] md:pt-[2.2vw] relative overflow-hidden shadow-lg rounded-[16px] flex flex-col gap-4 <?php echo $is_current ? 'border-2 border-blue-600' : ''; ?>">
         <?php if ($is_best_seller): ?>
-            <div class="bg-white text-[var(--primary-color)] absolute rounded-l-full right-[0px] top-[15px] py-2 px-4 text-[3.042vw] md:text-[1.042vw] font-semibold font-inter text-center uppercase">
+            <div
+                class="bg-white text-[var(--primary-color)] absolute rounded-l-full right-[0px] top-[15px] py-2 px-4 text-[3.042vw] md:text-[1.042vw] font-semibold font-inter text-center uppercase">
                 Best Seller
             </div>
         <?php endif; ?>
         <div class="flex justify-between items-start mb-2">
-            <h3 class="text-[6.875vw] md:text-[1.875vw] font-bold w-[70%] leading-[1] <?= $is_best_seller ? 'text-white' : 'text-[#1A1A1A]'; ?>"><?php echo esc_html($plan['name']); ?></h3>
+            <h3
+                class="text-[6.875vw] md:text-[1.875vw] font-bold w-[70%] leading-[1] <?= $is_best_seller ? 'text-white' : 'text-[#1A1A1A]'; ?>">
+                <?php echo esc_html($plan['name']); ?>
+            </h3>
             <?php if ($is_current): ?>
                 <span class="px-3 py-1 bg-blue-100 text-[var(--primary-color)] text-xs font-semibold rounded ">Current
-                                    Plan</span>
+                    Plan</span>
             <?php endif; ?>
 
         </div>
-        <p class="<?= $is_best_seller ? 'text-white' : 'text-[#1A1A1A]'; ?> text-[3.833vw] md:text-[0.833vw] font-inter">Individual homeowners listing a
+        <p class="<?= $is_best_seller ? 'text-white' : 'text-[#1A1A1A]'; ?> text-[3.833vw] md:text-[0.833vw] font-inter">
+            Individual homeowners listing a
             single property</p>
 
-        <h6 class="<?= $is_best_seller ? 'text-white' : 'text-[#1A1A1A]'; ?> text-[9.5vw] md:text-[2.5vw] font-bold font-inter">$<?= $plan['price']; ?>
-            <span
-                    class="text-[3.765vw] md:text-[0.833vw] font-light">/ <?= $plan['billing_cycle'] ?></span>
+        <h6
+            class="<?= $is_best_seller ? 'text-white' : 'text-[#1A1A1A]'; ?> text-[9.5vw] md:text-[2.5vw] font-bold font-inter">
+            $<?= $plan['price']; ?>
+            <span class="text-[3.765vw] md:text-[0.833vw] font-light">/ <?= $plan['billing_cycle'] ?></span>
         </h6>
 
         <ul class=" flex flex-col gap-5 <?= $is_best_seller ? 'text-white' : 'text-[#1A1A1A]'; ?>">
@@ -56,13 +69,14 @@ foreach ($plans_data as $plan) {
                 Listings Included :
                 <span class="font-light">
                     <?= $plan['max_properties'] == 1 ? '1 property' : 'Up to ' . esc_html($plan['max_properties']) . ' properties'; ?>
-                 </span>
+                </span>
             </li>
 
             <li class="font-bold font-inter text-[4.67vw] md:text-[0.99vw]">Featured Listing : <span
-                        class="font-light"><?= $plan['featured_limit'] == 1 ? '1 property' : 'Up to ' . esc_html($plan['featured_limit']) . ' properties'; ?></span></li>
+                    class="font-light"><?= $plan['featured_limit'] == 1 ? '1 property' : 'Up to ' . esc_html($plan['featured_limit']) . ' properties'; ?></span>
+            </li>
             <li class="font-bold font-inter text-[4.67vw] md:text-[0.99vw]">Advanced Analytics : <span
-                        class="font-light"><?php echo $plan['analytics'] ? 'Available' : 'Not Available'; ?></span></li>
+                    class="font-light"><?php echo $plan['analytics'] ? 'Available' : 'Not Available'; ?></span></li>
             <?php if ($plan['features']): ?>
                 <li class="font-bold font-inter text-[4.67vw] md:text-[0.99vw] flex gap-6">Features
                     <ul class="list-disc">
@@ -78,20 +92,21 @@ foreach ($plans_data as $plan) {
             <?php if (is_user_logged_in()): ?>
                 <?php if (!$is_current && $stats['subscription']): ?>
                     <button
-                            class="w-full px-4 py-2 <?= $is_best_seller ? 'bg-white text-[var(--primary-color)] hover:bg-white/80' : 'bg-[var(--primary-color)] text-white hover:bg-blue-700' ?> rounded-lg transition upgrade-to-plan-btn"
-                            data-plan-id="<?php echo esc_attr($plan['id']); ?>">
+                        class="w-full px-4 py-2 <?= $is_best_seller ? 'bg-white text-[var(--primary-color)] hover:bg-white/80' : 'bg-[var(--primary-color)] text-white hover:bg-blue-700' ?> rounded-lg transition upgrade-plan-btn"
+                        data-subscription-id="<?php echo esc_attr($stats['subscription']->id); ?>"
+                        data-plan-id="<?php echo esc_attr($plan['id']); ?>">
                         Upgrade to <?php echo esc_html($plan['name']); ?>
                     </button>
                 <?php elseif (!$stats['subscription']): ?>
                     <a href="<?php echo esc_url(home_url('/checkout?plan=' . $plan['id'])); ?>"
-                       class="block w-full px-4 py-2 <?= $is_best_seller ? 'bg-white text-[var(--primary-color)] hover:bg-white/80' : 'bg-[var(--primary-color)] text-white hover:bg-blue-700' ?> rounded-lg transition text-center">
+                        class="block w-full px-4 py-2 <?= $is_best_seller ? 'bg-white text-[var(--primary-color)] hover:bg-white/80' : 'bg-[var(--primary-color)] text-white hover:bg-blue-700' ?> rounded-lg transition text-center">
                         Choose Plan
                     </a>
                 <?php endif; ?>
 
             <?php else: ?>
                 <a href="<?= home_url() . '/login'; ?>"
-                   class="block px-4 py-2 font-semibold font-inter <?= $is_best_seller ? 'bg-white text-[var(--primary-color)] hover:bg-white/80' : 'bg-[var(--primary-color)] text-white hover:bg-blue-700' ?> rounded-lg transition text-[3.765vw] md:text-[0.938vw] w-full text-center">
+                    class="block px-4 py-2 font-semibold font-inter <?= $is_best_seller ? 'bg-white text-[var(--primary-color)] hover:bg-white/80' : 'bg-[var(--primary-color)] text-white hover:bg-blue-700' ?> rounded-lg transition text-[3.765vw] md:text-[0.938vw] w-full text-center">
                     Get
                     Started
                 </a>

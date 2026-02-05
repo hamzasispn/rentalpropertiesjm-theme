@@ -37,27 +37,33 @@ $subscription = property_theme_get_user_subscription($user_id) ?? array();
 
         <!-- Navigation -->
         <nav class="flex-1 px-4 py-8 space-y-2">
-            <a href="#overview" @click="activateTab('overview', true)" :class="{ 'bg-slate-800 font-semibold': activeTab === 'overview' }"
+            <a href="#overview" @click="activateTab('overview', true)"
+                :class="{ 'bg-slate-800 font-semibold': activeTab === 'overview' }"
                 class="nav-link px-4 py-3 rounded-lg hover:bg-slate-800 transition block">
                 📊 Overview
             </a>
-            <a href="#properties" @click="activateTab('properties', true)" :class="{ 'bg-slate-800 font-semibold': activeTab === 'properties' }"
+            <a href="#properties" @click="activateTab('properties', true)"
+                :class="{ 'bg-slate-800 font-semibold': activeTab === 'properties' }"
                 class="nav-link px-4 py-3 rounded-lg hover:bg-slate-800 transition block">
                 🏠 My Properties
             </a>
-            <a href="#add-property" @click="activateTab('add-property', true)" :class="{ 'bg-slate-800 font-semibold': activeTab === 'add-property' }"
+            <a href="#add-property" @click="activateTab('add-property', true)"
+                :class="{ 'bg-slate-800 font-semibold': activeTab === 'add-property' }"
                 class="nav-link px-4 py-3 rounded-lg hover:bg-slate-800 transition block">
                 ➕ Add Property
             </a>
-            <a href="#analytics" @click="activateTab('analytics', true)" :class="{ 'bg-slate-800 font-semibold': activeTab === 'analytics' }"
+            <a href="#analytics" @click="activateTab('analytics', true)"
+                :class="{ 'bg-slate-800 font-semibold': activeTab === 'analytics' }"
                 class="nav-link px-4 py-3 rounded-lg hover:bg-slate-800 transition block">
                 📈 Analytics
             </a>
-            <a href="#billing" @click="activateTab('billing', true)" :class="{ 'bg-slate-800 font-semibold': activeTab === 'billing' }"
+            <a href="#billing" @click="activateTab('billing', true)"
+                :class="{ 'bg-slate-800 font-semibold': activeTab === 'billing' }"
                 class="nav-link px-4 py-3 rounded-lg hover:bg-slate-800 transition block">
                 💳 Billing
             </a>
-            <a href="#settings" @click="activateTab('settings', true)" :class="{ 'bg-slate-800 font-semibold': activeTab === 'settings' }"
+            <a href="#settings" @click="activateTab('settings', true)"
+                :class="{ 'bg-slate-800 font-semibold': activeTab === 'settings' }"
                 class="nav-link px-4 py-3 rounded-lg hover:bg-slate-800 transition block">
                 ⚙️ Settings
             </a>
@@ -234,7 +240,8 @@ $subscription = property_theme_get_user_subscription($user_id) ?? array();
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <div class="bg-white rounded-lg shadow p-6">
                         <h3 class="text-slate-600 text-sm font-semibold">Total Views</h3>
-                        <p class="text-4xl font-bold text-slate-900 mt-2"><?php echo esc_html($stats['total_views'] ?? '0'); ?>
+                        <p class="text-4xl font-bold text-slate-900 mt-2">
+                            <?php echo esc_html($stats['total_views'] ?? '0'); ?>
                         </p>
                     </div>
                     <div class="bg-white rounded-lg shadow p-6">
@@ -312,10 +319,8 @@ $subscription = property_theme_get_user_subscription($user_id) ?? array();
                         </div>
 
                         <div class="flex gap-4">
-                            <button
-                                class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition upgrade-plan-btn">⬆️
-                                Upgrade Plan</button>
-                            <button class="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
+                            <button data-subscription-id="<?= $stats['subscription']->id ?>"
+                                class="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
                                 @click="confirmCancelSubscription()">
                                 Cancel Subscription
                             </button>
@@ -325,7 +330,7 @@ $subscription = property_theme_get_user_subscription($user_id) ?? array();
 
                 <!-- Available Plans -->
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <?php get_template_part('template-parts/component', 'plan-card'); ?>
+                    <?php get_template_part('template-parts/component', 'plan-card', array('subscription' => $stats['subscription'])); ?>
                 </div>
             </div>
 
@@ -373,9 +378,7 @@ $subscription = property_theme_get_user_subscription($user_id) ?? array();
 </div>
 
 <!-- Payment Modal for Upgrades -->
-<div id="upgrade-payment-modal"
-    x-show="showUpgradeModal" x-transition
-    style="display: none;"
+<div id="upgrade-payment-modal" x-show="showUpgradeModal" x-transition style="display: none;"
     class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
     <div class="bg-white rounded-lg max-w-md w-full p-8">
         <div class="flex justify-between items-center mb-6">
@@ -413,9 +416,7 @@ $subscription = property_theme_get_user_subscription($user_id) ?? array();
 </div>
 
 <!-- Update Payment Method Modal -->
-<div id="update-payment-modal"
-    x-show="showUpdatePaymentModal" x-transition
-    style="display: none;"
+<div id="update-payment-modal" x-show="showUpdatePaymentModal" x-transition style="display: none;"
     class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
     <div class="bg-white rounded-lg max-w-md w-full p-8">
         <div class="flex justify-between items-center mb-6">
@@ -468,15 +469,15 @@ $subscription = property_theme_get_user_subscription($user_id) ?? array();
             initTabs() {
                 const fullHash = window.location.hash.replace('#', '');
                 let activeTabName = 'overview';
-                
+
                 // Parse hash which may contain: tab?param=value
                 if (fullHash) {
                     const [tabName, queryString] = fullHash.split('?');
-                    
+
                     if (tabName && document.getElementById(tabName)) {
                         activeTabName = tabName;
                         console.log('[v0] Opening tab from hash:', tabName);
-                        
+
                         // If there are query params in the hash, log them
                         if (queryString) {
                             const hashParams = new URLSearchParams(queryString);
@@ -487,7 +488,7 @@ $subscription = property_theme_get_user_subscription($user_id) ?? array();
                         }
                     }
                 }
-                
+
                 this.activeTab = activeTabName;
                 this.initChart();
                 this.initStripe();
@@ -591,49 +592,6 @@ $subscription = property_theme_get_user_subscription($user_id) ?? array();
                         this.deleteAccount();
                     }
                 });
-            },
-
-            // Upgrade plan
-            async handleUpgradePlan(planId) {
-                this.selectedPlanId = planId;
-
-                try {
-                    const response = await fetch(propertyTheme.rest_url + 'property-theme/v1/subscription-plans/', {
-                        headers: {
-                            'X-WP-Nonce': propertyTheme.nonce,
-                        }
-                    });
-                    const planData = await response.json();
-                    const currentPrice = <?php echo $stats['plan']['price'] ?? 0; ?>;
-                    const selectedPlan = planData.find(p => p.id == planId);
-
-                    if (!selectedPlan) {
-                        alert("Selected plan not found.");
-                        return;
-                    }
-
-                    this.upgradeAmount = Math.max(0, selectedPlan.price - currentPrice);
-                    this.selectedPlanName = selectedPlan.name;
-                    document.getElementById('upgrade-plan-name').textContent = selectedPlan.name;
-                    document.getElementById('upgrade-amount').textContent = this.upgradeAmount;
-
-                    this.showUpgradeModal = true;
-                    this.$nextTick(() => {
-                        if (window.upgradeCardElement) {
-                            window.upgradeCardElement.mount('#upgrade-card-element');
-                        }
-                    });
-                } catch (error) {
-                    console.error('Error fetching plan:', error);
-                    alert('Error loading plan details');
-                }
-            },
-
-            closeUpgradeModal() {
-                this.showUpgradeModal = false;
-                if (window.upgradeCardElement) {
-                    window.upgradeCardElement.unmount();
-                }
             },
 
             closeUpdatePaymentModal() {
@@ -744,57 +702,6 @@ $subscription = property_theme_get_user_subscription($user_id) ?? array();
                 document.getElementById('upgrade-payment-form')?.addEventListener('submit', (e) => this.handleUpgradePayment(e));
                 document.getElementById('update-payment-form')?.addEventListener('submit', (e) => this.handleUpdatePayment(e));
                 document.querySelector('.update-payment-btn')?.addEventListener('click', () => this.openUpdatePaymentModal());
-                document.querySelectorAll('.upgrade-plan-btn').forEach(btn => {
-                    btn.addEventListener('click', () => this.handleUpgradePlan(btn.dataset.planId));
-                });
-            },
-
-            async handleUpgradePayment(e) {
-                e.preventDefault();
-                const submitBtn = document.getElementById('upgrade-submit-btn');
-                const errorDiv = document.getElementById('upgrade-error');
-
-                submitBtn.disabled = true;
-                submitBtn.textContent = 'Processing...';
-                errorDiv.classList.add('hidden');
-
-                try {
-                    const { paymentMethod, error } = await window.stripe.createPaymentMethod({
-                        type: 'card',
-                        card: window.upgradeCardElement,
-                    });
-
-                    if (error) {
-                        throw new Error(error.message);
-                    }
-
-                    const response = await fetch(propertyTheme.rest_url + 'property-theme/v1/user/subscription/upgrade', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-WP-Nonce': propertyTheme.nonce,
-                        },
-                        body: JSON.stringify({
-                            plan_id: this.selectedPlanId,
-                            payment_method_id: paymentMethod.id
-                        })
-                    });
-
-                    const data = await response.json();
-
-                    if (!response.ok) {
-                        throw new Error(data.message || 'Upgrade failed');
-                    }
-
-                    alert('Successfully upgraded to ' + this.selectedPlanName + '!');
-                    location.reload();
-                } catch (error) {
-                    console.error('Upgrade error:', error);
-                    errorDiv.textContent = error.message;
-                    errorDiv.classList.remove('hidden');
-                    submitBtn.disabled = false;
-                    submitBtn.textContent = 'Complete Upgrade';
-                }
             },
 
             async handleUpdatePayment(e) {
@@ -845,6 +752,56 @@ $subscription = property_theme_get_user_subscription($user_id) ?? array();
             }
         };
     }
+
+    document.querySelectorAll('.upgrade-plan-btn').forEach(btn => {
+        btn.addEventListener('click', async () => {
+
+            const planId = btn.dataset.planId;
+            const subscriptionId = btn.dataset.subscriptionId;
+
+            if (!planId || !subscriptionId) {
+                alert('Invalid subscription or plan');
+                return;
+            }
+
+            btn.disabled = true;
+            btn.innerText = 'Updating...';
+
+            try {
+                const response = await fetch(
+                    propertyTheme.rest_url + 'property-theme/v1/update-subscription-plan',
+                    {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-WP-Nonce': propertyTheme.nonce,
+                        },
+                        body: JSON.stringify({
+                            subscription_id: subscriptionId,
+                            plan_id: planId,
+                            billing_cycle: 'monthly',
+                            prorate: true,
+                        }),
+                    }
+                );
+
+                const result = await response.json();
+
+                if (!response.ok || !result.success) {
+                    throw new Error(result.message || 'Upgrade failed');
+                }
+
+                alert('Plan updated successfully');
+                window.location.reload();
+
+            } catch (err) {
+                console.error(err);
+                alert(err.message || 'Something went wrong');
+                btn.disabled = false;
+                btn.innerText = 'Upgrade / Downgrade';
+            }
+        });
+    });
 </script>
 
 <?php get_footer(); ?>

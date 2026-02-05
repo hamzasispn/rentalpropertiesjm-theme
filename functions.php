@@ -232,6 +232,8 @@ require_once get_template_directory() . '/inc/subscription/stripe-webhooks.php';
 require_once get_template_directory() . '/inc/subscription/stripe-subscriptions-native.php';
 require_once get_template_directory() . '/inc/subscription/stripe-migration.php';
 require_once get_template_directory() . '/inc/subscription/stripe-products-setup.php';
+require_once get_template_directory() . '/inc/subscription/property-deactivation.php';
+
 
 require_once get_template_directory() . '/admin/migration-page.php';
 
