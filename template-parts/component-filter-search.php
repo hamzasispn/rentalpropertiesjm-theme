@@ -13,24 +13,24 @@ $property_type_hierarchy = [];
 
 foreach ($parent_types as $parent) {
     $children = get_terms([
-        'taxonomy'   => 'property_type',
+        'taxonomy' => 'property_type',
         'hide_empty' => false,
-        'parent'     => $parent->term_id,
+        'parent' => $parent->term_id,
     ]);
 
     $children_with_icons = array_map(function ($child) {
         return [
             'term_id' => $child->term_id,
-            'name'    => $child->name,
-            'slug'    => $child->slug,
-            'icon'    => get_field('icons', 'property_type_' . $child->term_id),
+            'name' => $child->name,
+            'slug' => $child->slug,
+            'icon' => get_field('icons', 'property_type_' . $child->term_id),
         ];
     }, $children);
 
     $property_type_hierarchy[] = [
-        'parent'   => [
+        'parent' => [
             'term_id' => $parent->term_id,
-            'name'    => $parent->name,
+            'name' => $parent->name,
         ],
         'children' => $children_with_icons,
     ];
@@ -56,14 +56,6 @@ if (empty($properties_page_url)) {
 <!-- Desktop Filter Bar -->
 <div x-data="propertyFiltering(<?php echo htmlspecialchars(json_encode($filter_params)); ?>, <?php echo htmlspecialchars(json_encode($cities_data)); ?>, <?php echo htmlspecialchars(json_encode($property_type_hierarchy)); ?>)"
     class="absolute bottom-[-6%] left-1/2 transform -translate-x-1/2 md:w-[68.958vw] w-[90%] flex flex-col md:flex-row items-center bg-white shadow-lg rounded-[16px] z-10 md:h-[7vw] h-fit">
-    
-    <!-- Mobile Filter Button (visible on mobile) -->
-    <button @click="showMobileSidebar = !showMobileSidebar; if (showMobileSidebar) { $nextTick(initializeMobileSliders) }" class="md:hidden w-full flex items-center justify-center gap-2 bg-[var(--primary-color)] text-white p-[3vw] rounded-[16px] font-semibold text-[3.5vw] mb-4">
-        <svg class="w-[4vw] h-[4vw]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"></path>
-        </svg>
-        Filters
-    </button>
 
     <!-- Desktop Filter UI -->
     <div class="hidden md:flex w-full items-stretch">
@@ -78,29 +70,33 @@ if (empty($properties_page_url)) {
             </select>
         </div>
 
-        <div class="md:w-[17.188vw] md:border-r border-slate-200 py-[0.99vw] px-0 md:pl-[1.8vw] md:pr-[1.458vw] relative">
+        <div
+            class="md:w-[17.188vw] md:border-r border-slate-200 py-[0.99vw] px-0 md:pl-[1.8vw] md:pr-[1.458vw] relative">
             <label class="block text-[1.042vw] font-semibold text-slate-900 tracking-wide mb-[1.354vw]">Area</label>
             <input type="text" x-model="filters.location" @input="searchLocations($event)"
                 @focus="showLocationSuggestions = true" @blur="setTimeout(() => showLocationSuggestions = false, 200)"
-                placeholder="Search..." class="w-full text-[0.833vw] text-slate-900 outline-none font-inter bg-transparent">
+                placeholder="Search..."
+                class="w-full text-[0.833vw] text-slate-900 outline-none font-inter bg-transparent">
 
             <!-- Location Suggestions from Google API -->
             <div x-show="showLocationSuggestions && locationSuggestions.length"
                 class="absolute top-full left-0 right-0 mt-2 bg-white border border-slate-300 rounded-lg shadow-lg z-20 max-h-56 overflow-y-auto">
                 <template x-for="location in locationSuggestions" :key="location">
-                    <button type="button"
-                        @click="filters.location = location; showLocationSuggestions = false;"
+                    <button type="button" @click="filters.location = location; showLocationSuggestions = false;"
                         class="w-full text-left px-4 py-2.5 hover:bg-blue-50 text-slate-900 text-sm transition"
                         x-text="location"></button>
                 </template>
             </div>
         </div>
 
-        <div class="relative md:w-[17.188vw] md:border-r border-slate-200 py-[0.99vw] px-0 md:pl-[1.667vw] md:pr-[1.458vw]">
+        <div
+            class="relative md:w-[17.188vw] md:border-r border-slate-200 py-[0.99vw] px-0 md:pl-[1.667vw] md:pr-[1.458vw]">
             <label class="block text-[1.042vw] font-semibold text-slate-900 tracking-wide mb-[1.354vw]">Type</label>
-            <button @click="showTypeDropdown = !showTypeDropdown" class="w-full text-left text-[0.833vw] text-slate-900 outline-none font-inter flex justify-between items-center bg-transparent">
+            <button @click="showTypeDropdown = !showTypeDropdown"
+                class="w-full text-left text-[0.833vw] text-slate-900 outline-none font-inter flex justify-between items-center bg-transparent">
                 <span x-text="selectedTypeName || 'Select type...'" class="font-inter truncate"></span>
-                <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                    xmlns="http://www.w3.org/2000/svg">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
                 </svg>
             </button>
@@ -147,25 +143,33 @@ if (empty($properties_page_url)) {
     </div>
 
     <!-- Additional Filters Dropdown (Desktop) -->
-    <div x-show="showFilters" x-cloak class="hidden md:block absolute left-0 w-full bg-white shadow-lg rounded-[16px] z-10 mt-2" style="top: calc(100% + 0rem);">
+    <div x-show="showFilters" x-cloak
+        class="hidden md:block absolute left-0 w-full bg-white shadow-lg rounded-[16px] z-10 mt-2"
+        style="top: calc(100% + 0rem);">
         <div class="grid md:grid-cols-4">
             <!-- Bedrooms Slider -->
             <div class="border-r border-slate-300 py-[0.99vw] px-[1.458vw] col-span-1">
-                <label class="block text-[1.042vw] font-semibold text-slate-900 tracking-wide mb-[1.354vw] font-inter">Bedrooms (Min)</label>
+                <label
+                    class="block text-[1.042vw] font-semibold text-slate-900 tracking-wide mb-[1.354vw] font-inter">Bedrooms
+                    (Min)</label>
                 <div id="bedroom-slider" class="h-2"></div>
                 <div class="text-center mt-2 text-[0.833vw]" x-text="filters.beds" class="font-inter"></div>
             </div>
 
             <!-- Bathrooms Slider -->
             <div class="border-r border-slate-300 py-[0.99vw] px-[1.458vw] col-span-1">
-                <label class="block text-[1.042vw] font-semibold text-slate-900 tracking-wide mb-[1.354vw] font-inter">Bathrooms (Min)</label>
+                <label
+                    class="block text-[1.042vw] font-semibold text-slate-900 tracking-wide mb-[1.354vw] font-inter">Bathrooms
+                    (Min)</label>
                 <div id="bathroom-slider" class="h-2"></div>
                 <div class="text-center mt-2 text-[0.833vw]" x-text="filters.baths"></div>
             </div>
 
             <!-- Price Slider -->
             <div class="border-r border-slate-300 py-[0.99vw] px-[1.458vw] col-span-1">
-                <label class="block text-[1.042vw] font-semibold text-slate-900 tracking-wide mb-[1.354vw] font-inter">Price Range</label>
+                <label
+                    class="block text-[1.042vw] font-semibold text-slate-900 tracking-wide mb-[1.354vw] font-inter">Price
+                    Range</label>
                 <div id="price-slider" class="h-2"></div>
                 <div class="flex justify-between mt-2">
                     <span x-text="'$' + filters.priceMin.toLocaleString()" class="font-inter text-[0.833vw]"></span>
@@ -175,7 +179,9 @@ if (empty($properties_page_url)) {
 
             <!-- Area Slider -->
             <div class="border-r border-slate-300 py-[0.99vw] px-[1.458vw] col-span-1">
-                <label class="block text-[1.042vw] font-semibold text-slate-900 tracking-wide mb-[1.354vw] font-inter">Area Range (sq ft)</label>
+                <label
+                    class="block text-[1.042vw] font-semibold text-slate-900 tracking-wide mb-[1.354vw] font-inter">Area
+                    Range (sq ft)</label>
                 <div id="area-slider" class="h-2"></div>
                 <div class="flex justify-between mt-2">
                     <span x-text="filters.areaMin.toLocaleString()" class="font-inter text-[0.833vw]"></span>
@@ -192,119 +198,12 @@ if (empty($properties_page_url)) {
             </div>
         </div>
     </div>
+
 </div>
 
-<!-- Mobile Sidebar Filter (Canvas/Menu) -->
-<div x-show="showMobileSidebar" x-transition class="fixed inset-0 z-50 md:hidden" x-cloak>
-    <!-- Overlay -->
-    <div @click="showMobileSidebar = false" class="fixed inset-0 bg-black/30 backdrop-blur-sm"></div>
-    
-    <!-- Sidebar Panel -->
-    <div class="fixed left-0 top-0 bottom-0 w-4/5 bg-white shadow-2xl overflow-y-auto" style="max-width: 320px;">
-        <!-- Header -->
-        <div class="flex items-center justify-between p-4 border-b border-slate-200 sticky top-0 bg-white">
-            <h2 class="text-lg font-bold text-slate-900">Filters</h2>
-            <button @click="showMobileSidebar = false" class="text-slate-600 hover:text-slate-900 text-2xl">
-                ✕
-            </button>
-        </div>
 
-        <!-- Filter Content -->
-        <div class="p-4 space-y-6">
-            <!-- City Filter -->
-            <div>
-                <label class="block text-sm font-semibold text-slate-900 mb-2">City</label>
-                <select x-model="filters.city" @change="resetLocationSuggestions()"
-                    class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm text-slate-900 focus:ring-2 focus:ring-[var(--primary-color)] focus:border-transparent">
-                    <option value="">Select a city...</option>
-                    <template x-for="city in citiesList" :key="city">
-                        <option :value="city" x-text="city"></option>
-                    </template>
-                </select>
-            </div>
 
-            <!-- Location Filter -->
-            <div x-show="filters.city" class="relative">
-                <label class="block text-sm font-semibold text-slate-900 mb-2">Location</label>
-                <input type="text" x-model="filters.location" @input="searchLocations($event)"
-                    placeholder="Search location..." class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm text-slate-900 focus:ring-2 focus:ring-[var(--primary-color)] focus:border-transparent">
-            </div>
 
-            <!-- Property Type Filter -->
-            <div>
-                <label class="block text-sm font-semibold text-slate-900 mb-3">Property Type</label>
-                <div class="space-y-2">
-                    <template x-for="group in propertyTypeHierarchy" :key="group.parent.term_id">
-                        <div>
-                            <p class="text-xs font-semibold text-slate-700 uppercase mb-2" x-text="group.parent.name"></p>
-                            <div class="space-y-1 ml-2">
-                                <template x-for="child in group.children" :key="child.slug">
-                                    <button type="button"
-                                        @click="filters.type = child.term_id; filters.selectedTypeName = child.name"
-                                        :class="filters.type == child.term_id ? 'bg-[var(--primary-color)] text-white' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'"
-                                        class="w-full text-left px-3 py-2 rounded text-sm font-medium transition"
-                                        x-text="child.name"></button>
-                                </template>
-                            </div>
-                        </div>
-                    </template>
-                </div>
-            </div>
-
-            <!-- Bedrooms -->
-            <div>
-                <label class="block text-sm font-semibold text-slate-900 mb-2">
-                    Bedrooms: <span x-text="filters.beds > 0 ? filters.beds + '+' : 'Any'" class="text-[var(--primary-color)]"></span>
-                </label>
-                <div id="bedroom-slider-mobile" class="mt-3"></div>
-            </div>
-
-            <!-- Bathrooms -->
-            <div>
-                <label class="block text-sm font-semibold text-slate-900 mb-2">
-                    Bathrooms: <span x-text="filters.baths > 0 ? filters.baths + '+' : 'Any'" class="text-[var(--primary-color)]"></span>
-                </label>
-                <div id="bathroom-slider-mobile" class="mt-3"></div>
-            </div>
-
-            <!-- Price -->
-            <div>
-                <label class="block text-sm font-semibold text-slate-900 mb-2">
-                    Price: <span x-text="`$${(filters.priceMin/1000).toFixed(0)}K - $${(filters.priceMax/1000).toFixed(0)}K`" class="text-[var(--primary-color)]"></span>
-                </label>
-                <div id="price-slider-mobile" class="mt-3"></div>
-            </div>
-
-            <!-- Area -->
-            <div>
-                <label class="block text-sm font-semibold text-slate-900 mb-2">
-                    Area: <span x-text="`${filters.areaMin.toLocaleString()} - ${filters.areaMax.toLocaleString()} sqft`" class="text-[var(--primary-color)]"></span>
-                </label>
-                <div id="area-slider-mobile" class="mt-3"></div>
-            </div>
-
-            <!-- Featured -->
-            <div>
-                <label class="flex items-center gap-2 cursor-pointer">
-                    <input type="checkbox" x-model="filters.featured" class="w-4 h-4 rounded">
-                    <span class="text-sm font-medium text-slate-900">Featured Only</span>
-                </label>
-            </div>
-
-            <!-- Action Buttons -->
-            <div class="space-y-2 pt-4 border-t border-slate-200">
-                <button @click="searchProperties(); showMobileSidebar = false"
-                    class="w-full bg-[var(--primary-color)] text-white font-semibold py-3 rounded-lg hover:opacity-90 transition">
-                    Apply Filters
-                </button>
-                <button @click="filters = {}; selectedTypeName = ''"
-                    class="w-full border border-slate-300 text-slate-700 font-semibold py-3 rounded-lg hover:bg-slate-50 transition">
-                    Clear All
-                </button>
-            </div>
-        </div>
-    </div>
-</div>
 
 <!-- Nouislider CSS -->
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/noUiSlider/15.7.1/nouislider.min.css">
@@ -315,10 +214,6 @@ if (empty($properties_page_url)) {
 <script src="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/js/tom-select.complete.min.js"></script>
 <script
     src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAUPkXXwkGt0xC5ongE7-62nzz6l7D3Nf4&libraries=places,marker&v=beta"></script>
-
-<style>
-    [x-cloak] { display: none !important; }
-</style>
 
 <script>
     function propertyFiltering(initialParams, citiesData, propertyTypeHierarchy) {
@@ -340,7 +235,7 @@ if (empty($properties_page_url)) {
             citiesList: Object.keys(citiesData),
             propertyTypeHierarchy: propertyTypeHierarchy,
             showFilters: false,
-            showMobileSidebar: false, // Ensure sidebar is hidden by default
+            showMobileSidebar: false,
             locationSuggestions: [],
             showLocationSuggestions: false,
             showTypeDropdown: false,
@@ -574,8 +469,8 @@ if (empty($properties_page_url)) {
 
             searchProperties() {
                 const params = new URLSearchParams();
-                if (this.filters.city) params.append('prop_city', encodeURIComponent(this.filters.city));
-                if (this.filters.location) params.append('keyword', encodeURIComponent(this.filters.location));
+                if (this.filters.city) params.append('prop_city', this.filters.city);
+                if (this.filters.location) params.append('keyword', this.filters.location);
                 if (this.filters.type) params.append('property_type', this.filters.type);
                 if (this.filters.beds > 0) params.append('beds', this.filters.beds);
                 if (this.filters.baths > 0) params.append('baths', this.filters.baths);
@@ -586,19 +481,16 @@ if (empty($properties_page_url)) {
                 if (this.filters.featured) params.append('featured', 'true');
 
                 const queryString = params.toString();
-                // Use proper WordPress archive URL
                 let archiveUrl = '<?= $properties_page_url ?>';
-                
-                // Fallback if variable is empty
+
                 if (!archiveUrl || archiveUrl.includes('')) {
                     archiveUrl = '<?= home_url('/properties') ?>';
                 }
-                
-                // Ensure trailing slash before query string
+
                 if (!archiveUrl.endsWith('/')) {
                     archiveUrl += '/';
                 }
-                
+
                 window.location.href = archiveUrl + (queryString ? '?' + queryString : '');
             }
         };
