@@ -15,7 +15,7 @@ $filter_params = array(
     'area_max' => intval($_GET['area_max'] ?? 100000),
     'beds' => intval($_GET['beds'] ?? 0),
     'baths' => intval($_GET['baths'] ?? 0),
-    'city' => sanitize_text_field($_GET['city'] ?? ''),
+    'city' => sanitize_text_field($_GET['prop_city'] ?? ''),
     'location' => sanitize_text_field($_GET['location'] ?? ''),
     'keyword' => sanitize_text_field($_GET['keyword'] ?? ''),
     'sort' => sanitize_text_field($_GET['sort'] ?? 'newest'),
@@ -83,7 +83,6 @@ function sort_terms_numerically($terms)
 $bedrooms = sort_terms_numerically($bedrooms);
 $bathrooms = sort_terms_numerically($bathrooms);
 ?>
-
 
 
 <div class="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
@@ -573,9 +572,8 @@ $bathrooms = sort_terms_numerically($bathrooms);
                 if (this.filters.beds) params.append('beds_min', this.filters.beds);
                 if (this.filters.baths) params.append('baths_min', this.filters.baths);
                 if (this.filters.city) params.append('city', this.filters.city);
-                if (this.filters.location) params.append('keyword', this.filters.location);
+                if (this.filters.location) params.append('location', this.filters.location);
                 if (this.filters.keyword) params.append('keyword', this.filters.keyword);
-                // Always sort featured first if filter is not applied, otherwise use selected sort
                 const sort = this.filters.featured ? 'featured' : this.sortBy;
                 params.append('sort', sort);
                 if (this.filters.featured) params.append('featured', 'true');

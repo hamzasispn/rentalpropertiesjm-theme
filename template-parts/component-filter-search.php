@@ -1,4 +1,4 @@
-<!-- Advanced Property Search Filter with Responsive Design -->
+<!-- Advanced Property Search Filter with Responsive Design + Mobile Sidebar -->
 <?php
 
 $cities_data = get_jamaica_cities();
@@ -38,121 +38,148 @@ foreach ($parent_types as $parent) {
 
 $filter_params = $filter_params ?? [];
 
+// Add city and location to filter params if coming from redirect
+if (!isset($filter_params['city']) && isset($_GET['city'])) {
+    $filter_params['city'] = sanitize_text_field($_GET['city']);
+}
+if (!isset($filter_params['location']) && isset($_GET['location'])) {
+    $filter_params['location'] = sanitize_text_field($_GET['location']);
+}
+
+// Ensure we're using the correct WordPress properties page URL
+$properties_page_url = get_post_type_archive_link('property');
+if (empty($properties_page_url)) {
+    $properties_page_url = home_url('/properties/');
+}
+
 ?>
+<!-- Desktop Filter Bar -->
 <div x-data="propertyFiltering(<?php echo htmlspecialchars(json_encode($filter_params)); ?>, <?php echo htmlspecialchars(json_encode($cities_data)); ?>, <?php echo htmlspecialchars(json_encode($property_type_hierarchy)); ?>)"
     class="absolute bottom-[-6%] left-1/2 transform -translate-x-1/2 md:w-[68.958vw] w-[90%] flex flex-col md:flex-row items-center bg-white shadow-lg rounded-[16px] z-10 md:h-[7vw] h-fit">
-    <div class="md:w-[17.188vw] w-full md:border-r border-b md:border-b-0 border-slate-200 py-[1.5vw] md:py-[1.2vw] px-[2.35vw] md:px-0 md:pl-[1.8vw] md:pr-[1.458vw]">
-        <label class="block text-[2.35vw] md:text-[1.042vw] font-semibold text-slate-900 tracking-wide mb-[2vw] md:mb-[1.354vw]">City</label>
-        <select id="city-select" x-model="filters.city" @change="resetLocationSuggestions();"
-            class="w-full font-inter text-[2vw] md:text-[0.833vw] text-slate-900 outline-none border-none bg-transparent">
-            <option value="" class="font-inter">Select a city...</option>
-            <template x-for="city in citiesList" :key="city">
-                <option :value="city" x-text="city" class="font-inter"></option>
-            </template>
-        </select>
-    </div>
+    
+    <!-- Mobile Filter Button (visible on mobile) -->
+    <button @click="showMobileSidebar = !showMobileSidebar; if (showMobileSidebar) { $nextTick(initializeMobileSliders) }" class="md:hidden w-full flex items-center justify-center gap-2 bg-[var(--primary-color)] text-white p-[3vw] rounded-[16px] font-semibold text-[3.5vw] mb-4">
+        <svg class="w-[4vw] h-[4vw]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"></path>
+        </svg>
+        Filters
+    </button>
 
-    <div class="md:w-[17.188vw] w-full md:border-r border-b md:border-b-0 border-slate-200 py-[1.5vw] md:py-[0.99vw] px-[2.35vw] md:px-0 md:pl-[1.8vw] md:pr-[1.458vw] relative">
-        <label class="block text-[2.35vw] md:text-[1.042vw] font-semibold text-slate-900 tracking-wide mb-[2vw] md:mb-[1.354vw]">Location</label>
-        <input type="text" x-model="filters.location" @input="searchLocations($event)"
-            @focus="showLocationSuggestions = true" @blur="setTimeout(() => showLocationSuggestions = false, 200)"
-            placeholder="Search..." class="w-full text-[2vw] md:text-[0.833vw] text-slate-900 outline-none font-inter bg-transparent">
-
-        <!-- Location Suggestions from Google API -->
-        <div x-show="showLocationSuggestions && locationSuggestions.length"
-            class="absolute top-full left-0 right-0 mt-2 bg-white border border-slate-300 rounded-lg shadow-lg z-20 max-h-56 overflow-y-auto">
-            <template x-for="location in locationSuggestions" :key="location">
-                <button type="button"
-                    @click="filters.location = location; showLocationSuggestions = false;"
-                    class="w-full text-left px-4 py-2.5 hover:bg-blue-50 text-slate-900 text-sm transition"
-                    x-text="location"></button>
-            </template>
+    <!-- Desktop Filter UI -->
+    <div class="hidden md:flex w-full items-stretch">
+        <div class="md:w-[17.188vw] md:border-r border-slate-200 py-[1.2vw] px-0 md:pl-[1.8vw] md:pr-[1.458vw]">
+            <label class="block text-[1.042vw] font-semibold text-slate-900 tracking-wide mb-[1.354vw]">City</label>
+            <select id="city-select" x-model="filters.city" @change="resetLocationSuggestions();"
+                class="w-full font-inter text-[0.833vw] text-slate-900 outline-none border-none bg-transparent">
+                <option value="" class="font-inter">Select a city...</option>
+                <template x-for="city in citiesList" :key="city">
+                    <option :value="city" x-text="city" class="font-inter"></option>
+                </template>
+            </select>
         </div>
-    </div>
 
-    <div class="relative md:w-[17.188vw] w-full md:border-r border-b md:border-b-0 border-slate-200 py-[1.5vw] md:py-[0.99vw] px-[2.35vw] md:px-0 md:pl-[1.667vw] md:pr-[1.458vw]">
-        <label class="block text-[2.35vw] md:text-[1.042vw] font-semibold text-slate-900 tracking-wide mb-[2vw] md:mb-[1.354vw]">Type</label>
-        <button @click="showTypeDropdown = !showTypeDropdown" class="w-full text-left text-[2vw] md:text-[0.833vw] text-slate-900 outline-none font-inter flex justify-between items-center bg-transparent">
-            <span x-text="selectedTypeName || 'Select type...'" class="font-inter truncate"></span>
-            <svg class="w-[2.35vw] md:w-4 h-[2.35vw] md:h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+        <div class="md:w-[17.188vw] md:border-r border-slate-200 py-[0.99vw] px-0 md:pl-[1.8vw] md:pr-[1.458vw] relative">
+            <label class="block text-[1.042vw] font-semibold text-slate-900 tracking-wide mb-[1.354vw]">Area</label>
+            <input type="text" x-model="filters.location" @input="searchLocations($event)"
+                @focus="showLocationSuggestions = true" @blur="setTimeout(() => showLocationSuggestions = false, 200)"
+                placeholder="Search..." class="w-full text-[0.833vw] text-slate-900 outline-none font-inter bg-transparent">
+
+            <!-- Location Suggestions from Google API -->
+            <div x-show="showLocationSuggestions && locationSuggestions.length"
+                class="absolute top-full left-0 right-0 mt-2 bg-white border border-slate-300 rounded-lg shadow-lg z-20 max-h-56 overflow-y-auto">
+                <template x-for="location in locationSuggestions" :key="location">
+                    <button type="button"
+                        @click="filters.location = location; showLocationSuggestions = false;"
+                        class="w-full text-left px-4 py-2.5 hover:bg-blue-50 text-slate-900 text-sm transition"
+                        x-text="location"></button>
+                </template>
+            </div>
+        </div>
+
+        <div class="relative md:w-[17.188vw] md:border-r border-slate-200 py-[0.99vw] px-0 md:pl-[1.667vw] md:pr-[1.458vw]">
+            <label class="block text-[1.042vw] font-semibold text-slate-900 tracking-wide mb-[1.354vw]">Type</label>
+            <button @click="showTypeDropdown = !showTypeDropdown" class="w-full text-left text-[0.833vw] text-slate-900 outline-none font-inter flex justify-between items-center bg-transparent">
+                <span x-text="selectedTypeName || 'Select type...'" class="font-inter truncate"></span>
+                <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                </svg>
+            </button>
+
+            <!-- Custom Dropdown with Tabs -->
+            <div x-show="showTypeDropdown" @click.outside="showTypeDropdown = false"
+                class="absolute top-full left-0 w-full bg-white border border-slate-300 rounded-lg shadow-lg z-20 max-h-96 overflow-y-auto mt-2">
+                <!-- Tabs -->
+                <div class="flex border-b">
+                    <template x-for="(typeGroup, index) in propertyTypeHierarchy" :key="typeGroup.parent.term_id">
+                        <button @click="activeTab = index"
+                            :class="{ 'bg-blue-100 text-[var(--primary-color)]': activeTab === index, 'text-slate-600': activeTab !== index }"
+                            class="flex-1 py-2 px-4 text-sm font-medium border-r last:border-r-0 font-inter">
+                            <span x-text="typeGroup.parent.name"></span>
+                        </button>
+                    </template>
+                </div>
+
+                <!-- Tab Content -->
+                <div class="p-4">
+                    <template x-for="(typeGroup, index) in propertyTypeHierarchy" :key="index">
+                        <div x-show="activeTab === index" class="grid grid-cols-2 gap-2">
+                            <template x-for="child in typeGroup.children" :key="child.term_id">
+                                <button @click="selectType(child.slug, child.name)"
+                                    class="bg-blue-100 text-[var(--primary-color)] px-4 py-2 rounded-full text-sm flex items-center gap-2">
+                                    <span x-html="child.icon" class="w-5 h-5 fill-[var(--primary-color)] block"></span>
+                                    <span x-text="child.name" class="font-inter line-clamp-1 text-left"></span>
+                                </button>
+                            </template>
+                        </div>
+                    </template>
+                </div>
+            </div>
+        </div>
+        <button @click="showFilters = !showFilters"
+            class="md:w-[6.146vw] bg-[var(--primary-color)] flex items-center justify-center text-white md:border-r border-white md:p-4">
+            <svg class="md:w-5 md:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4">
+                </path>
             </svg>
         </button>
-
-        <!-- Custom Dropdown with Tabs -->
-        <div x-show="showTypeDropdown" @click.outside="showTypeDropdown = false"
-            class="absolute top-full left-0 w-full bg-white border border-slate-300 rounded-lg shadow-lg z-20 max-h-96 overflow-y-auto mt-2">
-            <!-- Tabs -->
-            <div class="flex border-b">
-                <template x-for="(typeGroup, index) in propertyTypeHierarchy" :key="typeGroup.parent.term_id">
-                    <button @click="activeTab = index"
-                        :class="{ 'bg-blue-100 text-[var(--primary-color)]': activeTab === index, 'text-slate-600': activeTab !== index }"
-                        class="flex-1 py-2 px-4 text-sm font-medium border-r last:border-r-0 font-inter">
-                        <span x-text="typeGroup.parent.name"></span>
-                    </button>
-                </template>
-            </div>
-
-            <!-- Tab Content -->
-            <div class="p-4">
-                <template x-for="(typeGroup, index) in propertyTypeHierarchy" :key="index">
-                    <div x-show="activeTab === index" class="grid grid-cols-2 gap-2">
-                        <template x-for="child in typeGroup.children" :key="child.term_id">
-                            <button @click="selectType(child.term_id, child.name)"
-                                class="bg-blue-100 text-[var(--primary-color)] px-4 py-2 rounded-full text-sm flex items-center gap-2">
-                                <span x-html="child.icon" class="w-5 h-5 fill-[var(--primary-color)] block"></span>
-                                <span x-text="child.name" class="font-inter line-clamp-1 text-left"></span>
-                            </button>
-                        </template>
-                    </div>
-                </template>
-            </div>
-        </div>
+        <button @click="searchProperties()"
+            class="md:w-[14.063vw] md:p-4 bg-[var(--primary-color)] text-white md:text-[1.25vw] font-semibold md:rounded-r-[16px] font-inter">Search</button>
     </div>
-    <button @click="showFilters = !showFilters"
-        class="md:w-[6.146vw] w-full bg-[var(--primary-color)] flex items-center justify-center text-white md:border-r border-white md:p-4 p-[1.5vw] h-full">
-        <svg class="md:w-5 md:h-5 w-[3vw] h-[3vw]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4">
-            </path>
-        </svg>
-    </button>
-    <button @click="searchProperties()"
-        class="md:w-[14.063vw] w-full md:p-4 p-[1.5vw] bg-[var(--primary-color)] text-white h-full md:text-[1.25vw] text-[2vw] font-semibold md:rounded-r-[16px] rounded-b-[16px] md:rounded-b-none font-inter">Search</button>
 
-    <!-- Additional Filters Dropdown -->
-    <div x-show="showFilters" x-cloak class="absolute left-0 w-full bg-white shadow-lg rounded-[16px] z-10 mt-2" style="top: calc(100% + 0rem);">
+    <!-- Additional Filters Dropdown (Desktop) -->
+    <div x-show="showFilters" x-cloak class="hidden md:block absolute left-0 w-full bg-white shadow-lg rounded-[16px] z-10 mt-2" style="top: calc(100% + 0rem);">
         <div class="grid md:grid-cols-4">
             <!-- Bedrooms Slider -->
-            <div class="border-r border-slate-300 py-[2.765vw] px-[5.765vw] md:py-[0.99vw] md:px-[1.458vw] col-span-2 md:col-span-1">
-                <label class="block text-[3.765vw] md:text-[1.042vw] font-semibold text-slate-900 tracking-wide mb-[1.354vw] font-inter">Bedrooms (Min)</label>
+            <div class="border-r border-slate-300 py-[0.99vw] px-[1.458vw] col-span-1">
+                <label class="block text-[1.042vw] font-semibold text-slate-900 tracking-wide mb-[1.354vw] font-inter">Bedrooms (Min)</label>
                 <div id="bedroom-slider" class="h-2"></div>
-                <div class="text-center mt-2 text-[3.765vw] md:text-[0.833vw]" x-text="filters.beds" class="font-inter text-[0.833vw]"></div>
+                <div class="text-center mt-2 text-[0.833vw]" x-text="filters.beds" class="font-inter"></div>
             </div>
 
             <!-- Bathrooms Slider -->
-            <div class="border-r border-slate-300 py-[2.765vw] px-[5.765vw] md:py-[0.99vw] md:px-[1.458vw]  col-span-2 md:col-span-1">
-                <label class="block text-[3.765vw] md:text-[1.042vw] font-semibold text-slate-900 tracking-wide mb-[1.354vw] font-inter">Bathrooms (Min)</label>
+            <div class="border-r border-slate-300 py-[0.99vw] px-[1.458vw] col-span-1">
+                <label class="block text-[1.042vw] font-semibold text-slate-900 tracking-wide mb-[1.354vw] font-inter">Bathrooms (Min)</label>
                 <div id="bathroom-slider" class="h-2"></div>
-                <div class="text-center mt-2 text-[3.765vw] font-inter md:text-[0.833vw]" x-text="filters.baths"></div>
+                <div class="text-center mt-2 text-[0.833vw]" x-text="filters.baths"></div>
             </div>
 
             <!-- Price Slider -->
-            <div class=" border-t md:border-t-[0] border-r border-slate-300 py-[2.765vw] px-[5.765vw] md:py-[0.99vw] md:px-[1.458vw]  col-span-4 md:col-span-1">
-                <label class="block text-[3.765vw] md:text-[1.042vw] font-semibold text-slate-900 tracking-wide mb-[1.354vw] font-inter">Price Range</label>
+            <div class="border-r border-slate-300 py-[0.99vw] px-[1.458vw] col-span-1">
+                <label class="block text-[1.042vw] font-semibold text-slate-900 tracking-wide mb-[1.354vw] font-inter">Price Range</label>
                 <div id="price-slider" class="h-2"></div>
                 <div class="flex justify-between mt-2">
-                    <span x-text="'$' + filters.priceMin.toLocaleString()" class="font-inter text-[3.765vw] md:text-[0.833vw]"></span>
-                    <span x-text="'$' + filters.priceMax.toLocaleString()" class="font-inter text-[3.765vw] md:text-[0.833vw]"></span>
+                    <span x-text="'$' + filters.priceMin.toLocaleString()" class="font-inter text-[0.833vw]"></span>
+                    <span x-text="'$' + filters.priceMax.toLocaleString()" class="font-inter text-[0.833vw]"></span>
                 </div>
             </div>
 
             <!-- Area Slider -->
-            <div class="border-r border-slate-300 py-[2.765vw] px-[5.765vw] md:py-[0.99vw] md:px-[1.458vw]  col-span-4 md:col-span-1">
-                <label class="block text-[3.765vw] md:text-[1.042vw] font-semibold text-slate-900 tracking-wide mb-[1.354vw] font-inter">Area Range (sq ft)</label>
+            <div class="border-r border-slate-300 py-[0.99vw] px-[1.458vw] col-span-1">
+                <label class="block text-[1.042vw] font-semibold text-slate-900 tracking-wide mb-[1.354vw] font-inter">Area Range (sq ft)</label>
                 <div id="area-slider" class="h-2"></div>
                 <div class="flex justify-between mt-2">
-                    <span x-text="filters.areaMin.toLocaleString()" class="font-inter text-[3.765vw] md:text-[0.833vw]"></span>
-                    <span x-text="filters.areaMax.toLocaleString()" class="font-inter text-[3.765vw] md:text-[0.833vw]"></span>
+                    <span x-text="filters.areaMin.toLocaleString()" class="font-inter text-[0.833vw]"></span>
+                    <span x-text="filters.areaMax.toLocaleString()" class="font-inter text-[0.833vw]"></span>
                 </div>
             </div>
 
@@ -160,8 +187,120 @@ $filter_params = $filter_params ?? [];
             <div class="col-span-4 p-4 border-t border-slate-300 flex items-center">
                 <label class="flex items-center">
                     <input type="checkbox" x-model="filters.featured" class="mr-2">
-                    <span class="font-inter text-[3.765vw] md:text-[0.833vw]">Featured Properties Only</span>
+                    <span class="font-inter text-[0.833vw]">Featured Properties Only</span>
                 </label>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Mobile Sidebar Filter (Canvas/Menu) -->
+<div x-show="showMobileSidebar" x-transition class="fixed inset-0 z-50 md:hidden" x-cloak>
+    <!-- Overlay -->
+    <div @click="showMobileSidebar = false" class="fixed inset-0 bg-black/30 backdrop-blur-sm"></div>
+    
+    <!-- Sidebar Panel -->
+    <div class="fixed left-0 top-0 bottom-0 w-4/5 bg-white shadow-2xl overflow-y-auto" style="max-width: 320px;">
+        <!-- Header -->
+        <div class="flex items-center justify-between p-4 border-b border-slate-200 sticky top-0 bg-white">
+            <h2 class="text-lg font-bold text-slate-900">Filters</h2>
+            <button @click="showMobileSidebar = false" class="text-slate-600 hover:text-slate-900 text-2xl">
+                ✕
+            </button>
+        </div>
+
+        <!-- Filter Content -->
+        <div class="p-4 space-y-6">
+            <!-- City Filter -->
+            <div>
+                <label class="block text-sm font-semibold text-slate-900 mb-2">City</label>
+                <select x-model="filters.city" @change="resetLocationSuggestions()"
+                    class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm text-slate-900 focus:ring-2 focus:ring-[var(--primary-color)] focus:border-transparent">
+                    <option value="">Select a city...</option>
+                    <template x-for="city in citiesList" :key="city">
+                        <option :value="city" x-text="city"></option>
+                    </template>
+                </select>
+            </div>
+
+            <!-- Location Filter -->
+            <div x-show="filters.city" class="relative">
+                <label class="block text-sm font-semibold text-slate-900 mb-2">Location</label>
+                <input type="text" x-model="filters.location" @input="searchLocations($event)"
+                    placeholder="Search location..." class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm text-slate-900 focus:ring-2 focus:ring-[var(--primary-color)] focus:border-transparent">
+            </div>
+
+            <!-- Property Type Filter -->
+            <div>
+                <label class="block text-sm font-semibold text-slate-900 mb-3">Property Type</label>
+                <div class="space-y-2">
+                    <template x-for="group in propertyTypeHierarchy" :key="group.parent.term_id">
+                        <div>
+                            <p class="text-xs font-semibold text-slate-700 uppercase mb-2" x-text="group.parent.name"></p>
+                            <div class="space-y-1 ml-2">
+                                <template x-for="child in group.children" :key="child.slug">
+                                    <button type="button"
+                                        @click="filters.type = child.term_id; filters.selectedTypeName = child.name"
+                                        :class="filters.type == child.term_id ? 'bg-[var(--primary-color)] text-white' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'"
+                                        class="w-full text-left px-3 py-2 rounded text-sm font-medium transition"
+                                        x-text="child.name"></button>
+                                </template>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+            </div>
+
+            <!-- Bedrooms -->
+            <div>
+                <label class="block text-sm font-semibold text-slate-900 mb-2">
+                    Bedrooms: <span x-text="filters.beds > 0 ? filters.beds + '+' : 'Any'" class="text-[var(--primary-color)]"></span>
+                </label>
+                <div id="bedroom-slider-mobile" class="mt-3"></div>
+            </div>
+
+            <!-- Bathrooms -->
+            <div>
+                <label class="block text-sm font-semibold text-slate-900 mb-2">
+                    Bathrooms: <span x-text="filters.baths > 0 ? filters.baths + '+' : 'Any'" class="text-[var(--primary-color)]"></span>
+                </label>
+                <div id="bathroom-slider-mobile" class="mt-3"></div>
+            </div>
+
+            <!-- Price -->
+            <div>
+                <label class="block text-sm font-semibold text-slate-900 mb-2">
+                    Price: <span x-text="`$${(filters.priceMin/1000).toFixed(0)}K - $${(filters.priceMax/1000).toFixed(0)}K`" class="text-[var(--primary-color)]"></span>
+                </label>
+                <div id="price-slider-mobile" class="mt-3"></div>
+            </div>
+
+            <!-- Area -->
+            <div>
+                <label class="block text-sm font-semibold text-slate-900 mb-2">
+                    Area: <span x-text="`${filters.areaMin.toLocaleString()} - ${filters.areaMax.toLocaleString()} sqft`" class="text-[var(--primary-color)]"></span>
+                </label>
+                <div id="area-slider-mobile" class="mt-3"></div>
+            </div>
+
+            <!-- Featured -->
+            <div>
+                <label class="flex items-center gap-2 cursor-pointer">
+                    <input type="checkbox" x-model="filters.featured" class="w-4 h-4 rounded">
+                    <span class="text-sm font-medium text-slate-900">Featured Only</span>
+                </label>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="space-y-2 pt-4 border-t border-slate-200">
+                <button @click="searchProperties(); showMobileSidebar = false"
+                    class="w-full bg-[var(--primary-color)] text-white font-semibold py-3 rounded-lg hover:opacity-90 transition">
+                    Apply Filters
+                </button>
+                <button @click="filters = {}; selectedTypeName = ''"
+                    class="w-full border border-slate-300 text-slate-700 font-semibold py-3 rounded-lg hover:bg-slate-50 transition">
+                    Clear All
+                </button>
             </div>
         </div>
     </div>
@@ -182,7 +321,7 @@ $filter_params = $filter_params ?? [];
 </style>
 
 <script>
-    function propertyFiltering(initialParams, citiesData, propertyTypeHierarchy, bedrooms, bathrooms) {
+    function propertyFiltering(initialParams, citiesData, propertyTypeHierarchy) {
         initialParams = initialParams || {};
         return {
             filters: {
@@ -201,6 +340,7 @@ $filter_params = $filter_params ?? [];
             citiesList: Object.keys(citiesData),
             propertyTypeHierarchy: propertyTypeHierarchy,
             showFilters: false,
+            showMobileSidebar: false, // Ensure sidebar is hidden by default
             locationSuggestions: [],
             showLocationSuggestions: false,
             showTypeDropdown: false,
@@ -211,6 +351,10 @@ $filter_params = $filter_params ?? [];
             bathroomSlider: null,
             priceSlider: null,
             areaSlider: null,
+            bedroomSliderMobile: null,
+            bathroomSliderMobile: null,
+            priceSliderMobile: null,
+            areaSliderMobile: null,
             geocoder: null,
             autocompleteListener: null,
 
@@ -234,8 +378,8 @@ $filter_params = $filter_params ?? [];
                 }
             },
 
-            selectType(id, name) {
-                this.filters.type = id;
+            selectType(slug, name) {
+                this.filters.type = slug;
                 this.selectedTypeName = name;
                 this.showTypeDropdown = false;
             },
@@ -324,6 +468,72 @@ $filter_params = $filter_params ?? [];
                 }
             },
 
+            initializeMobileSliders() {
+                const self = this;
+                const bedroomMobile = document.getElementById('bedroom-slider-mobile');
+                const bathroomMobile = document.getElementById('bathroom-slider-mobile');
+                const priceMobile = document.getElementById('price-slider-mobile');
+                const areaMobile = document.getElementById('area-slider-mobile');
+
+                if (bedroomMobile && !this.bedroomSliderMobile) {
+                    this.bedroomSliderMobile = noUiSlider.create(bedroomMobile, {
+                        start: [this.filters.beds],
+                        range: { min: 0, max: 10 },
+                        step: 1,
+                        tooltips: false,
+                        connect: 'lower',
+                        pips: false
+                    });
+                    this.bedroomSliderMobile.on('change', (values) => {
+                        this.filters.beds = parseInt(values[0]);
+                    });
+                }
+
+                if (bathroomMobile && !this.bathroomSliderMobile) {
+                    this.bathroomSliderMobile = noUiSlider.create(bathroomMobile, {
+                        start: [this.filters.baths],
+                        range: { min: 0, max: 10 },
+                        step: 1,
+                        tooltips: false,
+                        connect: 'lower',
+                        pips: false
+                    });
+                    this.bathroomSliderMobile.on('change', (values) => {
+                        this.filters.baths = parseInt(values[0]);
+                    });
+                }
+
+                if (priceMobile && !this.priceSliderMobile) {
+                    this.priceSliderMobile = noUiSlider.create(priceMobile, {
+                        start: [this.filters.priceMin, this.filters.priceMax],
+                        range: { min: 0, max: 5000000 },
+                        step: 50000,
+                        tooltips: false,
+                        connect: true,
+                        pips: false
+                    });
+                    this.priceSliderMobile.on('change', (values) => {
+                        this.filters.priceMin = parseInt(values[0]);
+                        this.filters.priceMax = parseInt(values[1]);
+                    });
+                }
+
+                if (areaMobile && !this.areaSliderMobile) {
+                    this.areaSliderMobile = noUiSlider.create(areaMobile, {
+                        start: [this.filters.areaMin, this.filters.areaMax],
+                        range: { min: 0, max: 100000 },
+                        step: 500,
+                        tooltips: false,
+                        connect: true,
+                        pips: false
+                    });
+                    this.areaSliderMobile.on('change', (values) => {
+                        this.filters.areaMin = parseInt(values[0]);
+                        this.filters.areaMax = parseInt(values[1]);
+                    });
+                }
+            },
+
             resetLocationSuggestions() {
                 this.filters.location = '';
                 this.locationSuggestions = [];
@@ -364,8 +574,8 @@ $filter_params = $filter_params ?? [];
 
             searchProperties() {
                 const params = new URLSearchParams();
-                if (this.filters.city) params.append('city', encodeURIComponent(this.filters.city));
-                if (this.filters.location) params.append('location', encodeURIComponent(this.filters.location));
+                if (this.filters.city) params.append('prop_city', encodeURIComponent(this.filters.city));
+                if (this.filters.location) params.append('keyword', encodeURIComponent(this.filters.location));
                 if (this.filters.type) params.append('property_type', this.filters.type);
                 if (this.filters.beds > 0) params.append('beds', this.filters.beds);
                 if (this.filters.baths > 0) params.append('baths', this.filters.baths);
@@ -376,7 +586,19 @@ $filter_params = $filter_params ?? [];
                 if (this.filters.featured) params.append('featured', 'true');
 
                 const queryString = params.toString();
-                const archiveUrl = '<?= home_url() ?>/properties';
+                // Use proper WordPress archive URL
+                let archiveUrl = '<?= $properties_page_url ?>';
+                
+                // Fallback if variable is empty
+                if (!archiveUrl || archiveUrl.includes('')) {
+                    archiveUrl = '<?= home_url('/properties') ?>';
+                }
+                
+                // Ensure trailing slash before query string
+                if (!archiveUrl.endsWith('/')) {
+                    archiveUrl += '/';
+                }
+                
                 window.location.href = archiveUrl + (queryString ? '?' + queryString : '');
             }
         };
