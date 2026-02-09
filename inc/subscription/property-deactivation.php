@@ -5,9 +5,7 @@
 
 
 add_action('init', function () {
-    if (!wp_next_scheduled('check_user_subscription_status')) {
-        wp_schedule_event(time(), 'hourly', 'check_user_subscription_status');
-    }
+    wp_schedule_event(time(), 'hourly', 'check_user_subscription_status');
 });
 
 add_action('check_user_subscription_status', 'handle_subscription_property_status');
