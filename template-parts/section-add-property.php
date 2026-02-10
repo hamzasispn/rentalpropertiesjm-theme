@@ -44,6 +44,7 @@ $property_data = array(
     'amenities_data' => array(),
     'gallery' => array(),
     'featured_image' => '',
+    'property_numbers' => array(),
 );
 
 if ($is_edit && $property) {
@@ -66,6 +67,7 @@ if ($is_edit && $property) {
         'amenities_data' => get_post_meta($property_id, '_property_amenities_data', true) ?: array(),
         'gallery' => get_post_meta($property_id, '_property_gallery', true) ?: array(),
         'featured_image' => get_the_post_thumbnail_url($property_id),
+        'property_numbers' => get_post_meta($property_id, '_property_numbers', true) ?: array(),
     );
 }
 
@@ -271,6 +273,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_property'])) {
         }
     }
     update_post_meta($post_id, '_property_amenities_data', $amenities_data);
+
+    // Save property numbers
+    $property_numbers = array('whats' => array(), 'num' => array());
+    if (isset($_POST['property_numbers']) && is_array($_POST['property_numbers'])) {
+        foreach ($_POST['property_numbers'] as $number_data) {
+            $number = sanitize_text_field($number_data['number'] ?? '');
+            $type = sanitize_text_field($number_data['type'] ?? 'num');
+            
+            if (!empty($number)) {
+                if ($type === 'whats') {
+                    $property_numbers['whats'][] = $number;
+                } else {
+                    $property_numbers['num'][] = $number;
+                }
+            }
+        }
+    }
+    update_post_meta($post_id, '_property_numbers', $property_numbers);
 
     // Save gallery
     $gallery = array();
@@ -521,6 +541,60 @@ if (isset($_GET['action']) && $_GET['action'] === 'delete' && isset($_GET['prope
                         <!-- Map Display with Google Maps -->
                         <div id="property-map" class="w-full h-80 rounded-lg border border-slate-300 mt-4 bg-slate-100">
                         </div>
+                    </div>
+                </div>
+
+                <!-- Contact Numbers Section -->
+                <div class="bg-white rounded-lg shadow-lg p-6">
+                    <div class="flex items-center justify-between mb-6">
+                        <div>
+                            <h2 class="text-lg font-semibold text-slate-900">Contact Numbers</h2>
+                            <p class="text-sm text-slate-600 mt-1">Add WhatsApp and phone numbers for inquiries</p>
+                        </div>
+                    </div>
+
+                    <div x-data="contactNumbers(<?php echo htmlspecialchars(json_encode($property_data['property_numbers'] ?? [])); ?>)" class="space-y-4">
+                        <!-- Numbers List -->
+                        <div id="numbers-list" class="space-y-3">
+                            <template x-for="(number, index) in numbers" :key="index">
+                                <div class="flex gap-3 items-end p-4 bg-slate-50 rounded-lg border border-slate-200">
+                                    <!-- Type Dropdown -->
+                                    <div class="flex-shrink-0">
+                                        <label class="block text-xs font-semibold text-slate-700 mb-2">Type</label>
+                                        <select x-model="number.type" 
+                                            :name="`property_numbers[${index}][type]`"
+                                            class="px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-slate-900 bg-white">
+                                            <option value="num">📱 Phone</option>
+                                            <option value="whats">💬 WhatsApp</option>
+                                        </select>
+                                    </div>
+
+                                    <!-- Phone Number Input -->
+                                    <div class="flex-1">
+                                        <label class="block text-xs font-semibold text-slate-700 mb-2">Number</label>
+                                        <input type="tel" x-model="number.number" 
+                                            :name="`property_numbers[${index}][number]`"
+                                            placeholder="e.g., +1 876 123 4567"
+                                            class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-slate-900">
+                                    </div>
+
+                                    <!-- Remove Button -->
+                                    <button type="button" @click="removeNumber(index)"
+                                        class="px-3 py-2 bg-red-100 text-red-600 rounded-lg hover:bg-red-200 font-semibold text-sm transition">
+                                        Remove
+                                    </button>
+                                </div>
+                            </template>
+                        </div>
+
+                        <!-- Add Number Button -->
+                        <button type="button" @click="addNumber()"
+                            class="w-full px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold transition flex items-center justify-center gap-2">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                            </svg>
+                            Add Number
+                        </button>
                     </div>
                 </div>
 
@@ -868,6 +942,45 @@ if (isset($_GET['action']) && $_GET['action'] === 'delete' && isset($_GET['prope
 
 <!-- Optimized Alpine.js Script - No Vanilla JS Functions -->
 <script>
+function contactNumbers(initialNumbers) {
+    // Convert the backend format to frontend format
+    let numbers = [];
+    
+    if (initialNumbers && typeof initialNumbers === 'object') {
+        // Handle whatsapp numbers
+        if (initialNumbers.whats && Array.isArray(initialNumbers.whats)) {
+            initialNumbers.whats.forEach(num => {
+                if (num) numbers.push({ type: 'whats', number: num });
+            });
+        }
+        // Handle phone numbers
+        if (initialNumbers.num && Array.isArray(initialNumbers.num)) {
+            initialNumbers.num.forEach(num => {
+                if (num) numbers.push({ type: 'num', number: num });
+            });
+        }
+    }
+    
+    // If empty, show one blank field
+    if (numbers.length === 0) {
+        numbers.push({ type: 'num', number: '' });
+    }
+
+    return {
+        numbers: numbers,
+
+        addNumber() {
+            this.numbers.push({ type: 'num', number: '' });
+        },
+
+        removeNumber(index) {
+            if (this.numbers.length > 1) {
+                this.numbers.splice(index, 1);
+            }
+        }
+    };
+}
+
 function propertyForm(initialData, typeSpecificFieldsData, citiesData) {
     return {
         propertyData: initialData,

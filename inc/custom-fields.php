@@ -5,7 +5,8 @@
  */
 
 // Register meta fields for properties
-function property_theme_register_meta_fields() {
+function property_theme_register_meta_fields()
+{
     register_post_meta('property', '_property_price', array(
         'show_in_rest' => true,
         'type' => 'string',
@@ -166,13 +167,35 @@ function property_theme_register_meta_fields() {
         'single' => true,
         'sanitize_callback' => 'sanitize_textarea_field',
     ));
+
+    register_post_meta('property','_property_numbers', array(
+        'show_in_rest' => array(
+            'schema' => array(
+                'type' => 'object',
+                'properties' => array(
+                    'whats' => array(
+                        'type' => 'number',
+                    ),
+                    'num' => array(
+                        'type' => 'number',
+                    ),
+                ),
+                'additionalProperties' => false,
+            ),
+        ),
+        'single' => true,
+        'type' => 'object',
+        )
+    );
+
 }
 add_action('init', 'property_theme_register_meta_fields');
 
 /**
  * Sanitize property_status to only allow rent or for_sale
  */
-function property_theme_sanitize_status($value) {
+function property_theme_sanitize_status($value)
+{
     $allowed = array('rent', 'for_sale');
     return in_array($value, $allowed) ? $value : '';
 }
@@ -180,15 +203,16 @@ function property_theme_sanitize_status($value) {
 /**
  * Sanitize property_coords JSON
  */
-function property_theme_sanitize_coords($value) {
+function property_theme_sanitize_coords($value)
+{
     if (is_string($value)) {
         $value = json_decode($value, true);
     }
-    
+
     if (!is_array($value)) {
         return array('lat' => null, 'lng' => null);
     }
-    
+
     return array(
         'lat' => isset($value['lat']) ? floatval($value['lat']) : null,
         'lng' => isset($value['lng']) ? floatval($value['lng']) : null,
@@ -198,27 +222,29 @@ function property_theme_sanitize_coords($value) {
 /**
  * Get user subscription plan
  */
-function property_theme_get_user_plan($user_id) {
+function property_theme_get_user_plan($user_id)
+{
     $subscription = property_theme_get_user_subscription($user_id);
     if (!$subscription) {
         return null;
     }
-    
+
     return get_post($subscription->package_id);
 }
 
 /**
  * Get locations autocomplete data
  */
-function property_theme_get_locations($search = '') {
+function property_theme_get_locations($search = '')
+{
     global $wpdb;
-    
+
     $query = "SELECT DISTINCT meta_value FROM {$wpdb->postmeta} WHERE meta_key = '_property_address'";
-    
+
     if (!empty($search)) {
         $query .= $wpdb->prepare(" AND meta_value LIKE %s", '%' . $wpdb->esc_like($search) . '%');
     }
-    
+
     $results = $wpdb->get_col($query . " ORDER BY meta_value LIMIT 20");
     return array_filter(array_unique($results));
 }
@@ -226,9 +252,10 @@ function property_theme_get_locations($search = '') {
 /**
  * Get analytics data for property
  */
-function property_theme_get_property_analytics($property_id) {
+function property_theme_get_property_analytics($property_id)
+{
     global $wpdb;
-    
+
     return $wpdb->get_results($wpdb->prepare(
         "SELECT event_type, COUNT(*) as count FROM {$wpdb->prefix}property_analytics WHERE property_id = %d GROUP BY event_type",
         $property_id
@@ -238,9 +265,10 @@ function property_theme_get_property_analytics($property_id) {
 /**
  * Get leads for property
  */
-function property_theme_get_property_leads($property_id) {
+function property_theme_get_property_leads($property_id)
+{
     global $wpdb;
-    
+
     return $wpdb->get_results($wpdb->prepare(
         "SELECT * FROM {$wpdb->prefix}property_leads WHERE property_id = %d ORDER BY created_at DESC LIMIT 50",
         $property_id
@@ -250,32 +278,34 @@ function property_theme_get_property_leads($property_id) {
 /**
  * Get property coordinates (with migration from old lat/long)
  */
-function property_theme_get_property_coords($property_id) {
+function property_theme_get_property_coords($property_id)
+{
     $coords = get_post_meta($property_id, 'property_coords', true);
-    
+
     // If new coords exist and are valid, return them
     if (!empty($coords) && !empty($coords['lat']) && !empty($coords['lng'])) {
         return $coords;
     }
-    
+
     // Migration: check old lat/long fields
     $old_lat = get_post_meta($property_id, '_property_latitude', true);
     $old_lng = get_post_meta($property_id, '_property_longitude', true);
-    
+
     if (!empty($old_lat) && !empty($old_lng)) {
         return array(
             'lat' => floatval($old_lat),
             'lng' => floatval($old_lng),
         );
     }
-    
+
     return array('lat' => null, 'lng' => null);
 }
 
 /**
  * Get full address details for a property
  */
-function property_theme_get_full_address($property_id) {
+function property_theme_get_full_address($property_id)
+{
     return array(
         'address' => get_post_meta($property_id, '_property_address', true),
     );
