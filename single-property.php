@@ -487,12 +487,10 @@ while (have_posts()):
                             <div class="flex flex-col gap-[3.765vw] md:gap-[0.833vw]">
                             
                                 <?php
-                                // Agar string ho to unserialize kar lo (WordPress safety)
                                 if (is_string($numbers)) {
                                     $numbers = maybe_unserialize($numbers);
                                 }
                                 
-                                // Check karo data properly exist karta hai ya nahi
                                 if (is_array($numbers) && 
                                     isset($numbers['whats']) && 
                                     is_array($numbers['whats']) && 
