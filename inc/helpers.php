@@ -71,3 +71,5 @@ function property_theme_add_every_minute_interval( $schedules ) {
     );
     return $schedules;
 }
+
+add_theme_support( 'post-thumbnails' );

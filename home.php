@@ -188,7 +188,7 @@ get_header();
     <!-- Why Choose Us Section -->
     <?php get_template_part('template-parts/sections/section', 'why-choose-us'); ?>
 
-    <!-- Plans Section --> 
+    <!-- Plans Section -->
     <?php get_template_part('template-parts/sections/section', 'plans'); ?>
 
     <!-- About Us Section -->
@@ -202,115 +202,140 @@ get_header();
                     Stay informed with the latest updates on Jamaica's real estate trends.
                 </p>
             </div>
-            <button
-                class="px-[2.604vw] py-[0.538vw] rounded-[0.833vw] text-[#1A1A1A] border border-[#1A1A1A] text-[0.938vw]  transition-all hover:scale[1.1] cursor-pointer font-inter">
+            <a href="/blogs"
+                class="px-[2.604vw] py-[0.538vw] rounded-[0.833vw] text-[#1A1A1A] border border-[#1A1A1A] text-[0.938vw]  transition-all hover:scale-110 cursor-pointer font-inter">
                 Read More Articles
-            </button>
-
+            </a>
         </div>
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-6">
-            <div class="bg-white p-2 pb-4 rounded-2xl shadow-2xl flex flex-col gap-3">
-                <img src="<?php echo get_template_directory_uri(); ?>/assets/blog.png" alt="Blog Image"
-                    class="w-full h-48 object-cover rounded-2xl" />
-                <h6 class="text-[16px] font-semibold text-[#132364] pl-2"> 17 Jan 2022</h6>
-                <div class="flex items-center gap-4  px-2">
-                    <h6 class="text-lg font-semibold text-[#101828] pl-2">Top 5 Investment Areas in Kingston for 2025
-                    </h6>
-                    <svg xmlns="http://www.w3.org/2000/svg" width="37" height="34" viewBox="0 0 24 24" fill="none">
-                        <path d="M7 17L17 7M17 7H7M17 7V17" stroke="#101828" stroke-width="2" stroke-linecap="round"
-                            stroke-linejoin="round" />
+
+        <!-- Posts Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6 mb-12">
+            <?php
+            $all_post = new WP_Query(array(
+                'posts_per_page' => -1,
+                'post_type' => 'post',
+                'orderby' => 'date',
+                'order' => 'DESC',
+            ));
+            if ($all_post->have_posts()):
+                while ($all_post->have_posts()):
+                    $all_post->the_post();
+                    ?>
+                    <article
+                        class="group rounded-xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 bg-white border border-slate-200 hover:-translate-y-1">
+                        <!-- Image Container -->
+                        <?php if (has_post_thumbnail()): ?>
+                            <div class="h-48 overflow-hidden bg-slate-200 relative">
+                                <?php the_post_thumbnail('medium', array('class' => 'w-full h-full object-cover group-hover:scale-105 transition-transform duration-300')); ?>
+                                <div class="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-300">
+                                </div>
+                            </div>
+                        <?php endif; ?>
+
+                        <!-- Content -->
+                        <div class="p-6 flex flex-col">
+                            <!-- Category Badge -->
+                            <?php
+                            $categories = get_the_category();
+                            if (!empty($categories)):
+                                $category = $categories[0];
+                                ?>
+                                <a href="<?php echo esc_url(get_category_link($category->term_id)); ?>"
+                                    class="inline-flex w-fit px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-semibold mb-3 hover:bg-blue-200 transition">
+                                    <?php echo esc_html($category->name); ?>
+                                </a>
+                            <?php endif; ?>
+
+                            <!-- Title -->
+                            <h2 class="text-xl font-bold text-slate-900 mb-2 line-clamp-2">
+                                <a href="<?php the_permalink(); ?>" class="hover:text-blue-600 transition">
+                                    <?php the_title(); ?>
+                                </a>
+                            </h2>
+
+                            <!-- Excerpt -->
+                            <p class="text-slate-600 text-sm mb-4 line-clamp-2 flex-grow">
+                                <?php echo wp_trim_words(get_the_excerpt(), 20); ?>
+                            </p>
+
+                            <!-- Meta Info -->
+                            <div class="flex items-center justify-between text-xs text-slate-600 mb-4">
+                                <div class="flex items-center gap-2">
+                                    <?php echo get_avatar(get_the_author_meta('ID'), 24, '', '', array('class' => 'rounded-full')); ?>
+                                    <span>
+                                        <?php the_author(); ?>
+                                    </span>
+                                </div>
+                                <span>
+                                    <?php echo get_the_date('M d, Y'); ?>
+                                </span>
+                            </div>
+
+                            <!-- Read More -->
+                            <a href="<?php the_permalink(); ?>"
+                                class="inline-flex items-center gap-2 text-blue-600 font-semibold hover:gap-3 transition-all group-hover:text-blue-700">
+                                Read Article
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7">
+                                    </path>
+                                </svg>
+                            </a>
+                        </div>
+                    </article>
+                    <?php
+                endwhile;
+            else:
+                ?>
+                <div class="col-span-1 md:col-span-2 text-center py-12">
+                    <svg class="w-16 h-16 mx-auto mb-4 text-slate-400" fill="none" stroke="currentColor"
+                        viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                     </svg>
+                    <h3 class="text-xl font-semibold text-slate-900 mb-2">No posts found</h3>
                 </div>
-                <p class="text-[#667085] font-light text-[15px] px-2">
-                    Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the
-                    industry's standard dummy text ever since the read more
-                </p>
-            </div>
-            <div class="bg-white p-2 pb-4 rounded-2xl shadow-2xl flex flex-col gap-3">
-                <img src="<?php echo get_template_directory_uri(); ?>/assets/blog.png" alt="Blog Image"
-                    class="w-full h-48 object-cover rounded-2xl" />
-                <h6 class="text-[16px] font-semibold text-[#132364] pl-2"> 17 Jan 2022</h6>
-                <div class="flex items-center gap-4  px-2">
-                    <h6 class="text-lg font-semibold text-[#101828] pl-2">Top 5 Investment Areas in Lahore for 2025</h6>
-                    <svg xmlns="http://www.w3.org/2000/svg" width="37" height="34" viewBox="0 0 24 24" fill="none">
-                        <path d="M7 17L17 7M17 7H7M17 7V17" stroke="#101828" stroke-width="2" stroke-linecap="round"
-                            stroke-linejoin="round" />
-                    </svg>
+                <?php
+            endif;
+            ?>
+        </div>
+
+    </div>
+</div>
+
+<section class="mx-auto w-[90%] overflow-hidden md:pt-[3.333vw] pt-[4.167vw] " x-data>
+    <div class="flex items-center animate-marquee">
+        <template x-for="t in 3" :key="t">
+            <template x-for="i in 7" :key="i">
+                <div
+                    class="w-[32.471vw] h-[15.765vw] md:w-[7.187vw] md:h-[3.49vw] ml-[18.824vw] md:ml-[3.333vw] flex-shrink-0">
+                    <img src="<?= get_template_directory_uri(); ?>/assets/LOGO.svg" alt="Logo"
+                        class="w-full h-full object-contain" />
                 </div>
-                <p class="text-[#667085] font-light text-[15px] px-2">
-                    Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the
-                    industry's standard dummy text ever since the read more
-                </p>
-            </div>
-            <div class="bg-white p-2 pb-4 rounded-2xl shadow-2xl flex flex-col gap-3">
-                <img src="<?php echo get_template_directory_uri(); ?>/assets/blog.png" alt="Blog Image"
-                    class="w-full h-48 object-cover rounded-2xl" />
-                <h6 class="text-[16px] font-semibold text-[#132364] pl-2"> 17 Jan 2022</h6>
-                <div class="flex items-center gap-4  px-2">
-                    <h6 class="text-lg font-semibold text-[#101828] pl-2">Top 5 Investment Areas in Lahore for 2025</h6>
-                    <svg xmlns="http://www.w3.org/2000/svg" width="37" height="34" viewBox="0 0 24 24" fill="none">
-                        <path d="M7 17L17 7M17 7H7M17 7V17" stroke="#101828" stroke-width="2" stroke-linecap="round"
-                            stroke-linejoin="round" />
-                    </svg>
-                </div>
-                <p class="text-[#667085] font-light text-[15px] px-2">
-                    Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the
-                    industry's standard dummy text ever since the read more
-                </p>
-            </div>
-            <div class="bg-white p-2 pb-4 rounded-2xl shadow-2xl flex flex-col gap-3">
-                <img src="<?php echo get_template_directory_uri(); ?>/assets/blog.png" alt="Blog Image"
-                    class="w-full h-48 object-cover rounded-2xl" />
-                <h6 class="text-[16px] font-semibold text-[#132364] pl-2"> 17 Jan 2022</h6>
-                <div class="flex items-center gap-4  px-2">
-                    <h6 class="text-lg font-semibold text-[#101828] pl-2">Top 5 Investment Areas in Lahore for 2025</h6>
-                    <svg xmlns="http://www.w3.org/2000/svg" width="37" height="34" viewBox="0 0 24 24" fill="none">
-                        <path d="M7 17L17 7M17 7H7M17 7V17" stroke="#101828" stroke-width="2" stroke-linecap="round"
-                            stroke-linejoin="round" />
-                    </svg>
-                </div>
-                <p class="text-[#667085] font-light text-[15px] px-2">
-                    Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the
-                    industry's standard dummy text ever since the read more
-                </p>
+            </template>
+        </template>
+    </div>
+</section>
+
+<section
+    class="mt-[7vw] mb-[7vw] md:mt-[4.271vw] md:mb-[4.271vw] pt-[5.781vw] pb-[3.802vw] w-[90%] mx-auto rounded-[1.042vw] bg-cover bg-center h-[50vh] md:h-auto flex justify-center items-center"
+    style="background-image: url('<?php echo get_template_directory_uri(); ?>/assets/bg-newsletter.jpg');">
+    <div class="flex justify-center items-center">
+        <div class="flex flex-col md:gap-3 gap-8">
+            <button
+                class="px-[5.647vw] md:px-[1.25vw] py-[8px] rounded-[14px] font-bold text-[var(--primary-color)] bg-white text-[14px] font-inter mx-auto">
+                Looking for More?
+            </button>
+            <h5
+                class="text-white text-[7.294vw] w-[90vw] md:text-[2.5vw] font-bold mb-[0.833vw] text-center md:w-[41.042vw] mx-auto leading-[1]">
+                Talk to our experts or Browse through more properties.</h5>
+            <div class="flex items-center md:flex-row flex-col justify-center gap-3">
+                <a href="<?= home_url() ?>/contact" class="btn-primary !bg-white !text-[var(--primary-color)]">Talk
+                    to an Expert</a>
+                <a href="<?= home_url() ?>/properties" class="btn-secondary">Browse Properties</a>
             </div>
         </div>
     </div>
-
-    <section class="mx-auto w-[90%] overflow-hidden md:pt-[3.333vw] pt-[4.167vw] " x-data>
-        <div class="flex items-center animate-marquee">
-            <template x-for="t in 3" :key="t">
-                <template x-for="i in 7" :key="i">
-                    <div
-                        class="w-[32.471vw] h-[15.765vw] md:w-[7.187vw] md:h-[3.49vw] ml-[18.824vw] md:ml-[3.333vw] flex-shrink-0">
-                        <img src="<?= get_template_directory_uri(); ?>/assets/LOGO.svg" alt="Logo"
-                            class="w-full h-full object-contain" />
-                    </div>
-                </template>
-            </template>
-        </div>
-    </section>
-
-    <section
-        class="mt-[7vw] mb-[7vw] md:mt-[4.271vw] md:mb-[4.271vw] pt-[5.781vw] pb-[3.802vw] w-[90%] mx-auto rounded-[1.042vw] bg-cover bg-center h-[50vh] md:h-auto flex justify-center items-center"
-        style="background-image: url('<?php echo get_template_directory_uri(); ?>/assets/bg-newsletter.jpg');">
-        <div class="flex justify-center items-center">
-            <div class="flex flex-col md:gap-3 gap-8">
-                <button
-                    class="px-[5.647vw] md:px-[1.25vw] py-[8px] rounded-[14px] font-bold text-[var(--primary-color)] bg-white text-[14px] font-inter mx-auto">
-                    Looking for More?
-                </button>
-                <h5
-                    class="text-white text-[7.294vw] w-[90vw] md:text-[2.5vw] font-bold mb-[0.833vw] text-center md:w-[41.042vw] mx-auto leading-[1]">
-                    Talk to our experts or Browse through more properties.</h5>
-                <div class="flex items-center md:flex-row flex-col justify-center gap-3">
-                    <a href="<?= home_url() ?>/contact" class="btn-primary !bg-white !text-[var(--primary-color)]">Talk
-                        to an Expert</a>
-                    <a href="<?= home_url() ?>/properties" class="btn-secondary">Browse Properties</a>
-                </div>
-            </div>
-        </div>
-    </section>
+</section>
 
 
-    <?php get_footer(); ?>
+<?php get_footer(); ?>
