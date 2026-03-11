@@ -40,9 +40,9 @@ get_header();
 
     <!-- Content with Sidebar -->
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-16">
-        <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
+        <div class="grid grid-cols-1 lg:grid-cols-6 gap-8">
             <!-- Main Content -->
-            <div class="lg:col-span-3">
+            <div class="lg:col-span-4">
                 <!-- Filter Controls -->
                 <div x-data="{ open: false }" class="mb-8">
                     <button @click="open = !open"
@@ -178,7 +178,7 @@ get_header();
             </div>
 
             <!-- Sidebar -->
-            <aside class="lg:col-span-1">
+            <aside class="lg:col-span-2">
                 <div class="sticky top-24 space-y-6">
                     <!-- Search Widget -->
                     <div
