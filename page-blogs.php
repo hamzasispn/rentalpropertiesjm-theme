@@ -20,7 +20,7 @@ get_header();
                 } elseif (is_tag()) {
                     echo 'Tag: ' . single_tag_title('', false);
                 } else {
-                    echo 'All Articles';
+                    echo 'All Blogs';
                 }
                 ?>
             </h1>
