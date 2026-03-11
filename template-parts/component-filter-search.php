@@ -131,6 +131,7 @@ if (empty($properties_page_url)) {
                 </div>
             </div>
         </div>
+
         <button @click="showFilters = !showFilters"
             class="md:w-[6.146vw] bg-[var(--primary-color)] flex items-center justify-center text-white md:border-r border-white md:p-4">
             <svg class="md:w-5 md:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -199,8 +200,17 @@ if (empty($properties_page_url)) {
         </div>
     </div>
 
-</div>
+    <!-- ✅ Verified Badge — sits just below the search bar, centered -->
+    <div class="hidden md:flex absolute -top-5 left-5  items-center gap-1.5 px-3 py-1 bg-white border border-green-200 rounded-full shadow-sm"
+        style="white-space: nowrap;">
+        <!-- Shield lock icon -->
+        <svg class="w-3.5 h-3.5 text-green-600 flex-shrink-0" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-1 14l-3-3 1.41-1.41L11 12.17l4.59-4.58L17 9l-6 6z"/>
+        </svg>
+        <span class="text-[0.75vw] font-semibold text-green-700 tracking-wide">100% Verified Listings</span>
+    </div>
 
+</div>
 
 
 
