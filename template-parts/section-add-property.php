@@ -495,11 +495,11 @@ if (isset($_GET['action']) && $_GET['action'] === 'delete' && isset($_GET['prope
                     <div class="space-y-4">
                         <!-- City Selection Dropdown -->
                         <div>
-                            <label class="block text-sm font-semibold text-slate-900 mb-2">City *</label>
+                            <label class="block text-sm font-semibold text-slate-900 mb-2">Parish *</label>
                             <select name="property_city" x-model="selectedCity" @change="updateCityLocation()"
                                 class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-slate-900"
                                 required>
-                                <option value="">Select a city...</option>
+                                <option value="">Select a parish...</option>
                                 <template x-for="(coords, city) in citiesData" :key="city">
                                     <option :value="city" x-text="city"></option>
                                 </template>

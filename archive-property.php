@@ -147,11 +147,11 @@ $bathrooms = sort_terms_numerically($bathrooms);
                         <!-- City Filter with TomSelect Dropdown -->
                         <div>
                             <label
-                                class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2 font-inter">City</label>
+                                class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2 font-inter">Parish</label>
                             <select id="city-select" x-model="filters.city"
                                 @change="resetLocationSuggestions(); applyFilters()"
                                 class="w-full px-4 py-2.5 border border-slate-300 rounded-lg text-sm text-slate-900 focus:ring-2 focus:ring-[var(--primary-color)] focus:border-transparent transition">
-                                <option value="">Select a city...</option>
+                                <option value="">Select a parish...</option>
                                 <template x-for="city in citiesList" :key="city">
                                     <option :value="city" x-text="city"></option>
                                 </template>

@@ -13,8 +13,8 @@ $heroExc = get_field('hero_sec_excerpt');
     <div class="absolute bg-white rounded-tl-[24px] bottom-0 right-0 w-[30.719vw] md:h-[8.75vw] h-[25vw]"></div>
     <div class="w-[80%] mx-auto flex items-center justify-between">
         <div class="heroContent w-full md:max-w-[80%] text-[var(--text-secondary-color)]">
-            <h1 class="text-[10.353vw] md:text-[3.563vw] font-bold leading-none"><?= esc_html($heroTitle); ?>
-                <h2 class="text-[8.176vw] md:text-[2.7vw] font-semibold leading-none md:leading-normal">
+            <h1 class="text-[10.353vw] md:text-[3.163vw] font-bold leading-none"><?= esc_html($heroTitle); ?>
+                <h2 class="text-[8.176vw] md:text-[2.1vw] font-semibold leading-none md:leading-normal">
                     <?= esc_html($heroSubtitle); ?></h2>
             </h1>
             <div class="text-[3.765vw] md:text-[0.833vw] !mb-[2.083vw] md:max-w-[34.063vw] max-w-full my-[4vw] md:my-0">
