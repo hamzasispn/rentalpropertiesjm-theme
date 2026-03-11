@@ -179,17 +179,17 @@ get_header();
 
             <!-- Sidebar -->
             <aside class="lg:col-span-1">
-                <div class="space-y-6">
+                <div class="sticky top-24 space-y-6">
                     <!-- Search Widget -->
                     <div
-                        class="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow">
+                        class="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow duration-200">
                         <h3 class="text-lg font-bold text-slate-900 mb-4">Search</h3>
                         <form method="get" action="<?php echo esc_url(home_url('/')); ?>" class="flex gap-2">
                             <input type="search" name="s" placeholder="Search articles..."
-                                class="flex-1 px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-                                required>
+                                value="<?php echo get_search_query(); ?>"
+                                class="flex-1 px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm">
                             <button type="submit"
-                                class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium">
+                                class="px-4 py-2 bg-[var(--primary-color)] text-white rounded-lg hover:bg-blue-700 transition-colors duration-200 font-medium">
                                 <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
                                     <path fill-rule="evenodd"
                                         d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z"
@@ -199,61 +199,94 @@ get_header();
                         </form>
                     </div>
 
-                    <!-- Categories Widget -->
+                    <!-- Recent Articles -->
                     <div
-                        class="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow">
-                        <h3 class="text-lg font-bold text-slate-900 mb-4">Categories</h3>
-                        <ul class="space-y-2">
+                        class="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow duration-200">
+                        <h3 class="text-lg font-bold text-slate-900 mb-4">Recent Articles</h3>
+                        <ul class="space-y-4">
                             <?php
-                            $categories = get_categories();
-                            foreach ($categories as $category):
-                                ?>
-                                <li>
-                                    <a href="<?php echo esc_url(get_category_link($category->term_id)); ?>"
-                                        class="flex items-center justify-between px-3 py-2 text-slate-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition group">
-                                        <span class="font-medium"><?php echo esc_html($category->name); ?></span>
-                                        <span class="text-xs bg-slate-100 group-hover:bg-blue-100 px-2 py-1 rounded-full">
-                                            <?php echo absint($category->count); ?>
-                                        </span>
-                                    </a>
-                                </li>
-                                <?php
-                            endforeach;
+                            $recent_posts = new WP_Query(array(
+                                'posts_per_page' => 5,
+                                'post__not_in' => array(get_the_ID()),
+                            ));
+
+                            if ($recent_posts->have_posts()) {
+                                while ($recent_posts->have_posts()) {
+                                    $recent_posts->the_post();
+                                    ?>
+                                    <li class="pb-4 border-b border-slate-100 last:pb-0 last:border-0">
+                                        <a href="<?php the_permalink(); ?>" class="group block">
+                                            <h4
+                                                class="text-sm font-semibold text-slate-900 group-hover:text-[var(--primary-color)] transition-colors duration-200 line-clamp-2">
+                                                <?php the_title(); ?>
+                                            </h4>
+                                            <time class="text-xs text-slate-500 mt-1 block">
+                                                <?php echo get_the_date('M d, Y'); ?>
+                                            </time>
+                                        </a>
+                                    </li>
+                                    <?php
+                                }
+                                wp_reset_postdata();
+                            }
                             ?>
                         </ul>
                     </div>
 
-                    <!-- Recent Posts Widget -->
+                    <!-- Categories -->
                     <div
-                        class="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow">
-                        <h3 class="text-lg font-bold text-slate-900 mb-4">Recent Posts</h3>
-                        <ul class="space-y-3">
+                        class="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow duration-200">
+                        <h3 class="text-lg font-bold text-slate-900 mb-4">Categories</h3>
+                        <div class="space-y-2">
                             <?php
-                            $recent = new WP_Query(array(
-                                'posts_per_page' => 5,
-                                'orderby' => 'date',
+                            $categories = get_categories(array(
+                                'hide_empty' => true,
+                            ));
+
+                            if (!empty($categories)) {
+                                foreach ($categories as $category) {
+                                    $active = in_category($category->term_id) ? 'bg-blue-50 text-blue-700 border-blue-200' : 'text-slate-700 border-slate-200 hover:border-slate-300';
+                                    ?>
+                                    <a href="<?php echo esc_url(get_category_link($category->term_id)); ?>"
+                                        class="flex items-center justify-between px-3 py-2 rounded-lg border transition-all duration-200 text-sm <?php echo $active; ?>">
+                                        <span class="font-medium"><?php echo esc_html($category->name); ?></span>
+                                        <span class="text-xs font-semibold px-2 py-1 rounded bg-slate-200 text-slate-700">
+                                            <?php echo $category->count; ?>
+                                        </span>
+                                    </a>
+                                    <?php
+                                }
+                            }
+                            ?>
+                        </div>
+                    </div>
+
+                    <!-- Tags -->
+                    <div
+                        class="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow duration-200">
+                        <h3 class="text-lg font-bold text-slate-900 mb-4">Popular Tags</h3>
+                        <div class="flex flex-wrap gap-2">
+                            <?php
+                            $tags = get_tags(array(
+                                'number' => 15,
+                                'orderby' => 'count',
                                 'order' => 'DESC',
                             ));
 
-                            while ($recent->have_posts()):
-                                $recent->the_post();
-                                ?>
-                                <li>
-                                    <a href="<?php the_permalink(); ?>" class="group block">
-                                        <h4
-                                            class="text-sm font-semibold text-slate-900 group-hover:text-blue-600 transition line-clamp-2">
-                                            <?php the_title(); ?>
-                                        </h4>
-                                        <p class="text-xs text-slate-500 mt-1">
-                                            <?php echo get_the_date('M d, Y'); ?>
-                                        </p>
+                            if (!empty($tags)) {
+                                foreach ($tags as $tag) {
+                                    $is_current_tag = has_tag($tag->term_id);
+                                    $tag_class = $is_current_tag ? 'bg-[var(--primary-color)] text-white' : 'bg-slate-100 text-slate-700 hover:bg-slate-200';
+                                    ?>
+                                    <a href="<?php echo esc_url(get_tag_link($tag->term_id)); ?>"
+                                        class="px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 <?php echo $tag_class; ?>">
+                                        <?php echo esc_html($tag->name); ?>
                                     </a>
-                                </li>
-                                <?php
-                            endwhile;
-                            wp_reset_postdata();
+                                    <?php
+                                }
+                            }
                             ?>
-                        </ul>
+                        </div>
                     </div>
                 </div>
             </aside>
