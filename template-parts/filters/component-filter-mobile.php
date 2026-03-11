@@ -1,4 +1,3 @@
-
 <!-- Advanced Property Search Filter with Responsive Design + Mobile Sidebar -->
 <?php
 
@@ -79,7 +78,7 @@ if (empty($properties_page_url)) {
         <!-- Sidebar Panel -->
         <div class="fixed left-0 top-0 bottom-0 w-4/5 bg-white shadow-2xl overflow-y-auto" style="max-width: 320px;">
             <!-- Header -->
-            <div class="flex items-center justify-between p-4 border-b border-slate-200 sticky top-0 bg-white">
+            <div class="flex items-center justify-between p-4 border-b border-slate-200 sticky top-0 bg-white z-10">
                 <h2 class="text-lg font-bold text-slate-900">Filters</h2>
                 <button @click="showMobileSidebar = false" class="text-slate-600 hover:text-slate-900 text-2xl">
                     ✕
@@ -88,6 +87,7 @@ if (empty($properties_page_url)) {
 
             <!-- Filter Content -->
             <div class="p-4 space-y-6">
+
                 <!-- City Filter -->
                 <div>
                     <label class="block text-sm font-semibold text-slate-900 mb-2">Parish</label>
@@ -103,9 +103,35 @@ if (empty($properties_page_url)) {
                 <!-- Location Filter -->
                 <div x-show="filters.city" class="relative">
                     <label class="block text-sm font-semibold text-slate-900 mb-2">Area</label>
-                    <input type="text" x-model="filters.location" @input="searchLocations($event)"
-                        placeholder="Search..."
+                    <input
+                        type="text"
+                        x-model="filters.location"
+                        @input="searchLocations($event)"
+                        @focus="showLocationSuggestions = locationSuggestions.length > 0"
+                        @click.outside="showLocationSuggestions = false"
+                        placeholder="Search area..."
                         class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm text-slate-900 focus:ring-2 focus:ring-[var(--primary-color)] focus:border-transparent">
+
+                    <!-- Location Suggestions Dropdown -->
+                    <div
+                        x-show="showLocationSuggestions && locationSuggestions.length > 0"
+                        x-transition
+                        class="absolute left-0 right-0 top-full mt-1 bg-white border border-slate-200 rounded-lg shadow-lg z-50 overflow-hidden">
+                        <template x-for="(suggestion, index) in locationSuggestions" :key="index">
+                            <button
+                                type="button"
+                                @click="filters.location = suggestion; showLocationSuggestions = false"
+                                class="w-full text-left px-3 py-2 text-sm text-slate-700 hover:bg-slate-100 border-b border-slate-100 last:border-0 transition">
+                                <span class="flex items-center gap-2">
+                                    <svg class="w-3.5 h-3.5 text-slate-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                    </svg>
+                                    <span x-text="suggestion"></span>
+                                </span>
+                            </button>
+                        </template>
+                    </div>
                 </div>
 
                 <!-- Property Type Filter -->
@@ -119,7 +145,7 @@ if (empty($properties_page_url)) {
                                 <div class="space-y-1 ml-2">
                                     <template x-for="child in group.children" :key="child.slug">
                                         <button type="button"
-                                            @click="filters.type = child.term_id; filters.selectedTypeName = child.name"
+                                            @click="filters.type = child.term_id; selectedTypeName = child.name"
                                             :class="filters.type == child.term_id ? 'bg-[var(--primary-color)] text-white' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'"
                                             class="w-full text-left px-3 py-2 rounded text-sm font-medium transition"
                                             x-text="child.name"></button>
@@ -182,11 +208,12 @@ if (empty($properties_page_url)) {
                         class="w-full bg-[var(--primary-color)] text-white font-semibold py-3 rounded-lg hover:opacity-90 transition">
                         Apply Filters
                     </button>
-                    <button @click="filters = {}; selectedTypeName = ''"
+                    <button @click="filters = { type: '', priceMin: 0, priceMax: 5000000, areaMin: 0, areaMax: 100000, beds: 0, baths: 0, city: '', location: '', featured: false }; selectedTypeName = ''"
                         class="w-full border border-slate-300 text-slate-700 font-semibold py-3 rounded-lg hover:bg-slate-50 transition">
                         Clear All
                     </button>
                 </div>
+
             </div>
         </div>
     </div>

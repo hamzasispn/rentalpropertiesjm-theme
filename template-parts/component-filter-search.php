@@ -282,6 +282,17 @@ if (empty($properties_page_url)) {
             setupTomSelect() {
                 const self = this;
                 setTimeout(() => {
+                    const el = document.getElementById('city-select');
+                    if (!el) return;
+
+                    if (el.tomselect) {
+                        el.tomselect.on('change', (value) => {
+                            self.filters.city = value;
+                            self.resetLocationSuggestions();
+                        });
+                        return;
+                    }
+
                     new TomSelect('#city-select', {
                         placeholder: 'Select a city...',
                         allowEmptyOption: true,
@@ -300,7 +311,7 @@ if (empty($properties_page_url)) {
                 const priceElement = document.getElementById('price-slider');
                 const areaElement = document.getElementById('area-slider');
 
-                if (bedroomElement && !this.bedroomSlider) {
+                if (bedroomElement && !bedroomElement.noUiSlider) {
                     this.bedroomSlider = noUiSlider.create(bedroomElement, {
                         start: [this.filters.beds],
                         range: { min: 0, max: 10 },
@@ -309,13 +320,14 @@ if (empty($properties_page_url)) {
                         connect: 'lower',
                         pips: false
                     });
-
                     this.bedroomSlider.on('change', (values) => {
                         this.filters.beds = parseInt(values[0]);
                     });
+                } else if (bedroomElement) {
+                    this.bedroomSlider = bedroomElement.noUiSlider;
                 }
 
-                if (bathroomElement && !this.bathroomSlider) {
+                if (bathroomElement && !bathroomElement.noUiSlider) {
                     this.bathroomSlider = noUiSlider.create(bathroomElement, {
                         start: [this.filters.baths],
                         range: { min: 0, max: 10 },
@@ -324,13 +336,14 @@ if (empty($properties_page_url)) {
                         connect: 'lower',
                         pips: false
                     });
-
                     this.bathroomSlider.on('change', (values) => {
                         this.filters.baths = parseInt(values[0]);
                     });
+                } else if (bathroomElement) {
+                    this.bathroomSlider = bathroomElement.noUiSlider;
                 }
 
-                if (priceElement && !this.priceSlider) {
+                if (priceElement && !priceElement.noUiSlider) {
                     this.priceSlider = noUiSlider.create(priceElement, {
                         start: [this.filters.priceMin, this.filters.priceMax],
                         range: { min: 0, max: 5000000 },
@@ -339,14 +352,15 @@ if (empty($properties_page_url)) {
                         connect: true,
                         pips: false
                     });
-
                     this.priceSlider.on('change', (values) => {
                         this.filters.priceMin = parseInt(values[0]);
                         this.filters.priceMax = parseInt(values[1]);
                     });
+                } else if (priceElement) {
+                    this.priceSlider = priceElement.noUiSlider;
                 }
 
-                if (areaElement && !this.areaSlider) {
+                if (areaElement && !areaElement.noUiSlider) {
                     this.areaSlider = noUiSlider.create(areaElement, {
                         start: [this.filters.areaMin, this.filters.areaMax],
                         range: { min: 0, max: 100000 },
@@ -355,22 +369,22 @@ if (empty($properties_page_url)) {
                         connect: true,
                         pips: false
                     });
-
                     this.areaSlider.on('change', (values) => {
                         this.filters.areaMin = parseInt(values[0]);
                         this.filters.areaMax = parseInt(values[1]);
                     });
+                } else if (areaElement) {
+                    this.areaSlider = areaElement.noUiSlider;
                 }
             },
 
             initializeMobileSliders() {
-                const self = this;
                 const bedroomMobile = document.getElementById('bedroom-slider-mobile');
                 const bathroomMobile = document.getElementById('bathroom-slider-mobile');
                 const priceMobile = document.getElementById('price-slider-mobile');
                 const areaMobile = document.getElementById('area-slider-mobile');
 
-                if (bedroomMobile && !this.bedroomSliderMobile) {
+                if (bedroomMobile && !bedroomMobile.noUiSlider) {
                     this.bedroomSliderMobile = noUiSlider.create(bedroomMobile, {
                         start: [this.filters.beds],
                         range: { min: 0, max: 10 },
@@ -382,9 +396,11 @@ if (empty($properties_page_url)) {
                     this.bedroomSliderMobile.on('change', (values) => {
                         this.filters.beds = parseInt(values[0]);
                     });
+                } else if (bedroomMobile) {
+                    this.bedroomSliderMobile = bedroomMobile.noUiSlider;
                 }
 
-                if (bathroomMobile && !this.bathroomSliderMobile) {
+                if (bathroomMobile && !bathroomMobile.noUiSlider) {
                     this.bathroomSliderMobile = noUiSlider.create(bathroomMobile, {
                         start: [this.filters.baths],
                         range: { min: 0, max: 10 },
@@ -396,9 +412,11 @@ if (empty($properties_page_url)) {
                     this.bathroomSliderMobile.on('change', (values) => {
                         this.filters.baths = parseInt(values[0]);
                     });
+                } else if (bathroomMobile) {
+                    this.bathroomSliderMobile = bathroomMobile.noUiSlider;
                 }
 
-                if (priceMobile && !this.priceSliderMobile) {
+                if (priceMobile && !priceMobile.noUiSlider) {
                     this.priceSliderMobile = noUiSlider.create(priceMobile, {
                         start: [this.filters.priceMin, this.filters.priceMax],
                         range: { min: 0, max: 5000000 },
@@ -411,9 +429,11 @@ if (empty($properties_page_url)) {
                         this.filters.priceMin = parseInt(values[0]);
                         this.filters.priceMax = parseInt(values[1]);
                     });
+                } else if (priceMobile) {
+                    this.priceSliderMobile = priceMobile.noUiSlider;
                 }
 
-                if (areaMobile && !this.areaSliderMobile) {
+                if (areaMobile && !areaMobile.noUiSlider) {
                     this.areaSliderMobile = noUiSlider.create(areaMobile, {
                         start: [this.filters.areaMin, this.filters.areaMax],
                         range: { min: 0, max: 100000 },
@@ -426,6 +446,8 @@ if (empty($properties_page_url)) {
                         this.filters.areaMin = parseInt(values[0]);
                         this.filters.areaMax = parseInt(values[1]);
                     });
+                } else if (areaMobile) {
+                    this.areaSliderMobile = areaMobile.noUiSlider;
                 }
             },
 
