@@ -285,29 +285,23 @@ add_action('init', function () {
 
 function get_jamaica_cities() {
     global $cities;
-    
-    $url = 'https://raw.githubusercontent.com/lmfmaier/cities-json/master/cities500.json';
-    
-    $response = wp_remote_get($url);
-    
-    if (is_wp_error($response)) {
-        $cities = array();
-        return $cities;
-    }
-    
-    $body = wp_remote_retrieve_body($response);
-    $data = json_decode($body, true);
-    
-    $cities = array();
-    
-    if (is_array($data)) {
-        foreach ($data as $city) {
-            if (isset($city['country']) && $city['country'] === 'JM' && isset($city['name']) && isset($city['lat']) && isset($city['lon'])) {
-                $name = $city['name'];
-                $cities[$name] = array('lat' => (float)$city['lat'], 'lng' => (float)$city['lon']);
-            }
-        }
-    }
-    
+
+    $cities = array(
+        'Kingston'        => array('lat' => 17.9970, 'lng' => -76.7936),
+        'Saint Andrew'    => array('lat' => 18.0167, 'lng' => -76.9000),
+        'Saint Thomas'    => array('lat' => 17.9833, 'lng' => -76.3500),
+        'Portland'        => array('lat' => 18.1667, 'lng' => -76.4500),
+        'Saint Mary'      => array('lat' => 18.3500, 'lng' => -76.9167),
+        'Saint Ann'       => array('lat' => 18.2000, 'lng' => -77.4667),
+        'Trelawny'        => array('lat' => 18.3500, 'lng' => -77.6000),
+        'Saint James'     => array('lat' => 18.4667, 'lng' => -77.9167),
+        'Hanover'         => array('lat' => 18.4000, 'lng' => -78.1333),
+        'Westmoreland'    => array('lat' => 18.2500, 'lng' => -78.1333),
+        'Saint Elizabeth' => array('lat' => 18.0500, 'lng' => -77.7667),
+        'Manchester'      => array('lat' => 18.0500, 'lng' => -77.5167),
+        'Clarendon'       => array('lat' => 17.9500, 'lng' => -77.2167),
+        'Saint Catherine' => array('lat' => 17.9833, 'lng' => -76.9500),
+    );
+
     return $cities;
 }
