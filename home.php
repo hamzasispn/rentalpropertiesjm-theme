@@ -197,14 +197,14 @@ get_header();
     <div class="flex flex-col gap-8 w-[90%] md:pt-[3.125vw] pt-[13.882vw] mx-auto">
         <div class="flex items-end justify-between mb-[2.608vw]">
             <div class="flex flex-col">
-                <h5 class="text-[#1A1A1A] text-[2.5vw] font-bold mb-[0.833vw]">Property Tips & Market Insights</h5>
+                <h5 class="text-[#1A1A1A] text-[2.5vw] font-bold mb-[0.833vw]">Blogs & Market Insights</h5>
                 <p class="text-[#1A1A1A] font-inter text-[1.042vw]">
                     Stay informed with the latest updates on Jamaica's real estate trends.
                 </p>
             </div>
             <a href="/blogs"
                 class="px-[2.604vw] py-[0.538vw] rounded-[0.833vw] text-[#1A1A1A] border border-[#1A1A1A] text-[0.938vw]  transition-all hover:scale-110 cursor-pointer font-inter">
-                Read More Articles
+                Read More Blogs
             </a>
         </div>
 
