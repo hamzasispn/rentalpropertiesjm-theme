@@ -90,10 +90,10 @@ if (empty($properties_page_url)) {
             <div class="p-4 space-y-6">
                 <!-- City Filter -->
                 <div>
-                    <label class="block text-sm font-semibold text-slate-900 mb-2">City</label>
+                    <label class="block text-sm font-semibold text-slate-900 mb-2">Parish</label>
                     <select x-model="filters.city" @change="resetLocationSuggestions()"
                         class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm text-slate-900 focus:ring-2 focus:ring-[var(--primary-color)] focus:border-transparent">
-                        <option value="">Select a city...</option>
+                        <option value="">Select a parish...</option>
                         <template x-for="city in citiesList" :key="city">
                             <option :value="city" x-text="city"></option>
                         </template>

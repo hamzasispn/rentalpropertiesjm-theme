@@ -60,10 +60,10 @@ if (empty($properties_page_url)) {
     <!-- Desktop Filter UI -->
     <div class="hidden md:flex w-full items-stretch">
         <div class="md:w-[17.188vw] md:border-r border-slate-200 py-[1.2vw] px-0 md:pl-[1.8vw] md:pr-[1.458vw]">
-            <label class="block text-[1.042vw] font-semibold text-slate-900 tracking-wide mb-[1.354vw]">City</label>
+            <label class="block text-[1.042vw] font-semibold text-slate-900 tracking-wide mb-[1.354vw]">Parish</label>
             <select id="city-select" x-model="filters.city" @change="resetLocationSuggestions();"
                 class="w-full font-inter text-[0.833vw] text-slate-900 outline-none border-none bg-transparent">
-                <option value="" class="font-inter">Select a city...</option>
+                <option value="" class="font-inter">Select a parish...</option>
                 <template x-for="city in citiesList" :key="city">
                     <option :value="city" x-text="city" class="font-inter"></option>
                 </template>

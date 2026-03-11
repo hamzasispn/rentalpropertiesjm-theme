@@ -9,64 +9,6 @@ get_header();
 <div class="min-h-screen bg-slate-50 pt-[6.979vw]">
 
 
-    <!-- Properties Grid -->
-    <div class="max-w-[90%] mx-auto px-4 md:py-16 pt-16">
-        <div x-data="{
-            recentProperties: [],
-            loadingRecent: true,
-            async loadRecentProperties() {
-                try {
-                    const response = await fetch('<?php echo get_home_url(); ?>/wp-json/property/v1/search?featured=false&per_page=6&sort=newest', {
-                        headers: {
-                            'X-WP-Nonce': propertyTheme.nonce,
-                        }
-                    });
-                    const data = await response.json();
-                    this.recentProperties = data.properties || [];
-                } catch (error) {
-                    console.error('Error loading recent properties:', error);
-                } finally {
-                    this.loadingRecent = false;
-                }
-            }
-        }" x-init="loadRecentProperties()">
-            <div x-show="recentProperties.length > 0">
-                <h2 class="text-[#1A1A1A] md:text-[2.5vw] text-[5.5vw] font-bold mb-[3.604vw] md:mb-[2.604vw]">Recent
-                    Listed Properties</h2>
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-[16px]"
-                    x-show="!loadingRecent">
-                    <template x-for="property in recentProperties" :key="property.id">
-                        <div>
-                            <?php get_template_part('template-parts/component', 'property-card'); ?>
-                        </div>
-                    </template>
-                </div>
-            </div>
-
-            <!-- Skeleton Cards Loading State - Dynamic placeholder instead of spinner -->
-            <div x-show="loadingRecent"
-                class="space-y-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-[16px]">
-                <template x-for="i in [1,2,3,4,5,6]" :key="i">
-                    <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden animate-pulse">
-                        <div class="h-56 bg-gradient-to-r from-slate-200 to-slate-100"></div>
-                        <div class="p-6">
-                            <div class="h-6 bg-slate-200 rounded w-3/4 mb-4"></div>
-                            <div class="h-4 bg-slate-200 rounded w-full mb-3"></div>
-                            <div class="h-4 bg-slate-200 rounded w-2/3 mb-6"></div>
-                            <div class="flex gap-2 mb-4">
-                                <div class="h-8 bg-slate-200 rounded-full w-20"></div>
-                                <div class="h-8 bg-slate-200 rounded-full w-20"></div>
-                            </div>
-                            <div class="h-10 bg-slate-200 rounded w-full"></div>
-                        </div>
-                    </div>
-                </template>
-            </div>
-
-
-        </div>
-    </div>
-
     <!-- Featured Properties Section -->
     <div class="max-w-[90%] mx-auto px-4 md:pt-[3.125vw] pt-[13.882vw]">
         <div x-data="{
@@ -103,6 +45,64 @@ get_header();
 
             <!-- Skeleton Cards Loading State - Dynamic placeholder instead of spinner -->
             <div x-show="loading"
+                class="space-y-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-[16px]">
+                <template x-for="i in [1,2,3,4,5,6]" :key="i">
+                    <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden animate-pulse">
+                        <div class="h-56 bg-gradient-to-r from-slate-200 to-slate-100"></div>
+                        <div class="p-6">
+                            <div class="h-6 bg-slate-200 rounded w-3/4 mb-4"></div>
+                            <div class="h-4 bg-slate-200 rounded w-full mb-3"></div>
+                            <div class="h-4 bg-slate-200 rounded w-2/3 mb-6"></div>
+                            <div class="flex gap-2 mb-4">
+                                <div class="h-8 bg-slate-200 rounded-full w-20"></div>
+                                <div class="h-8 bg-slate-200 rounded-full w-20"></div>
+                            </div>
+                            <div class="h-10 bg-slate-200 rounded w-full"></div>
+                        </div>
+                    </div>
+                </template>
+            </div>
+
+
+        </div>
+    </div>
+
+    <!-- Properties Grid -->
+    <div class="max-w-[90%] mx-auto px-4 md:py-16 pt-16">
+        <div x-data="{
+            recentProperties: [],
+            loadingRecent: true,
+            async loadRecentProperties() {
+                try {
+                    const response = await fetch('<?php echo get_home_url(); ?>/wp-json/property/v1/search?featured=false&per_page=6&sort=newest', {
+                        headers: {
+                            'X-WP-Nonce': propertyTheme.nonce,
+                        }
+                    });
+                    const data = await response.json();
+                    this.recentProperties = data.properties || [];
+                } catch (error) {
+                    console.error('Error loading recent properties:', error);
+                } finally {
+                    this.loadingRecent = false;
+                }
+            }
+        }" x-init="loadRecentProperties()">
+            <div x-show="recentProperties.length > 0">
+                <h2 class="text-[#1A1A1A] md:text-[2.5vw] text-[5.5vw] font-bold mb-[3.604vw] md:mb-[2.604vw]">Recent
+                    Listed Properties</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-[16px]"
+                    x-show="!loadingRecent">
+                    <template x-for="property in recentProperties" :key="property.id">
+                        <div>
+                            <?php get_template_part('template-parts/component', 'property-card'); ?>
+                        </div>
+                    </template>
+                </div>
+            </div>
+
+            <!-- Skeleton Cards Loading State - Dynamic placeholder instead of spinner -->
+            <div x-show="loadingRecent"
                 class="space-y-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-[16px]">
                 <template x-for="i in [1,2,3,4,5,6]" :key="i">
                     <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden animate-pulse">
@@ -301,41 +301,6 @@ get_header();
 
     </div>
 </div>
-
-<section class="mx-auto w-[90%] overflow-hidden md:pt-[3.333vw] pt-[4.167vw] " x-data>
-    <div class="flex items-center animate-marquee">
-        <template x-for="t in 3" :key="t">
-            <template x-for="i in 7" :key="i">
-                <div
-                    class="w-[32.471vw] h-[15.765vw] md:w-[7.187vw] md:h-[3.49vw] ml-[18.824vw] md:ml-[3.333vw] flex-shrink-0">
-                    <img src="<?= get_template_directory_uri(); ?>/assets/LOGO.svg" alt="Logo"
-                        class="w-full h-full object-contain" />
-                </div>
-            </template>
-        </template>
-    </div>
-</section>
-
-<section
-    class="mt-[7vw] mb-[7vw] md:mt-[4.271vw] md:mb-[4.271vw] pt-[5.781vw] pb-[3.802vw] w-[90%] mx-auto rounded-[1.042vw] bg-cover bg-center h-[50vh] md:h-auto flex justify-center items-center"
-    style="background-image: url('<?php echo get_template_directory_uri(); ?>/assets/bg-newsletter.jpg');">
-    <div class="flex justify-center items-center">
-        <div class="flex flex-col md:gap-3 gap-8">
-            <button
-                class="px-[5.647vw] md:px-[1.25vw] py-[8px] rounded-[14px] font-bold text-[var(--primary-color)] bg-white text-[14px] font-inter mx-auto">
-                Looking for More?
-            </button>
-            <h5
-                class="text-white text-[7.294vw] w-[90vw] md:text-[2.5vw] font-bold mb-[0.833vw] text-center md:w-[41.042vw] mx-auto leading-[1]">
-                Talk to our experts or Browse through more properties.</h5>
-            <div class="flex items-center md:flex-row flex-col justify-center gap-3">
-                <a href="<?= home_url() ?>/contact" class="btn-primary !bg-white !text-[var(--primary-color)]">Talk
-                    to an Expert</a>
-                <a href="<?= home_url() ?>/properties" class="btn-secondary">Browse Properties</a>
-            </div>
-        </div>
-    </div>
-</section>
 
 
 <?php get_footer(); ?>
