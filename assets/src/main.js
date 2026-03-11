@@ -1,5 +1,6 @@
 import './main.scss'
 import Alpine from 'alpinejs'
+import intersect from '@alpinejs/intersect'
 import axios from 'axios'
 
 // ✅ Swiper core ONLY
@@ -10,7 +11,6 @@ import 'swiper/css/thumbs'
 
 import './property-filter-manager.js'
 
-// ✅ Globals
 window.Swiper = Swiper
 window.axios = axios
 
@@ -26,6 +26,7 @@ window.wpData = {
 axios.defaults.headers.common['X-WP-Nonce'] = wpData.nonce
 axios.defaults.withCredentials = true
 
-// ✅ Alpine LAST
+Alpine.plugin(intersect)
+
 window.Alpine = Alpine
 Alpine.start()
