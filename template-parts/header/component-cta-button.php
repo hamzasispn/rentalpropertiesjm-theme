@@ -1,5 +1,5 @@
 <div class="hidden lg:flex gap-[1vw] items-center">
-    <a href="#"
+    <!-- <a href="#"
         class="<?php echo is_singular('property') ? 'bg-[var(--primary-color)]' : 'bg-white/15'; ?> backdrop-blur-[10px] w-[2.604vw] h-[2.604vw] flex items-center justify-center rounded-[0.625vw] hover:bg-white/25 transition-colors">
         <svg class="w-[0.938vw] h-[0.938vw]" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path
@@ -7,7 +7,7 @@
                 stroke="white" stroke-width="1.5" stroke-miterlimit="10" stroke-linecap="round"
                 stroke-linejoin="round" />
         </svg>
-    </a>
+    </a> -->
 
     <?php
     $current_user = wp_get_current_user();
