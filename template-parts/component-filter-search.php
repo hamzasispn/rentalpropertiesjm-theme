@@ -127,13 +127,13 @@ if (empty($properties_page_url)) {
         </div>
 
         <button @click="showFilters = !showFilters"
-            class="md:w-[6.146vw] bg-[var(--primary-color)] flex items-center justify-center text-white md:border-r border-white md:p-4">
+            class="md:w-[6.146vw] hidden bg-[var(--primary-color)] text-white md:border-r border-white md:p-4">
             <svg class="md:w-5 md:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
             </svg>
         </button>
         <button @click="searchProperties()"
-            class="md:w-[14.063vw] md:p-4 bg-[var(--primary-color)] text-white md:text-[1.25vw] font-semibold md:rounded-r-[16px] font-inter">Search</button>
+            class="md:w-[20.207vw] md:p-4 bg-[var(--primary-color)] text-white md:text-[1.25vw] font-semibold md:rounded-r-[16px] font-inter">Search</button>
     </div>
 
     <!-- Additional Filters Dropdown (Desktop) -->
