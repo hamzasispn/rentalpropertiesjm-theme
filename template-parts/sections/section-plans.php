@@ -12,7 +12,7 @@
         </p>
     </div>
     <div
-        class="flex md:flex-nowrap flex-wrap gap-[3.765vw] md:gap-[0.833vw] space-x-4 md:space-y-0 space-y-4 justify-center">
+        class="flex flex-wrap gap-[3.765vw] md:gap-[0.833vw] space-x-4 md:space-y-0 space-y-4 justify-center">
 
         <?php get_template_part('template-parts/component', 'plan-card'); ?>
     </div>

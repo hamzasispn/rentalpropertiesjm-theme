@@ -58,7 +58,7 @@ if (empty($properties_page_url)) {
     class="md:hidden block w-full"
     x-data="propertyFiltering(<?php echo htmlspecialchars(json_encode($filter_params)); ?>, <?php echo htmlspecialchars(json_encode($cities_data)); ?>, <?php echo htmlspecialchars(json_encode($property_type_hierarchy)); ?>)">
 
-    <!-- Mobile Filter Button (visible on mobile) -->
+    <!-- Mobile Filter Button -->
     <button
         @click="showMobileSidebar = !showMobileSidebar; $nextTick(() => { if (showMobileSidebar) initializeMobileSliders() })"
         class="btn-secondary flex items-center justify-center w-full gap-2 text-center">
@@ -80,25 +80,24 @@ if (empty($properties_page_url)) {
         </div>
     </div>
 
-    <!-- Mobile Sidebar Filter (Canvas/Menu) -->
+    <!-- Mobile Sidebar -->
     <div x-show="showMobileSidebar" x-transition class="fixed inset-0 z-50 md:hidden" x-cloak>
         <!-- Overlay -->
         <div @click="showMobileSidebar = false" class="fixed inset-0 bg-black/30 backdrop-blur-sm"></div>
 
         <!-- Sidebar Panel -->
         <div class="fixed left-0 top-0 bottom-0 w-4/5 bg-white shadow-2xl overflow-y-auto" style="max-width: 320px;">
+
             <!-- Header -->
             <div class="flex items-center justify-between p-4 border-b border-slate-200 sticky top-0 bg-white z-10">
                 <h2 class="text-lg font-bold text-slate-900">Filters</h2>
-                <button @click="showMobileSidebar = false" class="text-slate-600 hover:text-slate-900 text-2xl">
-                    ✕
-                </button>
+                <button @click="showMobileSidebar = false" class="text-slate-600 hover:text-slate-900 text-2xl">✕</button>
             </div>
 
             <!-- Filter Content -->
             <div class="p-4 space-y-6">
 
-                <!-- City Filter -->
+                <!-- Parish Filter -->
                 <div>
                     <label class="block text-sm font-semibold text-slate-900 mb-2">Parish</label>
                     <select x-model="filters.city" @change="resetLocationSuggestions()"
@@ -110,7 +109,7 @@ if (empty($properties_page_url)) {
                     </select>
                 </div>
 
-                <!-- Location Filter -->
+                <!-- Area Filter -->
                 <div x-show="filters.city" class="relative">
                     <label class="block text-sm font-semibold text-slate-900 mb-2">Area</label>
                     <input
@@ -121,8 +120,6 @@ if (empty($properties_page_url)) {
                         @click.outside="showLocationSuggestions = false"
                         placeholder="Search area..."
                         class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm text-slate-900 focus:ring-2 focus:ring-[var(--primary-color)] focus:border-transparent">
-
-                    <!-- Location Suggestions Dropdown -->
                     <div
                         x-show="showLocationSuggestions && locationSuggestions.length > 0"
                         x-transition
@@ -150,15 +147,15 @@ if (empty($properties_page_url)) {
                     <div class="space-y-2">
                         <template x-for="group in propertyTypeHierarchy" :key="group.parent.term_id">
                             <div>
-                                <p class="text-xs font-semibold text-slate-700 uppercase mb-2"
-                                    x-text="group.parent.name"></p>
+                                <p class="text-xs font-semibold text-slate-700 uppercase mb-2" x-text="group.parent.name"></p>
                                 <div class="space-y-1 ml-2">
                                     <template x-for="child in group.children" :key="child.slug">
                                         <button type="button"
                                             @click="filters.type = child.term_id; selectedTypeName = child.name"
                                             :class="filters.type == child.term_id ? 'bg-[var(--primary-color)] text-white' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'"
                                             class="w-full text-left px-3 py-2 rounded text-sm font-medium transition"
-                                            x-text="child.name"></button>
+                                            x-text="child.name">
+                                        </button>
                                     </template>
                                 </div>
                             </div>
@@ -166,42 +163,62 @@ if (empty($properties_page_url)) {
                     </div>
                 </div>
 
-                <!-- Bedrooms -->
+                <!-- ✅ Bedrooms — Plus/Minus Buttons -->
                 <div>
-                    <label class="block text-sm font-semibold text-slate-900 mb-2">
-                        Bedrooms: <span x-text="filters.beds > 0 ? filters.beds + '+' : 'Any'"
-                            class="text-[var(--primary-color)]"></span>
-                    </label>
-                    <div id="bedroom-slider-mobile" class="mt-3"></div>
+                    <label class="block text-sm font-semibold text-slate-900 mb-3">Bedrooms (Min)</label>
+                    <div class="flex items-center gap-4">
+                        <button type="button"
+                            @click="filters.beds = Math.max(0, filters.beds - 1)"
+                            class="w-10 h-10 rounded-full border-2 border-slate-300 flex items-center justify-center text-slate-600 hover:bg-slate-100 active:bg-slate-200 text-2xl leading-none select-none font-light">
+                            −
+                        </button>
+                        <div class="flex-1 text-center">
+                            <span class="text-2xl font-bold text-slate-900" x-text="filters.beds === 0 ? 'Any' : filters.beds"></span>
+                            <span class="text-sm text-slate-500 ml-1" x-show="filters.beds > 0">+</span>
+                        </div>
+                        <button type="button"
+                            @click="filters.beds = Math.min(10, filters.beds + 1)"
+                            class="w-10 h-10 rounded-full border-2 border-slate-300 flex items-center justify-center text-slate-600 hover:bg-slate-100 active:bg-slate-200 text-2xl leading-none select-none font-light">
+                            +
+                        </button>
+                    </div>
                 </div>
 
-                <!-- Bathrooms -->
+                <!-- ✅ Bathrooms — Plus/Minus Buttons (step 0.5) -->
                 <div>
-                    <label class="block text-sm font-semibold text-slate-900 mb-2">
-                        Bathrooms: <span x-text="filters.baths > 0 ? filters.baths + '+' : 'Any'"
-                            class="text-[var(--primary-color)]"></span>
-                    </label>
-                    <div id="bathroom-slider-mobile" class="mt-3"></div>
+                    <label class="block text-sm font-semibold text-slate-900 mb-3">Bathrooms (Min)</label>
+                    <div class="flex items-center gap-4">
+                        <button type="button"
+                            @click="filters.baths = Math.max(0, parseFloat((filters.baths - 0.5).toFixed(1)))"
+                            class="w-10 h-10 rounded-full border-2 border-slate-300 flex items-center justify-center text-slate-600 hover:bg-slate-100 active:bg-slate-200 text-2xl leading-none select-none font-light">
+                            −
+                        </button>
+                        <div class="flex-1 text-center">
+                            <span class="text-2xl font-bold text-slate-900" x-text="filters.baths === 0 ? 'Any' : filters.baths"></span>
+                            <span class="text-sm text-slate-500 ml-1" x-show="filters.baths > 0">+</span>
+                        </div>
+                        <button type="button"
+                            @click="filters.baths = Math.min(10, parseFloat((filters.baths + 0.5).toFixed(1)))"
+                            class="w-10 h-10 rounded-full border-2 border-slate-300 flex items-center justify-center text-slate-600 hover:bg-slate-100 active:bg-slate-200 text-2xl leading-none select-none font-light">
+                            +
+                        </button>
+                    </div>
                 </div>
 
-                <!-- Price -->
+                <!-- ✅ Price — Slider + Live Label -->
                 <div>
-                    <label class="block text-sm font-semibold text-slate-900 mb-2">
-                        Price: <span
-                            x-text="`$${(filters.priceMin/1000).toFixed(0)}K - $${(filters.priceMax/1000).toFixed(0)}K`"
-                            class="text-[var(--primary-color)]"></span>
-                    </label>
-                    <div id="price-slider-mobile" class="mt-3"></div>
+                    <label class="block text-sm font-semibold text-slate-900 mb-1">Price Range</label>
+                    <p class="text-sm text-[var(--primary-color)] font-medium mb-3"
+                        x-text="`$${filters.priceMin.toLocaleString()} — $${filters.priceMax.toLocaleString()}`"></p>
+                    <div id="price-slider-mobile" class="mt-2"></div>
                 </div>
 
-                <!-- Area -->
+                <!-- ✅ Area — Slider + Live Label -->
                 <div>
-                    <label class="block text-sm font-semibold text-slate-900 mb-2">
-                        Area: <span
-                            x-text="`${filters.areaMin.toLocaleString()} - ${filters.areaMax.toLocaleString()} sqft`"
-                            class="text-[var(--primary-color)]"></span>
-                    </label>
-                    <div id="area-slider-mobile" class="mt-3"></div>
+                    <label class="block text-sm font-semibold text-slate-900 mb-1">Area Range (sq ft)</label>
+                    <p class="text-sm text-[var(--primary-color)] font-medium mb-3"
+                        x-text="`${filters.areaMin.toLocaleString()} — ${filters.areaMax.toLocaleString()} sqft`"></p>
+                    <div id="area-slider-mobile" class="mt-2"></div>
                 </div>
 
                 <!-- Featured -->
@@ -214,11 +231,13 @@ if (empty($properties_page_url)) {
 
                 <!-- Action Buttons -->
                 <div class="space-y-2 pt-4 border-t border-slate-200">
-                    <button @click="searchProperties(); showMobileSidebar = false"
+                    <button
+                        @click="searchProperties(); showMobileSidebar = false"
                         class="w-full bg-[var(--primary-color)] text-white font-semibold py-3 rounded-lg hover:opacity-90 transition">
                         Apply Filters
                     </button>
-                    <button @click="filters = { type: '', priceMin: 0, priceMax: 5000000, areaMin: 0, areaMax: 100000, beds: 0, baths: 0, city: '', location: '', featured: false }; selectedTypeName = ''"
+                    <button
+                        @click="filters = { type: '', priceMin: 0, priceMax: 5000000, areaMin: 0, areaMax: 100000, beds: 0, baths: 0, city: '', location: '', featured: false }; selectedTypeName = ''; syncPriceSlider(); syncAreaSlider();"
                         class="w-full border border-slate-300 text-slate-700 font-semibold py-3 rounded-lg hover:bg-slate-50 transition">
                         Clear All
                     </button>

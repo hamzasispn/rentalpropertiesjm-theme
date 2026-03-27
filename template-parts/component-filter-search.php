@@ -70,8 +70,7 @@ if (empty($properties_page_url)) {
             </select>
         </div>
 
-        <div
-            class="md:w-[17.188vw] md:border-r border-slate-200 py-[0.99vw] px-0 md:pl-[1.8vw] md:pr-[1.458vw] relative">
+        <div class="md:w-[17.188vw] md:border-r border-slate-200 py-[0.99vw] px-0 md:pl-[1.8vw] md:pr-[1.458vw] relative">
             <label class="block text-[1.042vw] font-semibold text-slate-900 tracking-wide mb-[1.354vw]">Area</label>
             <input type="text" x-model="filters.location" @input="searchLocations($event)"
                 @focus="showLocationSuggestions = true" @blur="setTimeout(() => showLocationSuggestions = false, 200)"
@@ -89,14 +88,12 @@ if (empty($properties_page_url)) {
             </div>
         </div>
 
-        <div
-            class="relative md:w-[17.188vw] md:border-r border-slate-200 py-[0.99vw] px-0 md:pl-[1.667vw] md:pr-[1.458vw]">
+        <div class="relative md:w-[17.188vw] md:border-r border-slate-200 py-[0.99vw] px-0 md:pl-[1.667vw] md:pr-[1.458vw]">
             <label class="block text-[1.042vw] font-semibold text-slate-900 tracking-wide mb-[1.354vw]">Type</label>
             <button @click="showTypeDropdown = !showTypeDropdown"
                 class="w-full text-left text-[0.833vw] text-slate-900 outline-none font-inter flex justify-between items-center bg-transparent">
                 <span x-text="selectedTypeName || 'Select type...'" class="font-inter truncate"></span>
-                <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"
-                    xmlns="http://www.w3.org/2000/svg">
+                <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
                 </svg>
             </button>
@@ -104,7 +101,6 @@ if (empty($properties_page_url)) {
             <!-- Custom Dropdown with Tabs -->
             <div x-show="showTypeDropdown" @click.outside="showTypeDropdown = false"
                 class="absolute top-full left-0 w-full bg-white border border-slate-300 rounded-lg shadow-lg z-20 max-h-96 overflow-y-auto mt-2">
-                <!-- Tabs -->
                 <div class="flex border-b">
                     <template x-for="(typeGroup, index) in propertyTypeHierarchy" :key="typeGroup.parent.term_id">
                         <button @click="activeTab = index"
@@ -114,8 +110,6 @@ if (empty($properties_page_url)) {
                         </button>
                     </template>
                 </div>
-
-                <!-- Tab Content -->
                 <div class="p-4">
                     <template x-for="(typeGroup, index) in propertyTypeHierarchy" :key="index">
                         <div x-show="activeTab === index" class="grid grid-cols-2 gap-2">
@@ -135,8 +129,7 @@ if (empty($properties_page_url)) {
         <button @click="showFilters = !showFilters"
             class="md:w-[6.146vw] bg-[var(--primary-color)] flex items-center justify-center text-white md:border-r border-white md:p-4">
             <svg class="md:w-5 md:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4">
-                </path>
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
             </svg>
         </button>
         <button @click="searchProperties()"
@@ -148,51 +141,90 @@ if (empty($properties_page_url)) {
         class="hidden md:block absolute left-0 w-full bg-white shadow-lg rounded-[16px] z-10 mt-2"
         style="top: calc(100% + 0rem);">
         <div class="grid md:grid-cols-4">
-            <!-- Bedrooms Slider -->
-            <div class="border-r border-slate-300 py-[0.99vw] px-[1.458vw] col-span-1">
-                <label
-                    class="block text-[1.042vw] font-semibold text-slate-900 tracking-wide mb-[1.354vw] font-inter">Bedrooms
-                    (Min)</label>
-                <div id="bedroom-slider" class="h-2"></div>
-                <div class="text-center mt-2 text-[0.833vw]" x-text="filters.beds" class="font-inter"></div>
-            </div>
 
-            <!-- Bathrooms Slider -->
+            <!-- ✅ Bedrooms — Plus/Minus Buttons -->
             <div class="border-r border-slate-300 py-[0.99vw] px-[1.458vw] col-span-1">
-                <label
-                    class="block text-[1.042vw] font-semibold text-slate-900 tracking-wide mb-[1.354vw] font-inter">Bathrooms
-                    (Min)</label>
-                <div id="bathroom-slider" class="h-2"></div>
-                <div class="text-center mt-2 text-[0.833vw]" x-text="filters.baths"></div>
-            </div>
-
-            <!-- Price Slider -->
-            <div class="border-r border-slate-300 py-[0.99vw] px-[1.458vw] col-span-1">
-                <label
-                    class="block text-[1.042vw] font-semibold text-slate-900 tracking-wide mb-[1.354vw] font-inter">Price
-                    Range</label>
-                <div id="price-slider" class="h-2"></div>
-                <div class="flex justify-between mt-2">
-                    <span x-text="'$' + filters.priceMin.toLocaleString()" class="font-inter text-[0.833vw]"></span>
-                    <span x-text="'$' + filters.priceMax.toLocaleString()" class="font-inter text-[0.833vw]"></span>
+                <label class="block text-[1.042vw] font-semibold text-slate-900 tracking-wide mb-[1.354vw] font-inter">
+                    Bedrooms (Min)
+                </label>
+                <div class="flex items-center gap-3">
+                    <button type="button"
+                        @click="filters.beds = Math.max(0, filters.beds - 1)"
+                        class="w-8 h-8 rounded-full border border-slate-300 flex items-center justify-center text-slate-600 hover:bg-slate-100 text-xl leading-none select-none font-light">
+                        −
+                    </button>
+                    <span class="font-inter text-[1vw] font-bold min-w-[1.5rem] text-center" x-text="filters.beds === 0 ? 'Any' : filters.beds + '+'"></span>
+                    <button type="button"
+                        @click="filters.beds = Math.min(10, filters.beds + 1)"
+                        class="w-8 h-8 rounded-full border border-slate-300 flex items-center justify-center text-slate-600 hover:bg-slate-100 text-xl leading-none select-none font-light">
+                        +
+                    </button>
                 </div>
             </div>
 
-            <!-- Area Slider -->
+            <!-- ✅ Bathrooms — Plus/Minus Buttons (step 0.5) -->
             <div class="border-r border-slate-300 py-[0.99vw] px-[1.458vw] col-span-1">
-                <label
-                    class="block text-[1.042vw] font-semibold text-slate-900 tracking-wide mb-[1.354vw] font-inter">Area
-                    Range (sq ft)</label>
+                <label class="block text-[1.042vw] font-semibold text-slate-900 tracking-wide mb-[1.354vw] font-inter">
+                    Bathrooms (Min)
+                </label>
+                <div class="flex items-center gap-3">
+                    <button type="button"
+                        @click="filters.baths = Math.max(0, parseFloat((filters.baths - 0.5).toFixed(1)))"
+                        class="w-8 h-8 rounded-full border border-slate-300 flex items-center justify-center text-slate-600 hover:bg-slate-100 text-xl leading-none select-none font-light">
+                        −
+                    </button>
+                    <span class="font-inter text-[1vw] font-bold min-w-[1.5rem] text-center" x-text="filters.baths === 0 ? 'Any' : filters.baths + '+'"></span>
+                    <button type="button"
+                        @click="filters.baths = Math.min(10, parseFloat((filters.baths + 0.5).toFixed(1)))"
+                        class="w-8 h-8 rounded-full border border-slate-300 flex items-center justify-center text-slate-600 hover:bg-slate-100 text-xl leading-none select-none font-light">
+                        +
+                    </button>
+                </div>
+            </div>
+
+            <!-- ✅ Price Slider + Synced Inputs -->
+            <div class="border-r border-slate-300 py-[0.99vw] px-[1.458vw] col-span-1">
+                <label class="block text-[1.042vw] font-semibold text-slate-900 tracking-wide mb-[1.354vw] font-inter">
+                    Price Range
+                </label>
+                <div id="price-slider" class="h-2"></div>
+                <div class="flex justify-between mt-3 gap-1">
+                    <input type="number"
+                        x-model.number="filters.priceMin"
+                        @input="syncPriceSlider()"
+                        class="w-1/2 text-[0.75vw] border border-slate-200 rounded px-1 py-0.5 font-inter text-center outline-none focus:border-[var(--primary-color)]"
+                        min="0" max="5000000" step="50000" placeholder="Min">
+                    <input type="number"
+                        x-model.number="filters.priceMax"
+                        @input="syncPriceSlider()"
+                        class="w-1/2 text-[0.75vw] border border-slate-200 rounded px-1 py-0.5 font-inter text-center outline-none focus:border-[var(--primary-color)]"
+                        min="0" max="5000000" step="50000" placeholder="Max">
+                </div>
+            </div>
+
+            <!-- ✅ Area Slider + Synced Inputs -->
+            <div class="py-[0.99vw] px-[1.458vw] col-span-1">
+                <label class="block text-[1.042vw] font-semibold text-slate-900 tracking-wide mb-[1.354vw] font-inter">
+                    Area Range (sq ft)
+                </label>
                 <div id="area-slider" class="h-2"></div>
-                <div class="flex justify-between mt-2">
-                    <span x-text="filters.areaMin.toLocaleString()" class="font-inter text-[0.833vw]"></span>
-                    <span x-text="filters.areaMax.toLocaleString()" class="font-inter text-[0.833vw]"></span>
+                <div class="flex justify-between mt-3 gap-1">
+                    <input type="number"
+                        x-model.number="filters.areaMin"
+                        @input="syncAreaSlider()"
+                        class="w-1/2 text-[0.75vw] border border-slate-200 rounded px-1 py-0.5 font-inter text-center outline-none focus:border-[var(--primary-color)]"
+                        min="0" max="100000" step="500" placeholder="Min">
+                    <input type="number"
+                        x-model.number="filters.areaMax"
+                        @input="syncAreaSlider()"
+                        class="w-1/2 text-[0.75vw] border border-slate-200 rounded px-1 py-0.5 font-inter text-center outline-none focus:border-[var(--primary-color)]"
+                        min="0" max="100000" step="500" placeholder="Max">
                 </div>
             </div>
 
             <!-- Featured Checkbox -->
             <div class="col-span-4 p-4 border-t border-slate-300 flex items-center">
-                <label class="flex items-center">
+                <label class="flex items-center cursor-pointer">
                     <input type="checkbox" x-model="filters.featured" class="mr-2">
                     <span class="font-inter text-[0.833vw]">Featured Properties Only</span>
                 </label>
@@ -200,10 +232,9 @@ if (empty($properties_page_url)) {
         </div>
     </div>
 
-    <!-- ✅ Verified Badge — sits just below the search bar, centered -->
-    <div class="hidden md:flex absolute -top-5 left-5  items-center gap-1.5 px-3 py-1 bg-white border border-green-200 rounded-full shadow-sm"
+    <!-- ✅ Verified Badge -->
+    <div class="hidden md:flex absolute -top-5 left-5 items-center gap-1.5 px-3 py-1 bg-white border border-green-200 rounded-full shadow-sm"
         style="white-space: nowrap;">
-        <!-- Shield lock icon -->
         <svg class="w-3.5 h-3.5 text-green-600 flex-shrink-0" viewBox="0 0 24 24" fill="currentColor">
             <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-1 14l-3-3 1.41-1.41L11 12.17l4.59-4.58L17 9l-6 6z"/>
         </svg>
@@ -213,17 +244,14 @@ if (empty($properties_page_url)) {
 </div>
 
 
-
-
 <!-- Nouislider CSS -->
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/noUiSlider/15.7.1/nouislider.min.css">
-<!-- TomSelect CSS (jQuery-free) -->
+<!-- TomSelect CSS -->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/css/tom-select.bootstrap5.min.css">
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/noUiSlider/15.7.1/nouislider.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/js/tom-select.complete.min.js"></script>
-<script
-    src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAUPkXXwkGt0xC5ongE7-62nzz6l7D3Nf4&libraries=places,marker&v=beta"></script>
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAUPkXXwkGt0xC5ongE7-62nzz6l7D3Nf4&libraries=places,marker&v=beta"></script>
 
 <script>
     function propertyFiltering(initialParams, citiesData, propertyTypeHierarchy) {
@@ -244,7 +272,7 @@ if (empty($properties_page_url)) {
             citiesData: citiesData,
             citiesList: Object.keys(citiesData),
             propertyTypeHierarchy: propertyTypeHierarchy,
-            showFilters: false,
+            showFilters: true,
             showMobileSidebar: false,
             locationSuggestions: [],
             showLocationSuggestions: false,
@@ -252,16 +280,11 @@ if (empty($properties_page_url)) {
             activeTab: 0,
             selectedTypeName: '',
 
-            bedroomSlider: null,
-            bathroomSlider: null,
             priceSlider: null,
             areaSlider: null,
-            bedroomSliderMobile: null,
-            bathroomSliderMobile: null,
             priceSliderMobile: null,
             areaSliderMobile: null,
             geocoder: null,
-            autocompleteListener: null,
 
             init() {
                 this.setupTomSelect();
@@ -294,7 +317,6 @@ if (empty($properties_page_url)) {
                 setTimeout(() => {
                     const el = document.getElementById('city-select');
                     if (!el) return;
-
                     if (el.tomselect) {
                         el.tomselect.on('change', (value) => {
                             self.filters.city = value;
@@ -302,7 +324,6 @@ if (empty($properties_page_url)) {
                         });
                         return;
                     }
-
                     new TomSelect('#city-select', {
                         placeholder: 'Select a city...',
                         allowEmptyOption: true,
@@ -316,43 +337,10 @@ if (empty($properties_page_url)) {
             },
 
             initializeNouiSliders() {
-                const bedroomElement = document.getElementById('bedroom-slider');
-                const bathroomElement = document.getElementById('bathroom-slider');
                 const priceElement = document.getElementById('price-slider');
                 const areaElement = document.getElementById('area-slider');
 
-                if (bedroomElement && !bedroomElement.noUiSlider) {
-                    this.bedroomSlider = noUiSlider.create(bedroomElement, {
-                        start: [this.filters.beds],
-                        range: { min: 0, max: 10 },
-                        step: 1,
-                        tooltips: false,
-                        connect: 'lower',
-                        pips: false
-                    });
-                    this.bedroomSlider.on('change', (values) => {
-                        this.filters.beds = parseInt(values[0]);
-                    });
-                } else if (bedroomElement) {
-                    this.bedroomSlider = bedroomElement.noUiSlider;
-                }
-
-                if (bathroomElement && !bathroomElement.noUiSlider) {
-                    this.bathroomSlider = noUiSlider.create(bathroomElement, {
-                        start: [this.filters.baths],
-                        range: { min: 0, max: 10 },
-                        step: 1,
-                        tooltips: false,
-                        connect: 'lower',
-                        pips: false
-                    });
-                    this.bathroomSlider.on('change', (values) => {
-                        this.filters.baths = parseInt(values[0]);
-                    });
-                } else if (bathroomElement) {
-                    this.bathroomSlider = bathroomElement.noUiSlider;
-                }
-
+                // Price Slider — updates input fields live while dragging
                 if (priceElement && !priceElement.noUiSlider) {
                     this.priceSlider = noUiSlider.create(priceElement, {
                         start: [this.filters.priceMin, this.filters.priceMax],
@@ -360,9 +348,8 @@ if (empty($properties_page_url)) {
                         step: 50000,
                         tooltips: false,
                         connect: true,
-                        pips: false
                     });
-                    this.priceSlider.on('change', (values) => {
+                    this.priceSlider.on('update', (values) => {
                         this.filters.priceMin = parseInt(values[0]);
                         this.filters.priceMax = parseInt(values[1]);
                     });
@@ -370,6 +357,7 @@ if (empty($properties_page_url)) {
                     this.priceSlider = priceElement.noUiSlider;
                 }
 
+                // Area Slider — updates input fields live while dragging
                 if (areaElement && !areaElement.noUiSlider) {
                     this.areaSlider = noUiSlider.create(areaElement, {
                         start: [this.filters.areaMin, this.filters.areaMax],
@@ -377,9 +365,8 @@ if (empty($properties_page_url)) {
                         step: 500,
                         tooltips: false,
                         connect: true,
-                        pips: false
                     });
-                    this.areaSlider.on('change', (values) => {
+                    this.areaSlider.on('update', (values) => {
                         this.filters.areaMin = parseInt(values[0]);
                         this.filters.areaMax = parseInt(values[1]);
                     });
@@ -389,42 +376,8 @@ if (empty($properties_page_url)) {
             },
 
             initializeMobileSliders() {
-                const bedroomMobile = document.getElementById('bedroom-slider-mobile');
-                const bathroomMobile = document.getElementById('bathroom-slider-mobile');
                 const priceMobile = document.getElementById('price-slider-mobile');
                 const areaMobile = document.getElementById('area-slider-mobile');
-
-                if (bedroomMobile && !bedroomMobile.noUiSlider) {
-                    this.bedroomSliderMobile = noUiSlider.create(bedroomMobile, {
-                        start: [this.filters.beds],
-                        range: { min: 0, max: 10 },
-                        step: 1,
-                        tooltips: false,
-                        connect: 'lower',
-                        pips: false
-                    });
-                    this.bedroomSliderMobile.on('change', (values) => {
-                        this.filters.beds = parseInt(values[0]);
-                    });
-                } else if (bedroomMobile) {
-                    this.bedroomSliderMobile = bedroomMobile.noUiSlider;
-                }
-
-                if (bathroomMobile && !bathroomMobile.noUiSlider) {
-                    this.bathroomSliderMobile = noUiSlider.create(bathroomMobile, {
-                        start: [this.filters.baths],
-                        range: { min: 0, max: 10 },
-                        step: 1,
-                        tooltips: false,
-                        connect: 'lower',
-                        pips: false
-                    });
-                    this.bathroomSliderMobile.on('change', (values) => {
-                        this.filters.baths = parseInt(values[0]);
-                    });
-                } else if (bathroomMobile) {
-                    this.bathroomSliderMobile = bathroomMobile.noUiSlider;
-                }
 
                 if (priceMobile && !priceMobile.noUiSlider) {
                     this.priceSliderMobile = noUiSlider.create(priceMobile, {
@@ -433,9 +386,8 @@ if (empty($properties_page_url)) {
                         step: 50000,
                         tooltips: false,
                         connect: true,
-                        pips: false
                     });
-                    this.priceSliderMobile.on('change', (values) => {
+                    this.priceSliderMobile.on('update', (values) => {
                         this.filters.priceMin = parseInt(values[0]);
                         this.filters.priceMax = parseInt(values[1]);
                     });
@@ -450,14 +402,33 @@ if (empty($properties_page_url)) {
                         step: 500,
                         tooltips: false,
                         connect: true,
-                        pips: false
                     });
-                    this.areaSliderMobile.on('change', (values) => {
+                    this.areaSliderMobile.on('update', (values) => {
                         this.filters.areaMin = parseInt(values[0]);
                         this.filters.areaMax = parseInt(values[1]);
                     });
                 } else if (areaMobile) {
                     this.areaSliderMobile = areaMobile.noUiSlider;
+                }
+            },
+
+            // Sync price inputs → slider
+            syncPriceSlider() {
+                if (this.priceSlider) {
+                    this.priceSlider.set([this.filters.priceMin, this.filters.priceMax]);
+                }
+                if (this.priceSliderMobile) {
+                    this.priceSliderMobile.set([this.filters.priceMin, this.filters.priceMax]);
+                }
+            },
+
+            // Sync area inputs → slider
+            syncAreaSlider() {
+                if (this.areaSlider) {
+                    this.areaSlider.set([this.filters.areaMin, this.filters.areaMax]);
+                }
+                if (this.areaSliderMobile) {
+                    this.areaSliderMobile.set([this.filters.areaMin, this.filters.areaMax]);
                 }
             },
 
@@ -474,16 +445,11 @@ if (empty($properties_page_url)) {
                     this.showLocationSuggestions = false;
                     return;
                 }
-
                 this.fetchLocationSuggestions(query);
             },
 
             fetchLocationSuggestions(query) {
-                if (!this.geocoder || !this.filters.city) {
-                    console.warn('Geocoder not ready or city not selected');
-                    return;
-                }
-
+                if (!this.geocoder || !this.filters.city) return;
                 const self = this;
                 this.geocoder.geocode({
                     address: query + ', ' + this.filters.city,
@@ -518,7 +484,6 @@ if (empty($properties_page_url)) {
                 if (!archiveUrl || archiveUrl.includes('')) {
                     archiveUrl = '<?= home_url('/properties') ?>';
                 }
-
                 if (!archiveUrl.endsWith('/')) {
                     archiveUrl += '/';
                 }

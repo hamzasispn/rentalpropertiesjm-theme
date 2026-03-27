@@ -6,7 +6,7 @@
 get_header();
 ?>
 
-<div class="min-h-screen bg-slate-50 pt-[6.979vw]">
+<div class="min-h-screen bg-slate-50 pt-[12.979vw]">
 
 
     <!-- Featured Properties Section -->
