@@ -64,8 +64,19 @@ function property_theme_create_stripe_native_subscription($user_id, $plan_id, $p
             throw new Exception('Failed to set default payment method: ' . $update_response['error']['message']);
         }
 
+        // For 'days' billing cycle plans, override billing_cycle param to match stored price
+        $effective_billing_cycle = $billing_cycle;
+        if ($plan['billing_cycle'] === 'days') {
+            $effective_billing_cycle = 'days';
+        }
+
         // Get Stripe price ID for the plan and billing cycle
-        $stripe_price_id = property_theme_get_stripe_price_id($plan_id, $billing_cycle);
+        $stripe_price_id = property_theme_get_stripe_price_id($plan_id, $effective_billing_cycle);
+        if (!$stripe_price_id) {
+            // Auto-sync price if missing, then retry
+            property_theme_sync_stripe_price($plan_id, $effective_billing_cycle);
+            $stripe_price_id = property_theme_get_stripe_price_id($plan_id, $effective_billing_cycle);
+        }
         if (!$stripe_price_id) {
             throw new Exception('Stripe price not configured for this plan. Please sync products first.');
         }
@@ -80,7 +91,7 @@ function property_theme_create_stripe_native_subscription($user_id, $plan_id, $p
             'expand[]' => 'latest_invoice.payment_intent', // Get payment status
             'metadata[user_id]' => $user_id,
             'metadata[plan_id]' => $plan_id,
-            'metadata[billing_cycle]' => $billing_cycle,
+            'metadata[billing_cycle]' => $effective_billing_cycle,
             'description' => $plan['name'] . ' Subscription - ' . get_bloginfo('name'),
         );
 

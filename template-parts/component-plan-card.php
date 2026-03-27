@@ -61,10 +61,21 @@ foreach ($plans_data as $plan) {
         <h6
             class="<?= $is_best_seller ? 'text-white' : 'text-[#1A1A1A]'; ?> text-[9.5vw] md:text-[2.5vw] font-bold font-inter">
             $<?= $plan['price']; ?>
-            <span class="text-[3.765vw] md:text-[0.833vw] font-light">/ <?= $plan['billing_cycle'] ?></span>
+            <span class="text-[3.765vw] md:text-[0.833vw] font-light"></span>
         </h6>
 
         <ul class=" flex flex-col gap-5 <?= $is_best_seller ? 'text-white' : 'text-[#1A1A1A]'; ?>">
+            <?php if ($plan['billing_cycle'] === 'days'): ?>
+                <li class="font-bold font-inter text-[4.67vw] md:text-[0.99vw]">Listing Duration : <span class="font-light">
+                        <?php
+                        if ($plan['billing_days'] == 1) {
+                            echo $plan['billing_days'] . ' day';
+                        } else {
+                            echo $plan['billing_days'] . ' days';
+                        } ?>
+                    </span>
+                </li>
+            <?php endif; ?>
             <li class="font-bold font-inter text-[4.67vw] md:text-[0.99vw]">
                 Listings Included :
                 <span class="font-light">
@@ -72,9 +83,10 @@ foreach ($plans_data as $plan) {
                 </span>
             </li>
 
-            <li class="font-bold font-inter text-[4.67vw] md:text-[0.99vw]">Featured Listing : <span
-                    class="font-light"><?= $plan['featured_limit'] == 1 ? '1 property' : 'Up to ' . esc_html($plan['featured_limit']) . ' properties'; ?></span>
+            <li class="font-bold font-inter text-[4.67vw] md:text-[0.99vw]">Featured Listing Status: <span
+                    class="font-light"><?= $plan['featured_limit'] == 1 ? 'Available' : 'Up to ' . esc_html($plan['featured_limit']) . ' properties'; ?></span>
             </li>
+
             <li class="font-bold font-inter text-[4.67vw] md:text-[0.99vw]">Advanced Analytics : <span
                     class="font-light"><?php echo $plan['analytics'] ? 'Available' : 'Not Available'; ?></span></li>
             <?php if ($plan['features']): ?>

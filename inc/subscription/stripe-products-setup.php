@@ -88,15 +88,25 @@ function property_theme_sync_stripe_price($plan_id, $billing_cycle = 'monthly') 
 
     // Get base price from plan
     $base_price = floatval($plan['price']);
-    
+
     if ($billing_cycle === 'yearly') {
-        $interval = 'year';
-        $meta_key = 'stripe_yearly_price_id';
-        $discount_key = '_plan_yearly_discount';
+        $interval       = 'year';
+        $interval_count = 1;
+        $meta_key       = 'stripe_yearly_price_id';
+        $discount_key   = '_plan_yearly_discount';
+    } elseif ($billing_cycle === 'days') {
+        // Stripe supports day-based recurring via interval='day'
+        $billing_days   = intval(get_post_meta($plan_id, '_plan_billing_days', true)) ?: 14;
+        $interval       = 'day';
+        $interval_count = max(1, $billing_days);
+        $meta_key       = 'stripe_days_price_id';
+        $discount_key   = '_plan_monthly_discount'; // reuse monthly discount field
     } else {
-        $interval = 'month';
-        $meta_key = 'stripe_price_id';
-        $discount_key = '_plan_monthly_discount';
+        // monthly (default)
+        $interval       = 'month';
+        $interval_count = 1;
+        $meta_key       = 'stripe_price_id';
+        $discount_key   = '_plan_monthly_discount';
     }
 
     // Get discount percentage and apply it
@@ -112,13 +122,15 @@ function property_theme_sync_stripe_price($plan_id, $billing_cycle = 'monthly') 
     $existing_price_id = get_post_meta($plan_id, $meta_key, true);
 
     $price_data = array(
-        'product' => $product_id,
-        'unit_amount' => $price,
-        'currency' => 'usd',
-        'recurring[interval]' => $interval,
-        'recurring[usage_type]' => 'licensed',
-        'metadata[plan_id]' => $plan_id,
-        'metadata[billing_cycle]' => $billing_cycle,
+        'product'                  => $product_id,
+        'unit_amount'              => $price,
+        'currency'                 => 'usd',
+        'recurring[interval]'      => $interval,
+        'recurring[interval_count]'=> $interval_count,
+        'recurring[usage_type]'    => 'licensed',
+        'metadata[plan_id]'        => $plan_id,
+        'metadata[billing_cycle]'  => $billing_cycle,
+        'metadata[billing_days]'   => $billing_cycle === 'days' ? $interval_count : '',
         'metadata[discount_percent]' => $discount_percent,
     );
 
@@ -192,10 +204,14 @@ function property_theme_sync_all_stripe_products() {
             );
         }
 
-        // Create prices for both monthly and yearly
-        foreach (array('monthly', 'yearly') as $cycle) {
-            $price_result = property_theme_sync_stripe_price($plan->ID, $cycle);
-            if (is_wp_error($price_result)) {
+        // Create prices for monthly, yearly, and days
+        foreach (array('monthly', 'yearly', 'days') as $cycle) {
+            // Only sync 'days' price if this plan actually uses days billing
+            if ($cycle === 'days') {
+                $plan_billing_cycle = get_post_meta($plan->ID, '_plan_billing_cycle', true);
+                if ($plan_billing_cycle !== 'days') continue;
+            }
+            $price_result = property_theme_sync_stripe_price($plan->ID, $cycle);            if (is_wp_error($price_result)) {
                 $results['prices'][$plan->ID][$cycle] = array(
                     'status' => 'failed',
                     'error' => $price_result->get_error_message(),
@@ -241,7 +257,13 @@ add_action('rest_api_init', function() {
  * @return string|false Price ID or false if not found
  */
 function property_theme_get_stripe_price_id($plan_id, $billing_cycle = 'monthly') {
-    $meta_key = ($billing_cycle === 'yearly') ? 'stripe_yearly_price_id' : 'stripe_price_id';
+    if ($billing_cycle === 'yearly') {
+        $meta_key = 'stripe_yearly_price_id';
+    } elseif ($billing_cycle === 'days') {
+        $meta_key = 'stripe_days_price_id';
+    } else {
+        $meta_key = 'stripe_price_id';
+    }
     return get_post_meta($plan_id, $meta_key, true) ?: false;
 }
 
