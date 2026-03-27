@@ -1,5 +1,6 @@
-<div class="bg-white rounded-xl flex flex-col shadow-sm hover:shadow-xl border border-slate-200 overflow-hidden transition-all duration-300 hover:-translate-y-1 h-full"
-    :class="{ '!flex-row !items-center': viewType === 'list' }">
+<div class="bg-white rounded-xl cursor-pointer flex flex-col shadow-sm hover:shadow-xl border border-slate-200 overflow-hidden transition-all duration-300 hover:-translate-y-1 h-full"
+    :class="{ '!flex-row !items-center': viewType === 'list' }"
+    @click="window.location.href = property.permalink">
     <!-- Image Container -->
     <div class="relative h-[50.059vw] md:h-[234px] bg-slate-200 overflow-hidden group" :class="{ '!w-[30%]': viewType === 'list' }">
 
@@ -11,8 +12,6 @@
             const rect = e.currentTarget.getBoundingClientRect()
             const x = e.clientX - rect.left
             const percent = x / rect.width
-
-            // total images ke hisaab se index calculate
             const newIndex = Math.floor(percent * this.images.length)
 
             if (newIndex !== this.index) {
