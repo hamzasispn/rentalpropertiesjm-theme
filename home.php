@@ -298,7 +298,7 @@ get_header();
             endif;
             ?>
             <a href="/blogs"
-                class="space-y-[4vw] w-1/2 mx-auto block md:hidden py-[2.538vw] rounded-[1.833vw] text-[#1A1A1A] border border-[#1A1A1A] text-[3.938vw]  transition-all hover:scale-110 cursor-pointer font-inter">
+                class="space-y-[4vw] w-1/2 mx-auto block md:hidden py-[2.538vw] text-center rounded-[1.833vw] text-[#1A1A1A] border border-[#1A1A1A] text-[3.938vw]  transition-all hover:scale-110 cursor-pointer font-inter">
                 Read More Blogs
             </a>
         </div>
