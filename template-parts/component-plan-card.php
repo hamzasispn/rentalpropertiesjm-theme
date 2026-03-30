@@ -35,7 +35,7 @@ foreach ($plans_data as $plan) {
     $is_best_seller = ($plan['id'] === $best_seller_plan_id);
 ?>
 
-    <div class="!mt-[0px] !mx-[0px] !mb-[0px] px-[6.833vw] md:px-[0.833vw] md:w-1/3 w-full <?= $is_best_seller ? 'bg-[var(--primary-color)]' : 'bg-white'; ?> pb-6 pt-[12.2vw] md:pt-[2.2vw] relative overflow-hidden shadow-lg rounded-[16px] flex flex-col gap-4 <?php echo $is_current ? 'border-2 border-blue-600' : ''; ?>">
+    <div class="!mt-[0px] !mx-[0px] !mb-[0px] px-[6.833vw] md:px-[0.833vw] md:w-[30%] w-full <?= $is_best_seller ? 'bg-[var(--primary-color)]' : 'bg-white'; ?> pb-6 pt-[12.2vw] md:pt-[2.2vw] relative overflow-hidden shadow-lg rounded-[16px] flex flex-col gap-4 <?php echo $is_current ? 'border-2 border-blue-600' : ''; ?>">
 
         <?php if ($is_best_seller): ?>
             <div class="bg-white text-[var(--primary-color)] absolute rounded-l-full right-[0px] top-[15px] py-2 px-4 text-[3.042vw] md:text-[1.042vw] font-semibold font-inter text-center uppercase">
