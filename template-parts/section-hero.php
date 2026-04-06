@@ -18,7 +18,8 @@ $heroExc = get_field('hero_sec_excerpt');
                     <?= esc_html($heroSubtitle); ?></h2>
             </h1>
             <div class="text-[3.765vw] md:text-[1.1vw] !mb-[2.083vw] md:max-w-[34.063vw] max-w-full my-[4vw] md:my-0">
-                <?= $heroDesc ?></div>
+                <?= esc_html($heroDesc); ?>
+            </div>
             <div class="flex md:flex-row flex-col items-center gap-[3.765vw] md:gap-[1.25vw] mb-[2.5vw]">
                 <?php if ($ctaOne): ?>
                     <a href="<?= esc_url($ctaOne['url']); ?>"
