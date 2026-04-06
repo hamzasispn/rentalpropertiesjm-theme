@@ -24,7 +24,11 @@ img {
 }
 
 @layer components {
-
+    .remove-br {
+        br {
+            @apply hidden;
+        }
+    }
     .menu-main-menu-container {
 
         ul {
