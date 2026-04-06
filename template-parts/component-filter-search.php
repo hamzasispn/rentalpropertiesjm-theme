@@ -127,7 +127,7 @@ if (empty($properties_page_url)) {
         </div>
 
         <button @click="showFilters = !showFilters"
-            class="md:w-[6.146vw] hidden bg-[var(--primary-color)] text-white md:border-r border-white md:p-4">
+            class="md:w-[6.146vw] flex justify-center items-center bg-[var(--primary-color)] text-white md:border-r border-white md:p-4">
             <svg class="md:w-5 md:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
             </svg>
@@ -272,7 +272,7 @@ if (empty($properties_page_url)) {
             citiesData: citiesData,
             citiesList: Object.keys(citiesData),
             propertyTypeHierarchy: propertyTypeHierarchy,
-            showFilters: true,
+            showFilters: false,
             showMobileSidebar: false,
             locationSuggestions: [],
             showLocationSuggestions: false,
