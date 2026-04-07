@@ -12,10 +12,10 @@
     </div>
     <div class="flex lg:flex-row flex-col gap-10 ">
         <div class="w-full lg:w-[45%]">
-            <img src="<?php echo get_template_directory_uri(); ?>/assets/home.png" alt="home" class="h-full" />
+            <img src="<?php echo get_template_directory_uri(); ?>/assets/details-section-img.jpg" alt="home" class="h-full" />
         </div>
         <div class="w-full lg:w-[55%] grid grid-cols-2 gap-4">
-            <?php for ($i = 0; $i < 7; $i++): ?>
+            <?php for ($i = 0; $i < 5; $i++): ?>
                 <div class="flex flex-col gap-4 md:w-[19.219vw]">
                     <div class="bg-white rounded-lg shadow-lg p-[2vw] md:p-[0.825vw] flex gap-4 items-center w-full">
                         <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
