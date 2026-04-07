@@ -38,6 +38,22 @@ foreach ($parent_types as $parent) {
 
 $filter_params = $filter_params ?? [];
 
+// Fetch bedroom and bathroom terms from taxonomy
+$bedroom_terms = get_terms(array('taxonomy' => 'bedroom', 'hide_empty' => false));
+$bathroom_terms = get_terms(array('taxonomy' => 'bathroom', 'hide_empty' => false));
+function sort_terms_numerically_local($terms)
+{
+    if (empty($terms) || is_wp_error($terms))
+        return [];
+    usort($terms, function ($a, $b) {
+        return intval($a->name) - intval($b->name);
+    });
+    return $terms;
+}
+$bedroom_terms = sort_terms_numerically_local($bedroom_terms);
+$bathroom_terms = sort_terms_numerically_local($bathroom_terms);
+$listing_statuses = get_terms(array('taxonomy' => 'property_listing_status', 'hide_empty' => false));
+
 // Add city and location to filter params if coming from redirect
 if (!isset($filter_params['city']) && isset($_GET['city'])) {
     $filter_params['city'] = sanitize_text_field($_GET['city']);
@@ -54,8 +70,22 @@ if (empty($properties_page_url)) {
 
 ?>
 <!-- Desktop Filter Bar -->
-<div x-data="propertyFiltering(<?php echo htmlspecialchars(json_encode($filter_params)); ?>, <?php echo htmlspecialchars(json_encode($cities_data)); ?>, <?php echo htmlspecialchars(json_encode($property_type_hierarchy)); ?>)"
+<div x-data="propertyFiltering(<?php echo htmlspecialchars(json_encode($filter_params)); ?>, <?php echo htmlspecialchars(json_encode($cities_data)); ?>, <?php echo htmlspecialchars(json_encode($property_type_hierarchy)); ?>, <?php echo htmlspecialchars(json_encode($bedroom_terms)); ?>, <?php echo htmlspecialchars(json_encode($bathroom_terms)); ?>, <?php echo htmlspecialchars(json_encode($listing_statuses)); ?>)"
     class="absolute bottom-[-6%] left-1/2 transform -translate-x-1/2 md:w-[68.958vw] w-[90%] flex flex-col md:flex-row items-center bg-white shadow-lg rounded-[16px] z-10 md:h-[7vw] h-fit">
+
+    <!-- Buy / Rent Toggle — top of desktop filter bar -->
+    <div class="hidden md:flex absolute -top-[2.5vw] left-1/2 transform -translate-x-1/2 z-20">
+        <template x-for="(status, index) in listingStatuses" :key="status.slug">
+            <button type="button" @click="filters.listingStatus = status.slug" :class="{
+            'bg-[var(--primary-color)] text-white': filters.listingStatus === status.slug,
+            'bg-white text-slate-600 hover:bg-slate-50': filters.listingStatus !== status.slug,
+            'rounded-tl-md': index === 0,
+            'rounded-tr-md': index === listingStatuses.length - 1
+        }" class="px-[2.5vw] py-[0.5vw] text-[1vw] font-semibold transition font-inter"
+                x-text="status.name">
+            </button>
+        </template>
+    </div>
 
     <!-- Desktop Filter UI -->
     <div class="hidden md:flex w-full items-stretch">
@@ -70,11 +100,12 @@ if (empty($properties_page_url)) {
             </select>
         </div>
 
-        <div class="md:w-[17.188vw] md:border-r border-slate-200 py-[0.99vw] px-0 md:pl-[1.8vw] md:pr-[1.458vw] relative">
+        <div
+            class="md:w-[17.188vw] md:border-r border-slate-200 py-[0.99vw] px-0 md:pl-[1.8vw] md:pr-[1.458vw] relative">
             <label class="block text-[1.042vw] font-semibold text-slate-900 tracking-wide mb-[1.354vw]">Area</label>
             <input type="text" x-model="filters.location" @input="searchLocations($event)"
                 @focus="showLocationSuggestions = true" @blur="setTimeout(() => showLocationSuggestions = false, 200)"
-                placeholder="Search..."
+                placeholder="Type to search areas..."
                 class="w-full text-[0.833vw] text-slate-900 outline-none font-inter bg-transparent">
 
             <!-- Location Suggestions from Google API -->
@@ -88,7 +119,8 @@ if (empty($properties_page_url)) {
             </div>
         </div>
 
-        <div class="relative md:w-[17.188vw] md:border-r border-slate-200 py-[0.99vw] px-0 md:pl-[1.667vw] md:pr-[1.458vw]">
+        <div
+            class="relative md:w-[17.188vw] md:border-r border-slate-200 py-[0.99vw] px-0 md:pl-[1.667vw] md:pr-[1.458vw]">
             <label class="block text-[1.042vw] font-semibold text-slate-900 tracking-wide mb-[1.354vw]">Type</label>
             <button @click="showTypeDropdown = !showTypeDropdown"
                 class="w-full text-left text-[0.833vw] text-slate-900 outline-none font-inter flex justify-between items-center bg-transparent">
@@ -142,88 +174,65 @@ if (empty($properties_page_url)) {
         style="top: calc(100% + 0rem);">
         <div class="grid md:grid-cols-4">
 
-            <!-- ✅ Bedrooms — Plus/Minus Buttons -->
+            <!-- Bedrooms Dropdown -->
             <div class="border-r border-slate-300 py-[0.99vw] px-[1.458vw] col-span-1">
-                <label class="block text-[1.042vw] font-semibold text-slate-900 tracking-wide mb-[1.354vw] font-inter">
-                    Bedrooms (Min)
-                </label>
-                <div class="flex items-center gap-3">
-                    <button type="button"
-                        @click="filters.beds = Math.max(0, filters.beds - 1)"
-                        class="w-8 h-8 rounded-full border border-slate-300 flex items-center justify-center text-slate-600 hover:bg-slate-100 text-xl leading-none select-none font-light">
-                        −
-                    </button>
-                    <span class="font-inter text-[1vw] font-bold min-w-[1.5rem] text-center" x-text="filters.beds === 0 ? 'Any' : filters.beds + '+'"></span>
-                    <button type="button"
-                        @click="filters.beds = Math.min(10, filters.beds + 1)"
-                        class="w-8 h-8 rounded-full border border-slate-300 flex items-center justify-center text-slate-600 hover:bg-slate-100 text-xl leading-none select-none font-light">
-                        +
-                    </button>
-                </div>
+                <label
+                    class="block text-[1.042vw] font-semibold text-slate-900 tracking-wide mb-[1.354vw] font-inter">Bedrooms
+                    (Min)</label>
+                <select x-model.number="filters.beds"
+                    class="w-full font-inter text-[0.833vw] text-slate-900 outline-none border border-slate-200 rounded-lg px-2 py-1 bg-white">
+                    <option value="0">Any</option>
+                    <template x-for="term in bedroomTerms" :key="term.term_id">
+                        <option :value="parseInt(term.name)" x-text="term.name + '+'"></option>
+                    </template>
+                </select>
             </div>
 
-            <!-- ✅ Bathrooms — Plus/Minus Buttons (step 0.5) -->
+            <!-- Bathrooms Dropdown -->
             <div class="border-r border-slate-300 py-[0.99vw] px-[1.458vw] col-span-1">
-                <label class="block text-[1.042vw] font-semibold text-slate-900 tracking-wide mb-[1.354vw] font-inter">
-                    Bathrooms (Min)
-                </label>
-                <div class="flex items-center gap-3">
-                    <button type="button"
-                        @click="filters.baths = Math.max(0, parseFloat((filters.baths - 0.5).toFixed(1)))"
-                        class="w-8 h-8 rounded-full border border-slate-300 flex items-center justify-center text-slate-600 hover:bg-slate-100 text-xl leading-none select-none font-light">
-                        −
-                    </button>
-                    <span class="font-inter text-[1vw] font-bold min-w-[1.5rem] text-center" x-text="filters.baths === 0 ? 'Any' : filters.baths + '+'"></span>
-                    <button type="button"
-                        @click="filters.baths = Math.min(10, parseFloat((filters.baths + 0.5).toFixed(1)))"
-                        class="w-8 h-8 rounded-full border border-slate-300 flex items-center justify-center text-slate-600 hover:bg-slate-100 text-xl leading-none select-none font-light">
-                        +
-                    </button>
-                </div>
+                <label
+                    class="block text-[1.042vw] font-semibold text-slate-900 tracking-wide mb-[1.354vw] font-inter">Bathrooms
+                    (Min)</label>
+                <select x-model.number="filters.baths"
+                    class="w-full font-inter text-[0.833vw] text-slate-900 outline-none border border-slate-200 rounded-lg px-2 py-1 bg-white">
+                    <option value="0">Any</option>
+                    <template x-for="term in bathroomTerms" :key="term.term_id">
+                        <option :value="parseFloat(term.name)" x-text="term.name + '+'"></option>
+                    </template>
+                </select>
             </div>
 
-            <!-- ✅ Price Slider + Synced Inputs -->
+            <!-- Currency Selector -->
             <div class="border-r border-slate-300 py-[0.99vw] px-[1.458vw] col-span-1">
-                <label class="block text-[1.042vw] font-semibold text-slate-900 tracking-wide mb-[1.354vw] font-inter">
-                    Price Range
-                </label>
-                <div id="price-slider" class="h-2"></div>
-                <div class="flex justify-between mt-3 gap-1">
-                    <input type="number"
-                        x-model.number="filters.priceMin"
-                        @input="syncPriceSlider()"
-                        class="w-1/2 text-[0.75vw] border border-slate-200 rounded px-1 py-0.5 font-inter text-center outline-none focus:border-[var(--primary-color)]"
-                        min="0" max="5000000" step="50000" placeholder="Min">
-                    <input type="number"
-                        x-model.number="filters.priceMax"
-                        @input="syncPriceSlider()"
-                        class="w-1/2 text-[0.75vw] border border-slate-200 rounded px-1 py-0.5 font-inter text-center outline-none focus:border-[var(--primary-color)]"
-                        min="0" max="5000000" step="50000" placeholder="Max">
-                </div>
+                <label
+                    class="block text-[1.042vw] font-semibold text-slate-900 tracking-wide mb-[1.354vw] font-inter">Currency</label>
+                <select x-model="selectedCurrency" @change="onCurrencyChange()"
+                    class="w-full font-inter text-[0.833vw] text-slate-900 outline-none border border-slate-200 rounded-lg px-2 py-1 bg-white">
+                    <option value="usd">USD ($)</option>
+                    <option value="jmd">JMD (J$)</option>
+                </select>
+                <p class="text-[0.625vw] text-slate-500 mt-1 font-inter" x-show="selectedCurrency === 'jmd'"
+                    x-text="`1 USD = ${usdToJmdRate.toFixed(2)} JMD`"></p>
             </div>
 
-            <!-- ✅ Area Slider + Synced Inputs -->
+            <!-- Price Range Dropdown (single) -->
             <div class="py-[0.99vw] px-[1.458vw] col-span-1">
                 <label class="block text-[1.042vw] font-semibold text-slate-900 tracking-wide mb-[1.354vw] font-inter">
-                    Area Range (sq ft)
+                    Price Range
+                    <span class="text-[0.7vw] text-slate-500"
+                        x-text="selectedCurrency === 'jmd' ? '(JMD)' : '(USD)'"></span>
                 </label>
-                <div id="area-slider" class="h-2"></div>
-                <div class="flex justify-between mt-3 gap-1">
-                    <input type="number"
-                        x-model.number="filters.areaMin"
-                        @input="syncAreaSlider()"
-                        class="w-1/2 text-[0.75vw] border border-slate-200 rounded px-1 py-0.5 font-inter text-center outline-none focus:border-[var(--primary-color)]"
-                        min="0" max="100000" step="500" placeholder="Min">
-                    <input type="number"
-                        x-model.number="filters.areaMax"
-                        @input="syncAreaSlider()"
-                        class="w-1/2 text-[0.75vw] border border-slate-200 rounded px-1 py-0.5 font-inter text-center outline-none focus:border-[var(--primary-color)]"
-                        min="0" max="100000" step="500" placeholder="Max">
-                </div>
+                <select x-model="filters.priceRange" @change="applyPriceRange($event.target.value)"
+                    class="w-full font-inter text-[0.7vw] text-slate-900 outline-none border border-slate-200 rounded px-1 py-0.5 bg-white">
+                    <option value="">Any Price</option>
+                    <template x-for="opt in priceRangeOptions" :key="opt.value">
+                        <option :value="opt.value" x-text="opt.label"></option>
+                    </template>
+                </select>
             </div>
 
             <!-- Featured Checkbox -->
-            <div class="col-span-4 p-4 border-t border-slate-300 flex items-center">
+            <div class="col-span-4 p-4 border-t border-slate-300 flex items-center gap-6">
                 <label class="flex items-center cursor-pointer">
                     <input type="checkbox" x-model="filters.featured" class="mr-2">
                     <span class="font-inter text-[0.833vw]">Featured Properties Only</span>
@@ -236,7 +245,8 @@ if (empty($properties_page_url)) {
     <div class="hidden md:flex absolute -top-5 left-5 items-center gap-1.5 px-3 py-1 bg-white border border-green-200 rounded-full shadow-sm"
         style="white-space: nowrap;">
         <svg class="w-3.5 h-3.5 text-green-600 flex-shrink-0" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-1 14l-3-3 1.41-1.41L11 12.17l4.59-4.58L17 9l-6 6z"/>
+            <path
+                d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-1 14l-3-3 1.41-1.41L11 12.17l4.59-4.58L17 9l-6 6z" />
         </svg>
         <span class="text-[0.75vw] font-semibold text-green-700 tracking-wide">100% Verified Listings</span>
     </div>
@@ -251,16 +261,17 @@ if (empty($properties_page_url)) {
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/noUiSlider/15.7.1/nouislider.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/js/tom-select.complete.min.js"></script>
-<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAUPkXXwkGt0xC5ongE7-62nzz6l7D3Nf4&libraries=places,marker&v=beta"></script>
+<script
+    src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAUPkXXwkGt0xC5ongE7-62nzz6l7D3Nf4&libraries=places,marker&v=beta"></script>
 
 <script>
-    function propertyFiltering(initialParams, citiesData, propertyTypeHierarchy) {
+    function propertyFiltering(initialParams, citiesData, propertyTypeHierarchy, bedroomTermsData, bathroomTermsData, listingStatusesData) {
         initialParams = initialParams || {};
         return {
             filters: {
                 type: initialParams.property_type || '',
                 priceMin: initialParams.price_min || 0,
-                priceMax: initialParams.price_max || 5000000,
+                priceMax: initialParams.price_max || 9999999999,
                 areaMin: initialParams.area_min || 0,
                 areaMax: initialParams.area_max || 100000,
                 beds: initialParams.beds || 0,
@@ -268,10 +279,15 @@ if (empty($properties_page_url)) {
                 city: initialParams.city || '',
                 location: initialParams.location || '',
                 featured: initialParams.featured === 'true' ? true : false,
+                listingStatus: initialParams.listing_status || 'buy',
+                priceRange: initialParams.price_range || '',
             },
             citiesData: citiesData,
             citiesList: Object.keys(citiesData),
             propertyTypeHierarchy: propertyTypeHierarchy,
+            bedroomTerms: bedroomTermsData || [],
+            bathroomTerms: bathroomTermsData || [],
+            listingStatuses: listingStatusesData || [],
             showFilters: false,
             showMobileSidebar: false,
             locationSuggestions: [],
@@ -279,6 +295,10 @@ if (empty($properties_page_url)) {
             showTypeDropdown: false,
             activeTab: 0,
             selectedTypeName: '',
+            selectedCurrency: 'usd',
+            usdToJmdRate: 157,
+            priceOptions: [],
+            priceRangeOptions: [],
 
             priceSlider: null,
             areaSlider: null,
@@ -288,9 +308,91 @@ if (empty($properties_page_url)) {
 
             init() {
                 this.setupTomSelect();
-                this.initializeNouiSliders();
                 this.geocoder = new google.maps.Geocoder();
                 this.setSelectedTypeName();
+                this.fetchExchangeRate();
+                this.buildPriceOptions();
+                // Default to first listing status (Buy) if not already set
+                if (!this.filters.listingStatus && this.listingStatuses.length > 0) {
+                    this.filters.listingStatus = this.listingStatuses[0].slug;
+                }
+            },
+
+            async fetchExchangeRate() {
+                try {
+                    const res = await fetch('https://api.exchangerate-api.com/v4/latest/USD');
+                    const data = await res.json();
+                    if (data && data.rates && data.rates.JMD) {
+                        this.usdToJmdRate = data.rates.JMD;
+                        if (this.selectedCurrency === 'jmd') this.buildPriceOptions();
+                    }
+                } catch (e) {
+                    this.usdToJmdRate = 157;
+                }
+            },
+
+            buildPriceOptions() {
+                const isJmd = this.selectedCurrency === 'jmd';
+                // USD price range bands
+                const usdRanges = [
+                    { min: 0, max: 50000, label: '$0 – $50K' },
+                    { min: 50000, max: 70000, label: '$50K – $70K' },
+                    { min: 70000, max: 100000, label: '$70K – $100K' },
+                    { min: 100000, max: 150000, label: '$100K – $150K' },
+                    { min: 150000, max: 200000, label: '$150K – $200K' },
+                    { min: 200000, max: 300000, label: '$200K – $300K' },
+                    { min: 300000, max: 500000, label: '$300K – $500K' },
+                    { min: 500000, max: 750000, label: '$500K – $750K' },
+                    { min: 750000, max: 1000000, label: '$750K – $1M' },
+                    { min: 1000000, max: 9999999999, label: '$1M+' },
+                ];
+                // JMD price range bands
+                const jmdRanges = [
+                    { min: 0, max: 5000000, label: 'J$0 – J$5M' },
+                    { min: 5000000, max: 10000000, label: 'J$5M – J$10M' },
+                    { min: 10000000, max: 20000000, label: 'J$10M – J$20M' },
+                    { min: 20000000, max: 30000000, label: 'J$20M – J$30M' },
+                    { min: 30000000, max: 50000000, label: 'J$30M – J$50M' },
+                    { min: 50000000, max: 75000000, label: 'J$50M – J$75M' },
+                    { min: 75000000, max: 100000000, label: 'J$75M – J$100M' },
+                    { min: 100000000, max: 9999999999, label: 'J$100M+' },
+                ];
+                const ranges = isJmd ? jmdRanges : usdRanges;
+                this.priceRangeOptions = ranges.map(r => ({
+                    value: r.min + '_' + r.max,
+                    label: r.label,
+                    min: r.min,
+                    max: r.max,
+                }));
+                // Reset selection when currency changes
+                this.filters.priceRange = '';
+                this.filters.priceMin = 0;
+                this.filters.priceMax = 9999999999;
+            },
+
+            applyPriceRange(value) {
+                if (!value) {
+                    this.filters.priceMin = 0;
+                    this.filters.priceMax = 9999999999;
+                    return;
+                }
+                const opt = this.priceRangeOptions.find(o => o.value === value);
+                if (opt) {
+                    this.filters.priceMin = opt.min;
+                    this.filters.priceMax = opt.max;
+                }
+            },
+
+            onCurrencyChange() {
+                this.buildPriceOptions();
+            },
+
+            formatPrice(usdPrice) {
+                if (this.selectedCurrency === 'jmd') {
+                    const jmd = Math.round(usdPrice * this.usdToJmdRate);
+                    return 'J$' + (jmd >= 1000000 ? (jmd / 1000000).toFixed(2) + 'M' : jmd.toLocaleString());
+                }
+                return '$' + (usdPrice >= 100000 ? (usdPrice / 1000).toFixed(usdPrice % 1000 === 0 ? 0 : 1) + 'K' : usdPrice.toLocaleString());
             },
 
             setSelectedTypeName() {
@@ -336,101 +438,12 @@ if (empty($properties_page_url)) {
                 }, 100);
             },
 
-            initializeNouiSliders() {
-                const priceElement = document.getElementById('price-slider');
-                const areaElement = document.getElementById('area-slider');
-
-                // Price Slider — updates input fields live while dragging
-                if (priceElement && !priceElement.noUiSlider) {
-                    this.priceSlider = noUiSlider.create(priceElement, {
-                        start: [this.filters.priceMin, this.filters.priceMax],
-                        range: { min: 0, max: 5000000 },
-                        step: 50000,
-                        tooltips: false,
-                        connect: true,
-                    });
-                    this.priceSlider.on('update', (values) => {
-                        this.filters.priceMin = parseInt(values[0]);
-                        this.filters.priceMax = parseInt(values[1]);
-                    });
-                } else if (priceElement) {
-                    this.priceSlider = priceElement.noUiSlider;
-                }
-
-                // Area Slider — updates input fields live while dragging
-                if (areaElement && !areaElement.noUiSlider) {
-                    this.areaSlider = noUiSlider.create(areaElement, {
-                        start: [this.filters.areaMin, this.filters.areaMax],
-                        range: { min: 0, max: 100000 },
-                        step: 500,
-                        tooltips: false,
-                        connect: true,
-                    });
-                    this.areaSlider.on('update', (values) => {
-                        this.filters.areaMin = parseInt(values[0]);
-                        this.filters.areaMax = parseInt(values[1]);
-                    });
-                } else if (areaElement) {
-                    this.areaSlider = areaElement.noUiSlider;
-                }
-            },
-
             initializeMobileSliders() {
-                const priceMobile = document.getElementById('price-slider-mobile');
-                const areaMobile = document.getElementById('area-slider-mobile');
-
-                if (priceMobile && !priceMobile.noUiSlider) {
-                    this.priceSliderMobile = noUiSlider.create(priceMobile, {
-                        start: [this.filters.priceMin, this.filters.priceMax],
-                        range: { min: 0, max: 5000000 },
-                        step: 50000,
-                        tooltips: false,
-                        connect: true,
-                    });
-                    this.priceSliderMobile.on('update', (values) => {
-                        this.filters.priceMin = parseInt(values[0]);
-                        this.filters.priceMax = parseInt(values[1]);
-                    });
-                } else if (priceMobile) {
-                    this.priceSliderMobile = priceMobile.noUiSlider;
-                }
-
-                if (areaMobile && !areaMobile.noUiSlider) {
-                    this.areaSliderMobile = noUiSlider.create(areaMobile, {
-                        start: [this.filters.areaMin, this.filters.areaMax],
-                        range: { min: 0, max: 100000 },
-                        step: 500,
-                        tooltips: false,
-                        connect: true,
-                    });
-                    this.areaSliderMobile.on('update', (values) => {
-                        this.filters.areaMin = parseInt(values[0]);
-                        this.filters.areaMax = parseInt(values[1]);
-                    });
-                } else if (areaMobile) {
-                    this.areaSliderMobile = areaMobile.noUiSlider;
-                }
+                // Mobile sliders removed — using dropdowns now
             },
 
-            // Sync price inputs → slider
-            syncPriceSlider() {
-                if (this.priceSlider) {
-                    this.priceSlider.set([this.filters.priceMin, this.filters.priceMax]);
-                }
-                if (this.priceSliderMobile) {
-                    this.priceSliderMobile.set([this.filters.priceMin, this.filters.priceMax]);
-                }
-            },
-
-            // Sync area inputs → slider
-            syncAreaSlider() {
-                if (this.areaSlider) {
-                    this.areaSlider.set([this.filters.areaMin, this.filters.areaMax]);
-                }
-                if (this.areaSliderMobile) {
-                    this.areaSliderMobile.set([this.filters.areaMin, this.filters.areaMax]);
-                }
-            },
+            syncPriceSlider() { /* no-op: using dropdowns */ },
+            syncAreaSlider() { /* no-op: using dropdowns */ },
 
             resetLocationSuggestions() {
                 this.filters.location = '';
@@ -473,10 +486,12 @@ if (empty($properties_page_url)) {
                 if (this.filters.beds > 0) params.append('beds', this.filters.beds);
                 if (this.filters.baths > 0) params.append('baths', this.filters.baths);
                 if (this.filters.priceMin > 0) params.append('price_min', this.filters.priceMin);
-                if (this.filters.priceMax < 5000000) params.append('price_max', this.filters.priceMax);
+                if (this.filters.priceMax < 9999999999) params.append('price_max', this.filters.priceMax);
                 if (this.filters.areaMin > 0) params.append('area_min', this.filters.areaMin);
                 if (this.filters.areaMax < 100000) params.append('area_max', this.filters.areaMax);
                 if (this.filters.featured) params.append('featured', 'true');
+                if (this.filters.listingStatus) params.append('listing_status', this.filters.listingStatus);
+                params.append('currency', this.selectedCurrency);
 
                 const queryString = params.toString();
                 let archiveUrl = '<?= $properties_page_url ?>';

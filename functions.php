@@ -122,22 +122,6 @@ function property_theme_register_cpt()
         'show_in_rest' => true,
         'rewrite' => array('slug' => 'property-type'),
     ));
-
-    // Register Status Taxonomy
-    register_taxonomy('property_status', 'property', array(
-        'label' => 'Status',
-        'hierarchical' => false,
-        'show_in_rest' => true,
-        'rewrite' => array('slug' => 'property-status'),
-    ));
-
-    // Register Location Taxonomy
-    register_taxonomy('property_location', 'property', array(
-        'label' => 'Location',
-        'hierarchical' => true,
-        'show_in_rest' => true,
-        'rewrite' => array('slug' => 'property-location'),
-    ));
 }
 add_action('init', 'property_theme_register_cpt');
 
@@ -225,6 +209,7 @@ require_once get_template_directory() . '/inc/subscription/subscription-fields.p
 require_once get_template_directory() . '/inc/theme-options.php';
 require_once get_template_directory() . '/inc/helpers.php';
 require_once get_template_directory() . '/inc/api-properties-search.php';
+require_once get_template_directory() . '/inc/taxonomy-status.php';
 
 require_once get_template_directory() . '/inc/subscription/stripe-subscriptions-checkout.php';
 require_once get_template_directory() . '/inc/subscription/stripe-subscriptions-native.php';
@@ -233,6 +218,7 @@ require_once get_template_directory() . '/inc/subscription/stripe-subscriptions-
 require_once get_template_directory() . '/inc/subscription/stripe-migration.php';
 require_once get_template_directory() . '/inc/subscription/stripe-products-setup.php';
 require_once get_template_directory() . '/inc/subscription/property-deactivation.php';
+require_once get_template_directory() . '/inc/resources-post-type.php';
 
 
 require_once get_template_directory() . '/admin/migration-page.php';

@@ -14,8 +14,12 @@ get_header();
         <div x-data="{
             properties: [],
             loading: true,
+            viewType: 'grid',
             async loadProperties() {
                 try {
+                    window.formatPrice = (price) => {
+                        return '$' + (price >= 100000 ? (price / 1000).toFixed(price % 1000 === 0 ? 0 : 1) + 'K' : price.toLocaleString());
+                    };
                     const response = await fetch('<?php echo get_home_url(); ?>/wp-json/property/v1/search?featured=true&per_page=6', {
                         headers: {
                             'X-WP-Nonce': propertyTheme.nonce,
@@ -72,6 +76,9 @@ get_header();
         <div x-data="{
             recentProperties: [],
             loadingRecent: true,
+            viewType: 'grid',
+            get loading() { return this.loadingRecent; },
+            get properties() { return this.recentProperties; },
             async loadRecentProperties() {
                 try {
                     const response = await fetch('<?php echo get_home_url(); ?>/wp-json/property/v1/search?featured=false&per_page=6&sort=newest', {
@@ -194,7 +201,7 @@ get_header();
     <!-- About Us Section -->
     <?php get_template_part('template-parts/sections/section', 'about-us'); ?>
 
-    <div class="flex flex-col gap-8 w-[90%] md:pt-[3.125vw] pt-[13.882vw] mx-auto">
+    <div class="!hidden flex flex-col gap-8 w-[90%] md:pt-[3.125vw] pt-[13.882vw] mx-auto">
         <div class="flex items-end justify-between mb-[2.608vw]">
             <div class="flex flex-col">
                 <h5 class="text-[#1A1A1A] text-[6.5vw] md:text-[2.5vw] font-bold mb-[0.833vw]">Blogs & Market Insights</h5>

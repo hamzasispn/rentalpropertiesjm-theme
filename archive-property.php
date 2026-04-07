@@ -10,7 +10,7 @@ $filter_params = array(
     'search' => sanitize_text_field($_GET['search'] ?? ''),
     'property_type' => sanitize_text_field($_GET['property_type'] ?? ''),
     'price_min' => intval($_GET['price_min'] ?? 0),
-    'price_max' => intval($_GET['price_max'] ?? 5000000),
+    'price_max' => intval($_GET['price_max'] ?? 9999999999),
     'area_min' => intval($_GET['area_min'] ?? 0),
     'area_max' => intval($_GET['area_max'] ?? 100000),
     'beds' => intval($_GET['beds'] ?? 0),
@@ -21,6 +21,8 @@ $filter_params = array(
     'sort' => sanitize_text_field($_GET['sort'] ?? 'newest'),
     'view' => sanitize_text_field($_GET['view'] ?? 'grid'),
     'featured' => sanitize_text_field($_GET['featured'] ?? ''),
+    'listing_status' => sanitize_text_field($_GET['listing_status'] ?? ''),
+    'currency' => sanitize_text_field($_GET['currency'] ?? 'usd'),
     'page' => max(1, intval($_GET['paged'] ?? 1)),
 );
 
@@ -89,11 +91,29 @@ $bathrooms = sort_terms_numerically($bathrooms);
     <div class="max-w-[90%] mx-auto px-4 py-8 md:py-12">
         <!-- Main Content -->
         <div
-            x-data="propertyArchiveFiltering(<?php echo htmlspecialchars(json_encode($filter_params)); ?>, <?php echo htmlspecialchars(json_encode($cities_data)); ?>, <?php echo htmlspecialchars(json_encode($property_type_hierarchy)); ?>, <?php echo htmlspecialchars(json_encode($bedrooms)); ?>, <?php echo htmlspecialchars(json_encode($bathrooms)); ?>)">
+            <?php
+$listing_statuses_archive = get_terms(array('taxonomy' => 'property_listing_status', 'hide_empty' => false));
+?>
+            x-data="propertyArchiveFiltering(<?php echo htmlspecialchars(json_encode($filter_params)); ?>, <?php echo htmlspecialchars(json_encode($cities_data)); ?>, <?php echo htmlspecialchars(json_encode($property_type_hierarchy)); ?>, <?php echo htmlspecialchars(json_encode($bedrooms)); ?>, <?php echo htmlspecialchars(json_encode($bathrooms)); ?>, <?php echo htmlspecialchars(json_encode($listing_statuses_archive)); ?>)">
 
             <!-- Top Filter Bar - Sticky -->
             <div
                 class="bg-white rounded-xl shadow-sm p-[1.765vw] md:p-4 border border-slate-200 mb-6 sticky top-0 z-50">
+
+                <!-- Buy / Rent Toggle — top of filter bar -->
+                <div class="flex gap-2 mb-4 pb-4 border-b border-slate-100">
+                    <template x-for="status in listingStatuses" :key="status.slug">
+                        <button type="button"
+                            @click="filters.listingStatus = status.slug; applyFilters()"
+                            :class="filters.listingStatus === status.slug
+                                ? 'bg-[var(--primary-color)] text-white border-[var(--primary-color)] shadow-sm'
+                                : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-50'"
+                            class="px-6 py-2 rounded-full border text-sm font-semibold transition font-inter"
+                            x-text="status.name">
+                        </button>
+                    </template>
+                </div>
+
                 <div class="flex items-center justify-between md:justify-normal md:gap-3 flex-wrap">
                     <!-- Plus Button to Toggle Filters -->
                     <button type="button" @click="showFilters = !showFilters"
@@ -220,46 +240,50 @@ $bathrooms = sort_terms_numerically($bathrooms);
 
                         <div
                             class="grid-cols-2 grid md:grid-cols-5 gap-8 lg:col-span-5 md:col-span-2 col-span-1 px-2 py-2">
-                            <!-- Bedrooms Single Slider (nouislider) -->
+                            <!-- Bedrooms Dropdown -->
                             <div>
                                 <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2">
-                                    Bedrooms: <span x-text="filters.beds > 0 ? filters.beds + '+' : 'Any'"
-                                        class="text-blue-600"></span>
+                                    Bedrooms (Min)
                                 </label>
-                                <div id="bedroom-slider" class="mt-3"></div>
-                                <input type="hidden" x-model="filters.beds" id="bedroom-value" @change="applyFilters()">
+                                <select x-model.number="filters.beds" @change="applyFilters()"
+                                    class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm text-slate-900 focus:ring-2 focus:ring-[var(--primary-color)] focus:border-transparent">
+                                    <option value="0">Any</option>
+                                    <template x-for="term in bedroomTerms" :key="term.term_id">
+                                        <option :value="parseInt(term.name)" x-text="term.name + '+'"></option>
+                                    </template>
+                                </select>
                             </div>
 
-                            <!-- Bathrooms Single Slider (nouislider) -->
+                            <!-- Bathrooms Dropdown -->
                             <div>
                                 <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2">
-                                    Bathrooms: <span x-text="filters.baths > 0 ? filters.baths + '+' : 'Any'"
-                                        class="text-blue-600"></span>
+                                    Bathrooms (Min)
                                 </label>
-                                <div id="bathroom-slider" class="mt-3"></div>
-                                <input type="hidden" x-model="filters.baths" id="bathroom-value"
-                                    @change="applyFilters()">
+                                <select x-model.number="filters.baths" @change="applyFilters()"
+                                    class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm text-slate-900 focus:ring-2 focus:ring-[var(--primary-color)] focus:border-transparent">
+                                    <option value="0">Any</option>
+                                    <template x-for="term in bathroomTerms" :key="term.term_id">
+                                        <option :value="parseFloat(term.name)" x-text="term.name + '+'"></option>
+                                    </template>
+                                </select>
                             </div>
 
-                            <!-- Price Range Slider (nouislider) -->
+                            <!-- Price Range Dropdown (single) -->
                             <div>
                                 <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2">
-                                    Price: <span
-                                        x-text="`$${(filters.priceMin/1000).toFixed(0)}K - $${(filters.priceMax/1000).toFixed(0)}K`"
-                                        class="text-blue-600"></span>
+                                    Price Range <span class="normal-case text-slate-400" x-text="selectedCurrency === 'jmd' ? '(JMD)' : '(USD)'"></span>
                                 </label>
-                                <div id="price-slider" class="mt-3"></div>
+                                <select x-model="filters.priceRange" @change="applyPriceRange($event.target.value); applyFilters()"
+                                    class="w-full px-2 py-1.5 border border-slate-300 rounded text-xs text-slate-900 focus:ring-2 focus:ring-[var(--primary-color)] focus:border-transparent">
+                                    <option value="">Any Price</option>
+                                    <template x-for="opt in priceRangeOptions" :key="opt.value">
+                                        <option :value="opt.value" x-text="opt.label"></option>
+                                    </template>
+                                </select>
                             </div>
 
-                            <!-- Area Range Slider (nouislider) -->
-                            <div>
-                                <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2">
-                                    Area: <span
-                                        x-text="`${filters.areaMin.toLocaleString()} - ${filters.areaMax.toLocaleString()} sqft`"
-                                        class="text-blue-600"></span>
-                                </label>
-                                <div id="area-slider" class="mt-3"></div>
-                            </div>
+                            <!-- Area — commented out per requirements -->
+                            <!-- Area Range filter removed -->
                         </div>
 
                         <!-- Featured Filter -->
@@ -271,6 +295,19 @@ $bathrooms = sort_terms_numerically($bathrooms);
                                     class="text-sm font-medium text-slate-900 group-hover:text-blue-600 transition">Featured
                                     Only</span>
                             </label>
+                        </div>
+
+                        <!-- Currency Selector -->
+                        <div class="flex items-end">
+                            <div class="w-full">
+                                <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2">Currency</label>
+                                <select x-model="selectedCurrency" @change="onCurrencyChange()"
+                                    class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm text-slate-900 focus:ring-2 focus:ring-[var(--primary-color)] focus:border-transparent">
+                                    <option value="usd">USD ($)</option>
+                                    <option value="jmd">JMD (J$)</option>
+                                </select>
+                                <p class="text-xs text-slate-500 mt-1" x-show="selectedCurrency === 'jmd'" x-text="`1 USD = ${usdToJmdRate.toFixed(2)} JMD`"></p>
+                            </div>
                         </div>
 
                         <!-- Clear Filters Button -->
@@ -365,13 +402,14 @@ $bathrooms = sort_terms_numerically($bathrooms);
 
 <!-- Alpine.js Script with Google Geocoder & nouislider -->
 <script>
-    function propertyArchiveFiltering(initialParams, citiesData, propertyTypeHierarchy, bedrooms, bathrooms) {
+    function propertyArchiveFiltering(initialParams, citiesData, propertyTypeHierarchy, bedrooms, bathrooms, listingStatusesData) {
         return {
             filters: {
                 search: initialParams.search || '',
                 types: initialParams.property_type ? initialParams.property_type.split(',') : [],
                 priceMin: initialParams.price_min || 0,
-                priceMax: initialParams.price_max || 5000000,
+                priceMax: initialParams.price_max || 9999999999,
+                priceRange: '',
                 areaMin: initialParams.area_min || 0,
                 areaMax: initialParams.area_max || 100000,
                 beds: initialParams.beds || 0,
@@ -380,6 +418,7 @@ $bathrooms = sort_terms_numerically($bathrooms);
                 location: initialParams.location || '',
                 keyword: initialParams.keyword || '',
                 featured: initialParams.featured === 'true' ? true : false,
+                listingStatus: initialParams.listing_status || 'buy',
             },
             sortBy: initialParams.sort || 'newest',
             viewType: initialParams.view || 'grid',
@@ -393,6 +432,13 @@ $bathrooms = sort_terms_numerically($bathrooms);
             citiesData: citiesData,
             citiesList: Object.keys(citiesData),
             propertyTypeHierarchy: propertyTypeHierarchy,
+            bedroomTerms: bedrooms || [],
+            bathroomTerms: bathrooms || [],
+            listingStatuses: listingStatusesData || [],
+            selectedCurrency: initialParams.currency || 'usd',
+            usdToJmdRate: 157,
+            priceOptions: [],
+            priceRangeOptions: [],
 
             showFilters: false,
             locationSuggestions: [],
@@ -404,11 +450,96 @@ $bathrooms = sort_terms_numerically($bathrooms);
             autocompleteListener: null,
 
             init() {
+                // Expose formatPrice globally so property-card component can use it
+                window.formatPrice = (price) => this.formatPrice(price);
                 this.setupTomSelect();
-                this.initializeNouiSliders();
                 this.geocoder = new google.maps.Geocoder();
+                this.fetchExchangeRate();
+                this.buildPriceOptions();
+                // Default to first listing status (Buy) if not set via URL param
+                if (!this.filters.listingStatus && this.listingStatuses.length > 0) {
+                    this.filters.listingStatus = this.listingStatuses[0].slug;
+                }
                 this.applyFilters();
                 this.setupInfiniteScroll();
+            },
+
+            async fetchExchangeRate() {
+                try {
+                    const res = await fetch('https://api.exchangerate-api.com/v4/latest/USD');
+                    const data = await res.json();
+                    if (data && data.rates && data.rates.JMD) {
+                        this.usdToJmdRate = data.rates.JMD;
+                        this.buildPriceOptions();
+                    }
+                } catch(e) {
+                    this.usdToJmdRate = 157;
+                }
+            },
+
+            buildPriceOptions() {
+                const isJmd = this.selectedCurrency === 'jmd';
+                const usdRanges = [
+                    { min: 0,       max: 50000,      label: '$0 – $50K' },
+                    { min: 50000,   max: 70000,      label: '$50K – $70K' },
+                    { min: 70000,   max: 100000,     label: '$70K – $100K' },
+                    { min: 100000,  max: 150000,     label: '$100K – $150K' },
+                    { min: 150000,  max: 200000,     label: '$150K – $200K' },
+                    { min: 200000,  max: 300000,     label: '$200K – $300K' },
+                    { min: 300000,  max: 500000,     label: '$300K – $500K' },
+                    { min: 500000,  max: 750000,     label: '$500K – $750K' },
+                    { min: 750000,  max: 1000000,    label: '$750K – $1M' },
+                    { min: 1000000, max: 9999999999, label: '$1M+' },
+                ];
+                const jmdRanges = [
+                    { min: 0,         max: 5000000,    label: 'J$0 – J$5M' },
+                    { min: 5000000,   max: 10000000,   label: 'J$5M – J$10M' },
+                    { min: 10000000,  max: 20000000,   label: 'J$10M – J$20M' },
+                    { min: 20000000,  max: 30000000,   label: 'J$20M – J$30M' },
+                    { min: 30000000,  max: 50000000,   label: 'J$30M – J$50M' },
+                    { min: 50000000,  max: 75000000,   label: 'J$50M – J$75M' },
+                    { min: 75000000,  max: 100000000,  label: 'J$75M – J$100M' },
+                    { min: 100000000, max: 9999999999, label: 'J$100M+' },
+                ];
+                const ranges = isJmd ? jmdRanges : usdRanges;
+                this.priceRangeOptions = ranges.map(r => ({
+                    value: r.min + '_' + r.max,
+                    label: r.label,
+                    min: r.min,
+                    max: r.max,
+                }));
+                // Reset price selection when currency changes
+                this.filters.priceRange = '';
+                this.filters.priceMin = 0;
+                this.filters.priceMax = 9999999999;
+            },
+
+            applyPriceRange(value) {
+                if (!value) {
+                    this.filters.priceMin = 0;
+                    this.filters.priceMax = 9999999999;
+                    return;
+                }
+                const opt = this.priceRangeOptions.find(o => o.value === value);
+                if (opt) {
+                    this.filters.priceMin = opt.min;
+                    this.filters.priceMax = opt.max;
+                }
+            },
+
+            onCurrencyChange() {
+                this.buildPriceOptions();
+                // Re-expose so card re-renders with new currency
+                window.formatPrice = (price) => this.formatPrice(price);
+                this.applyFilters();
+            },
+
+            formatPrice(usdPrice) {
+                if (this.selectedCurrency === 'jmd') {
+                    const jmd = Math.round(usdPrice * this.usdToJmdRate);
+                    return 'J$' + (jmd >= 1000000 ? (jmd/1000000).toFixed(2)+'M' : jmd.toLocaleString());
+                }
+                return '$' + (usdPrice >= 100000 ? (usdPrice/1000).toFixed(usdPrice%1000===0?0:1)+'K' : usdPrice.toLocaleString());
             },
 
             setupTomSelect() {
@@ -428,79 +559,6 @@ $bathrooms = sort_terms_numerically($bathrooms);
 
             priceSlider: null,
             areaSlider: null,
-
-            initializeNouiSliders() {
-                const bedroomElement = document.getElementById('bedroom-slider');
-                const bathroomElement = document.getElementById('bathroom-slider');
-                const priceElement = document.getElementById('price-slider');
-                const areaElement = document.getElementById('area-slider');
-
-                if (bedroomElement && !this.bedroomSlider) {
-                    this.bedroomSlider = noUiSlider.create(bedroomElement, {
-                        start: [this.filters.beds],
-                        range: { min: 0, max: 10 },
-                        step: 1,
-                        tooltips: false,
-                        connect: 'lower',
-                        pips: false
-                    });
-
-                    this.bedroomSlider.on('change', (values) => {
-                        this.filters.beds = parseInt(values[0]);
-                        this.$nextTick(() => this.applyFilters());
-                    });
-                }
-
-                if (bathroomElement && !this.bathroomSlider) {
-                    this.bathroomSlider = noUiSlider.create(bathroomElement, {
-                        start: [this.filters.baths],
-                        range: { min: 0, max: 10 },
-                        step: 1,
-                        tooltips: false,
-                        connect: 'lower',
-                        pips: false
-                    });
-
-                    this.bathroomSlider.on('change', (values) => {
-                        this.filters.baths = parseInt(values[0]);
-                        this.$nextTick(() => this.applyFilters());
-                    });
-                }
-
-                if (priceElement && !this.priceSlider) {
-                    this.priceSlider = noUiSlider.create(priceElement, {
-                        start: [this.filters.priceMin, this.filters.priceMax],
-                        range: { min: 0, max: 5000000 },
-                        step: 50000,
-                        tooltips: false,
-                        connect: true,
-                        pips: false
-                    });
-
-                    this.priceSlider.on('change', (values) => {
-                        this.filters.priceMin = parseInt(values[0]);
-                        this.filters.priceMax = parseInt(values[1]);
-                        this.$nextTick(() => this.applyFilters());
-                    });
-                }
-
-                if (areaElement && !this.areaSlider) {
-                    this.areaSlider = noUiSlider.create(areaElement, {
-                        start: [this.filters.areaMin, this.filters.areaMax],
-                        range: { min: 0, max: 100000 },
-                        step: 500,
-                        tooltips: false,
-                        connect: true,
-                        pips: false
-                    });
-
-                    this.areaSlider.on('change', (values) => {
-                        this.filters.areaMin = parseInt(values[0]);
-                        this.filters.areaMax = parseInt(values[1]);
-                        this.$nextTick(() => this.applyFilters());
-                    });
-                }
-            },
 
             setupInfiniteScroll() {
                 const observer = new IntersectionObserver((entries) => {
@@ -566,7 +624,7 @@ $bathrooms = sort_terms_numerically($bathrooms);
                 if (this.filters.search) params.append('search', this.filters.search);
                 if (this.filters.types.length) params.append('property_type', this.filters.types.join(','));
                 if (this.filters.priceMin) params.append('price_min', this.filters.priceMin);
-                if (this.filters.priceMax) params.append('price_max', this.filters.priceMax);
+                if (this.filters.priceMax && this.filters.priceMax < 9999999999) params.append('price_max', this.filters.priceMax);
                 if (this.filters.areaMin) params.append('area_min', this.filters.areaMin);
                 if (this.filters.areaMax) params.append('area_max', this.filters.areaMax);
                 if (this.filters.beds) params.append('beds_min', this.filters.beds);
@@ -574,6 +632,7 @@ $bathrooms = sort_terms_numerically($bathrooms);
                 if (this.filters.city) params.append('city', this.filters.city);
                 if (this.filters.location) params.append('location', this.filters.location);
                 if (this.filters.keyword) params.append('keyword', this.filters.keyword);
+                if (this.filters.listingStatus) params.append('listing_status', this.filters.listingStatus);
                 const sort = this.filters.featured ? 'featured' : this.sortBy;
                 params.append('sort', sort);
                 if (this.filters.featured) params.append('featured', 'true');
@@ -611,7 +670,8 @@ $bathrooms = sort_terms_numerically($bathrooms);
                     search: '',
                     types: [],
                     priceMin: 0,
-                    priceMax: 5000000,
+                    priceMax: 9999999999,
+                    priceRange: '',
                     areaMin: 0,
                     areaMax: 100000,
                     beds: 0,
@@ -620,14 +680,11 @@ $bathrooms = sort_terms_numerically($bathrooms);
                     location: '',
                     keyword: '',
                     featured: false,
+                    listingStatus: this.listingStatuses.length ? this.listingStatuses[0].slug : 'buy',
                 };
                 this.sortBy = 'newest';
-
-                // Reset nouisliders
-                if (this.bedroomSlider) this.bedroomSlider.set([0]);
-                if (this.bathroomSlider) this.bathroomSlider.set([0]);
-                if (this.priceSlider) this.priceSlider.set([0, 5000000]);
-                if (this.areaSlider) this.areaSlider.set([0, 100000]);
+                this.selectedCurrency = 'usd';
+                this.buildPriceOptions();
 
                 // Reset TomSelect
                 const select = document.getElementById('city-select');

@@ -52,9 +52,9 @@ foreach ($plans_data as $plan) {
             <?php endif; ?>
         </div>
 
-        <p class="<?= $is_best_seller ? 'text-white' : 'text-[#1A1A1A]'; ?> text-[3.833vw] md:text-[0.833vw] font-inter">
+        <!-- <p class="< ?= $is_best_seller ? 'text-white' : 'text-[#1A1A1A]'; ?> text-[3.833vw] md:text-[0.833vw] font-inter">
             Individual homeowners listing a single property
-        </p>
+        </p> -->
 
         <h6 class="<?= $is_best_seller ? 'text-white' : 'text-[#1A1A1A]'; ?> text-[9.5vw] md:text-[2.5vw] font-bold font-inter">
             $<?= $plan['price']; ?>

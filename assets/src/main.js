@@ -8,7 +8,6 @@ import Swiper from 'swiper'
 import 'swiper/css'
 import 'swiper/css/grid'
 import 'swiper/css/thumbs'
-
 import './property-filter-manager.js'
 
 window.Swiper = Swiper

@@ -1,12 +1,12 @@
 <div class="bg-white rounded-xl cursor-pointer flex flex-col shadow-sm hover:shadow-xl border border-slate-200 overflow-hidden transition-all duration-300 hover:-translate-y-1 h-full"
-    :class="{ '!flex-row !items-center': viewType === 'list' }"
+    :class="{ '!flex-row !items-center': (typeof viewType !== 'undefined' ? viewType : 'grid') === 'list' }"
     @click="window.location.href = property.permalink">
     <!-- Image Container -->
-    <div class="relative h-[50.059vw] md:h-[234px] bg-slate-200 overflow-hidden group" :class="{ '!w-[30%]': viewType === 'list' }">
+    <div class="relative h-[50.059vw] md:h-[234px] bg-slate-200 overflow-hidden group" :class="{ '!w-[30%]': (typeof viewType !== 'undefined' ? viewType : 'grid') === 'list' }">
 
 
         <div x-data="{
-        images: [property.image, ...(property.gallery || [])].filter(Boolean),
+        images: [property.image, ...((property.gallery && Array.isArray(property.gallery)) ? property.gallery : [])].filter(Boolean),
         index: 0,
         hover(e) {
             const rect = e.currentTarget.getBoundingClientRect()
@@ -41,7 +41,14 @@
             Super Hot
         </div>
 
-        <div x-show="property.gallery.length > 1"
+        <!-- Listing Status Badge (Buy / Rent) -->
+        <div x-show="property.listing_status"
+            class="absolute bottom-4 right-4 px-3 py-1 rounded-full text-[3.294vw] md:text-[0.729vw] font-bold shadow-lg font-inter"
+            :class="property.listing_status === 'rent' ? 'bg-blue-600 text-white' : 'bg-green-600 text-white'"
+            x-text="property.listing_status === 'rent' ? 'For Rent' : 'For Sale'">
+        </div>
+
+        <div x-show="property.gallery && property.gallery.length > 1"
             class="absolute top-4 left-4 bg-black/50 text-white px-3 py-1.5 rounded-full text-sm font-bold shadow-lg flex gap-2 items-center font-inter">
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path d="M8 6C6.916 6 6 6.916 6 8C6 9.084 6.916 10 8 10C9.084 10 10 9.084 10 8C10 6.916 9.084 6 8 6Z"
@@ -76,7 +83,7 @@
                     <a :href="property.permalink" x-text="property.title"></a>
                 </h3>
                 <p class="md:text-[1.042vw] text-[3.765vw] font-medium font-inter w-[25%] text-right"
-                    x-text="`$${property.price >= 100000 ? (property.price / 1000).toFixed(property.price % 1000 === 0 ? 0 : 1) + 'K' : property.price.toLocaleString()}`">
+                    x-text="typeof formatPrice === 'function' ? formatPrice(property.price) : ('$' + (property.price >= 100000 ? (property.price / 1000).toFixed(property.price % 1000 === 0 ? 0 : 1) + 'K' : property.price.toLocaleString()))">
                 </p>
             </div>
         </div>
@@ -138,7 +145,7 @@
                 <span class="text-[3.059vw] md:text-[0.625vw] font-inter font-medium text-black" x-text="`${property.area} sq.ft`"></span>
             </div>
         </div>
-        <div x-show="!loading && viewType === 'list'" class="flex justify-end">
+        <div x-show="!(typeof loading !== 'undefined' ? loading : false) && (typeof viewType !== 'undefined' ? viewType : 'grid') === 'list'" class="flex justify-end">
             <a :href="property.link"
                 class="block mt-4 bg-[var(--primary-color)] text-white font-inter font-medium hover:text-blue-800 px-4 py-2 rounded-lg">View
                 Details</a>

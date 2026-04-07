@@ -10,21 +10,22 @@ add_action('rest_api_init', function () {
 function property_search_api(WP_REST_Request $request)
 {
     $filters = array(
-        'property_type' => sanitize_text_field($request->get_param('property_type') ?? ''),
-        'price_min' => intval($request->get_param('price_min') ?? 0),
-        'price_max' => intval($request->get_param('price_max') ?? 999999999),
-        'area_min' => intval($request->get_param('area_min') ?? 0),
-        'area_max' => intval($request->get_param('area_max') ?? 999999999),
-        'beds_min' => intval($request->get_param('beds_min') ?? 0),
-        'beds_max' => intval($request->get_param('beds_max') ?? 10),
-        'baths_min' => intval($request->get_param('baths_min') ?? 0),
-        'baths_max' => intval($request->get_param('baths_max') ?? 10),
-        'city' => sanitize_text_field($request->get_param('city') ?? ''),
-        'keyword' => sanitize_text_field($request->get_param('keyword') ?? ''),
-        'featured' => $request->get_param('featured') === 'true',
-        'sort' => sanitize_text_field($request->get_param('sort') ?? 'newest'),
-        'paged' => intval($request->get_param('paged') ?? 1),
-        'per_page' => intval($request->get_param('per_page') ?? 12),
+        'property_type'    => sanitize_text_field($request->get_param('property_type') ?? ''),
+        'price_min'        => intval($request->get_param('price_min') ?? 0),
+        'price_max'        => intval($request->get_param('price_max') ?? 999999999),
+        'area_min'         => intval($request->get_param('area_min') ?? 0),
+        'area_max'         => intval($request->get_param('area_max') ?? 999999999),
+        'beds_min'         => intval($request->get_param('beds_min') ?? 0),
+        'beds_max'         => intval($request->get_param('beds_max') ?? 10),
+        'baths_min'        => intval($request->get_param('baths_min') ?? 0),
+        'baths_max'        => intval($request->get_param('baths_max') ?? 10),
+        'city'             => sanitize_text_field($request->get_param('city') ?? ''),
+        'keyword'          => sanitize_text_field($request->get_param('keyword') ?? ''),
+        'listing_status'   => sanitize_text_field($request->get_param('listing_status') ?? ''),
+        'featured'         => $request->get_param('featured') === 'true',
+        'sort'             => sanitize_text_field($request->get_param('sort') ?? 'newest'),
+        'paged'            => intval($request->get_param('paged') ?? 1),
+        'per_page'         => intval($request->get_param('per_page') ?? 12),
     );
 
     $args = array(
@@ -58,6 +59,15 @@ function property_search_api(WP_REST_Request $request)
             'taxonomy' => 'property_type',
             'field' => 'slug',
             'terms' => $types,
+        );
+    }
+
+    // Listing Status (buy / rent)
+    if (!empty($filters['listing_status'])) {
+        $args['tax_query'][] = array(
+            'taxonomy' => 'property_listing_status',
+            'field'    => 'slug',
+            'terms'    => $filters['listing_status'],
         );
     }
 
@@ -175,6 +185,10 @@ function property_search_api(WP_REST_Request $request)
             $bath_terms = wp_get_post_terms($post_id, 'bathroom', array('fields' => 'names'));
             $author_id = get_post_field('post_author', $post_id);
 
+            // Listing status (buy / rent)
+            $listing_status_terms = wp_get_post_terms($post_id, 'property_listing_status', array('fields' => 'slugs'));
+            $listing_status = !empty($listing_status_terms) ? $listing_status_terms[0] : '';
+
             $properties[] = array(
                 'id' => $post_id,
                 'title' => get_the_title(),
@@ -185,6 +199,7 @@ function property_search_api(WP_REST_Request $request)
                 'bathrooms' => !empty($bath_terms) ? (int) $bath_terms[0] : 0,
                 'address' => get_post_meta($post_id, '_property_address', true) ?: '',
                 'featured' => (bool) get_post_meta($post_id, '_property_featured', true),
+                'listing_status' => $listing_status,
                 'image' => get_the_post_thumbnail_url($post_id, 'medium'),
                 'permalink' => get_permalink(),
                 'author_name' => get_the_author_meta('display_name', $author_id),

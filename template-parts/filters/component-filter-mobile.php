@@ -38,6 +38,18 @@ foreach ($parent_types as $parent) {
 
 $filter_params = $filter_params ?? [];
 
+// Bedroom/bathroom taxonomy terms
+if (!function_exists('sort_terms_numerically_local2')) {
+    function sort_terms_numerically_local2($terms) {
+        if (empty($terms) || is_wp_error($terms)) return [];
+        usort($terms, function($a, $b) { return intval($a->name) - intval($b->name); });
+        return $terms;
+    }
+}
+$bedroom_terms   = sort_terms_numerically_local2(get_terms(array('taxonomy' => 'bedroom',  'hide_empty' => false)));
+$bathroom_terms  = sort_terms_numerically_local2(get_terms(array('taxonomy' => 'bathroom', 'hide_empty' => false)));
+$listing_statuses = get_terms(array('taxonomy' => 'property_listing_status', 'hide_empty' => false));
+
 // Add city and location to filter params if coming from redirect
 if (!isset($filter_params['city']) && isset($_GET['city'])) {
     $filter_params['city'] = sanitize_text_field($_GET['city']);
@@ -56,7 +68,7 @@ if (empty($properties_page_url)) {
 
 <div
     class="md:hidden block w-full"
-    x-data="propertyFiltering(<?php echo htmlspecialchars(json_encode($filter_params)); ?>, <?php echo htmlspecialchars(json_encode($cities_data)); ?>, <?php echo htmlspecialchars(json_encode($property_type_hierarchy)); ?>)">
+    x-data="propertyFiltering(<?php echo htmlspecialchars(json_encode($filter_params)); ?>, <?php echo htmlspecialchars(json_encode($cities_data)); ?>, <?php echo htmlspecialchars(json_encode($property_type_hierarchy)); ?>, <?php echo htmlspecialchars(json_encode($bedroom_terms)); ?>, <?php echo htmlspecialchars(json_encode($bathroom_terms)); ?>, <?php echo htmlspecialchars(json_encode($listing_statuses)); ?>)">
 
     <!-- Mobile Filter Button -->
     <button
@@ -163,63 +175,81 @@ if (empty($properties_page_url)) {
                     </div>
                 </div>
 
-                <!-- ✅ Bedrooms — Plus/Minus Buttons -->
+                <!-- Currency -->
                 <div>
-                    <label class="block text-sm font-semibold text-slate-900 mb-3">Bedrooms (Min)</label>
-                    <div class="flex items-center gap-4">
-                        <button type="button"
-                            @click="filters.beds = Math.max(0, filters.beds - 1)"
-                            class="w-10 h-10 rounded-full border-2 border-slate-300 flex items-center justify-center text-slate-600 hover:bg-slate-100 active:bg-slate-200 text-2xl leading-none select-none font-light">
-                            −
-                        </button>
-                        <div class="flex-1 text-center">
-                            <span class="text-2xl font-bold text-slate-900" x-text="filters.beds === 0 ? 'Any' : filters.beds"></span>
-                            <span class="text-sm text-slate-500 ml-1" x-show="filters.beds > 0">+</span>
-                        </div>
-                        <button type="button"
-                            @click="filters.beds = Math.min(10, filters.beds + 1)"
-                            class="w-10 h-10 rounded-full border-2 border-slate-300 flex items-center justify-center text-slate-600 hover:bg-slate-100 active:bg-slate-200 text-2xl leading-none select-none font-light">
-                            +
-                        </button>
+                    <label class="block text-sm font-semibold text-slate-900 mb-2">Currency</label>
+                    <select x-model="selectedCurrency" @change="onCurrencyChange()"
+                        class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm text-slate-900 focus:ring-2 focus:ring-[var(--primary-color)] focus:border-transparent">
+                        <option value="usd">USD ($)</option>
+                        <option value="jmd">JMD (J$)</option>
+                    </select>
+                    <p class="text-xs text-slate-500 mt-1" x-show="selectedCurrency === 'jmd'" x-text="`1 USD = ${usdToJmdRate.toFixed(2)} JMD`"></p>
+                </div>
+
+                <!-- Buy / Rent -->
+                <div>
+                    <label class="block text-sm font-semibold text-slate-900 mb-2">Listing Type</label>
+                    <div class="flex gap-2">
+                        <template x-for="status in listingStatuses" :key="status.slug">
+                            <button type="button"
+                                @click="filters.listingStatus = filters.listingStatus === status.slug ? '' : status.slug"
+                                :class="filters.listingStatus === status.slug ? 'bg-[var(--primary-color)] text-white border-[var(--primary-color)]' : 'bg-white text-slate-700 border-slate-300'"
+                                class="flex-1 py-2 rounded-lg border text-sm font-semibold transition"
+                                x-text="status.name">
+                            </button>
+                        </template>
                     </div>
                 </div>
 
-                <!-- ✅ Bathrooms — Plus/Minus Buttons (step 0.5) -->
+                <!-- Bedrooms Dropdown -->
                 <div>
-                    <label class="block text-sm font-semibold text-slate-900 mb-3">Bathrooms (Min)</label>
-                    <div class="flex items-center gap-4">
-                        <button type="button"
-                            @click="filters.baths = Math.max(0, parseFloat((filters.baths - 0.5).toFixed(1)))"
-                            class="w-10 h-10 rounded-full border-2 border-slate-300 flex items-center justify-center text-slate-600 hover:bg-slate-100 active:bg-slate-200 text-2xl leading-none select-none font-light">
-                            −
-                        </button>
-                        <div class="flex-1 text-center">
-                            <span class="text-2xl font-bold text-slate-900" x-text="filters.baths === 0 ? 'Any' : filters.baths"></span>
-                            <span class="text-sm text-slate-500 ml-1" x-show="filters.baths > 0">+</span>
-                        </div>
-                        <button type="button"
-                            @click="filters.baths = Math.min(10, parseFloat((filters.baths + 0.5).toFixed(1)))"
-                            class="w-10 h-10 rounded-full border-2 border-slate-300 flex items-center justify-center text-slate-600 hover:bg-slate-100 active:bg-slate-200 text-2xl leading-none select-none font-light">
-                            +
-                        </button>
+                    <label class="block text-sm font-semibold text-slate-900 mb-2">Bedrooms (Min)</label>
+                    <select x-model.number="filters.beds"
+                        class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm text-slate-900 focus:ring-2 focus:ring-[var(--primary-color)] focus:border-transparent">
+                        <option value="0">Any</option>
+                        <template x-for="term in bedroomTerms" :key="term.term_id">
+                            <option :value="parseInt(term.name)" x-text="term.name + '+'"></option>
+                        </template>
+                    </select>
+                </div>
+
+                <!-- Bathrooms Dropdown -->
+                <div>
+                    <label class="block text-sm font-semibold text-slate-900 mb-2">Bathrooms (Min)</label>
+                    <select x-model.number="filters.baths"
+                        class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm text-slate-900 focus:ring-2 focus:ring-[var(--primary-color)] focus:border-transparent">
+                        <option value="0">Any</option>
+                        <template x-for="term in bathroomTerms" :key="term.term_id">
+                            <option :value="parseFloat(term.name)" x-text="term.name + '+'"></option>
+                        </template>
+                    </select>
+                </div>
+
+                <!-- Price Range Dropdowns -->
+                <div>
+                    <label class="block text-sm font-semibold text-slate-900 mb-2">
+                        Price Range
+                        <span class="text-xs text-slate-500" x-text="selectedCurrency === 'jmd' ? '(JMD)' : '(USD)'"></span>
+                    </label>
+                    <div class="flex gap-2 items-center">
+                        <select x-model.number="filters.priceMin"
+                            class="w-1/2 px-2 py-2 border border-slate-300 rounded-lg text-sm text-slate-900 focus:ring-2 focus:ring-[var(--primary-color)] focus:border-transparent">
+                            <template x-for="opt in priceOptions" :key="opt.value">
+                                <option :value="opt.value" x-text="opt.label"></option>
+                            </template>
+                        </select>
+                        <span class="text-slate-400">—</span>
+                        <select x-model.number="filters.priceMax"
+                            class="w-1/2 px-2 py-2 border border-slate-300 rounded-lg text-sm text-slate-900 focus:ring-2 focus:ring-[var(--primary-color)] focus:border-transparent">
+                            <template x-for="opt in priceOptions" :key="opt.value">
+                                <option :value="opt.value" x-text="opt.label"></option>
+                            </template>
+                        </select>
                     </div>
                 </div>
 
-                <!-- ✅ Price — Slider + Live Label -->
-                <div>
-                    <label class="block text-sm font-semibold text-slate-900 mb-1">Price Range</label>
-                    <p class="text-sm text-[var(--primary-color)] font-medium mb-3"
-                        x-text="`$${filters.priceMin.toLocaleString()} — $${filters.priceMax.toLocaleString()}`"></p>
-                    <div id="price-slider-mobile" class="mt-2"></div>
-                </div>
-
-                <!-- ✅ Area — Slider + Live Label -->
-                <div>
-                    <label class="block text-sm font-semibold text-slate-900 mb-1">Area Range (sq ft)</label>
-                    <p class="text-sm text-[var(--primary-color)] font-medium mb-3"
-                        x-text="`${filters.areaMin.toLocaleString()} — ${filters.areaMax.toLocaleString()} sqft`"></p>
-                    <div id="area-slider-mobile" class="mt-2"></div>
-                </div>
+                <!-- Area commented out as per requirements -->
+                <!-- Area Range (sq ft) filter removed -->
 
                 <!-- Featured -->
                 <div>
@@ -237,7 +267,7 @@ if (empty($properties_page_url)) {
                         Apply Filters
                     </button>
                     <button
-                        @click="filters = { type: '', priceMin: 0, priceMax: 5000000, areaMin: 0, areaMax: 100000, beds: 0, baths: 0, city: '', location: '', featured: false }; selectedTypeName = ''; syncPriceSlider(); syncAreaSlider();"
+                        @click="filters = { type: '', priceMin: 0, priceMax: 500000, areaMin: 0, areaMax: 100000, beds: 0, baths: 0, city: '', location: '', featured: false, listingStatus: '' }; selectedTypeName = ''; selectedCurrency = 'usd'; buildPriceOptions();"
                         class="w-full border border-slate-300 text-slate-700 font-semibold py-3 rounded-lg hover:bg-slate-50 transition">
                         Clear All
                     </button>

@@ -99,6 +99,14 @@ function sort_terms_numerically($terms) {
 $bedrooms  = sort_terms_numerically(get_terms(array('taxonomy' => 'bedroom',  'hide_empty' => false)));
 $bathrooms = sort_terms_numerically(get_terms(array('taxonomy' => 'bathroom', 'hide_empty' => false)));
 
+// Listing status terms (Buy / Rent) + current value when editing
+$listing_statuses_form  = get_terms(array('taxonomy' => 'property_listing_status', 'hide_empty' => false));
+$current_listing_status = '';
+if ($is_edit && $property_id) {
+    $ls_terms = wp_get_post_terms($property_id, 'property_listing_status', array('fields' => 'slugs'));
+    $current_listing_status = !empty($ls_terms) ? $ls_terms[0] : '';
+}
+
 get_jamaica_cities();
 global $cities;
 $cities_data = $cities;
@@ -169,6 +177,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_property'])) {
 
     $property_bathroom = sanitize_text_field($_POST['property_bathroom'] ?? '');
     if ($property_bathroom) wp_set_post_terms($post_id, array($property_bathroom), 'bathroom');
+
+    // Listing Status (Buy / Rent)
+    $property_listing_status = sanitize_text_field($_POST['property_listing_status'] ?? '');
+    if ($property_listing_status) {
+        $ls_term = get_term_by('slug', $property_listing_status, 'property_listing_status');
+        if ($ls_term) wp_set_post_terms($post_id, array($ls_term->term_id), 'property_listing_status');
+    } else {
+        wp_set_object_terms($post_id, array(), 'property_listing_status');
+    }
 
     // Amenities
     $amenities_data = array();
@@ -408,6 +425,45 @@ if (isset($_GET['action']) && $_GET['action'] === 'delete' && isset($_GET['prope
                         </div>
                         <?php endforeach; ?>
                     </div>
+                </div>
+
+                <!-- Property Purpose Card (Buy / Rent) -->
+                <div class="bg-white rounded-lg shadow-lg p-6">
+                    <h4 class="text-lg font-semibold font-inter mb-1">Property Purpose</h4>
+                    <p class="text-sm text-slate-500 mb-4 font-inter">Is this property listed for sale or for rent?</p>
+
+                    <!-- Tab-style buttons -->
+                    <div class="flex rounded-xl overflow-hidden border border-slate-200 w-fit shadow-sm">
+                        <?php if (!is_wp_error($listing_statuses_form) && !empty($listing_statuses_form)):
+                            foreach ($listing_statuses_form as $ls): ?>
+                        <button type="button"
+                            @click="selectedListingStatus = '<?php echo esc_js($ls->slug); ?>'"
+                            class="px-8 py-2.5 text-sm font-bold font-inter transition-all duration-200 focus:outline-none"
+                            :class="selectedListingStatus === '<?php echo esc_js($ls->slug); ?>'
+                                ? 'bg-[var(--primary-color)] text-white'
+                                : 'bg-slate-50 text-slate-600 hover:bg-slate-100 hover:text-[var(--primary-color)]'">
+                            <?php if ($ls->slug === 'buy'): ?>
+                                <span class="flex items-center gap-2">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+                                    For Sale
+                                </span>
+                            <?php else: ?>
+                                <span class="flex items-center gap-2">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                                    For Rent
+                                </span>
+                            <?php endif; ?>
+                        </button>
+                        <?php endforeach; endif; ?>
+                    </div>
+
+                    <!-- Hidden input that submits with the form -->
+                    <input type="hidden" name="property_listing_status" :value="selectedListingStatus">
+
+                    <!-- Helper text -->
+                    <p class="mt-3 text-xs text-slate-400 font-inter"
+                        x-text="selectedListingStatus === 'buy' ? 'This property will appear in Buy / For Sale listings.' : selectedListingStatus === 'rent' ? 'This property will appear in Rent / For Rent listings.' : 'Please select a purpose above.'">
+                    </p>
                 </div>
 
                 <!-- Basic Info Card -->
@@ -846,6 +902,7 @@ function propertyForm(initialData, typeSpecificFieldsData, citiesData, planPhoto
         selectedPropertyType: initialData.property_type || '',
         selectedBedroom:      initialData.bedrooms  || '',
         selectedBathroom:     initialData.bathrooms || '',
+        selectedListingStatus: initialData.listing_status || 'buy',
         selectedCity:         initialData.city      || '',
 
         // Plan feature flags
