@@ -66,22 +66,22 @@ foreach ($plans_data as $plan) {
             <span class="text-[3.765vw] md:text-[0.833vw] font-light"></span>
         </h6>
 
-        <ul class="flex flex-col gap-5 <?= $is_best_seller ? 'text-white' : 'text-[#1A1A1A]'; ?>">
-            <?php if ($plan['billing_cycle'] === 'days'): ?>
+        <ul class="list-disc mb-[2.33vw] pl-[1.7vw] flex flex-col gap-5 <?= $is_best_seller ? 'text-white' : 'text-[#1A1A1A]'; ?>">
+            <!-- < ?php if ($plan['billing_cycle'] === 'days'): ?>
                 <li class="font-bold font-inter text-[4.67vw] md:text-[0.99vw]">
                     Listing Duration :
                     <span class="font-light">
-                        <?php echo $plan['billing_days'] == 1 ? $plan['billing_days'] . ' day' : $plan['billing_days'] . ' days'; ?>
+                        < ?php echo $plan['billing_days'] == 1 ? $plan['billing_days'] . ' day' : $plan['billing_days'] . ' days'; ?>
                     </span>
                 </li>
-            <?php endif; ?>
+            < ?php endif; ?> -->
 
-            <li class="font-bold font-inter text-[4.67vw] md:text-[0.99vw]">
+            <!-- <li class="font-bold font-inter text-[4.67vw] md:text-[0.99vw]">
                 Listings Included :
                 <span class="font-light">
-                    <?= $plan['max_properties'] == 1 ? '1 property' : 'Up to ' . esc_html($plan['max_properties']) . ' properties'; ?>
+                    < ?= $plan['max_properties'] == 1 ? '1 property' : 'Up to ' . esc_html($plan['max_properties']) . ' properties'; ?>
                 </span>
-            </li>
+            </li> -->
 
             <li class="font-bold font-inter text-[4.67vw] md:text-[0.99vw]">
                 Featured Listing Status:
@@ -98,14 +98,9 @@ foreach ($plans_data as $plan) {
             </li>
 
             <?php if ($plan['features']): ?>
-                <li class="font-bold font-inter text-[4.67vw] md:text-[0.99vw] flex gap-6">
-                    Features
-                    <ul class="list-disc">
-                        <?php foreach ($plan['features'] as $feature): ?>
-                            <li class="font-medium text-[3.729vw] md:text-[0.729vw]"><?= esc_html($feature); ?></li>
-                        <?php endforeach; ?>
-                    </ul>
-                </li>
+                <?php foreach ($plan['features'] as $feature): ?>
+                    <li class="font-bold font-inter text-[4.67vw] md:text-[0.99vw]"><?= esc_html($feature); ?></li>
+                <?php endforeach; ?>
             <?php endif; ?>
         </ul>
 
