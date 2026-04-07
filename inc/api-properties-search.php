@@ -9,6 +9,11 @@ add_action('rest_api_init', function () {
 
 function property_search_api(WP_REST_Request $request)
 {
+    // ── Disable caching (prevents 304 Not Modified stale results) ───────────
+    nocache_headers();
+    header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
+    header("Pragma: no-cache");
+
     // ── Raw param reads (keep null so we can detect "not provided") ──────────
     $price_min_raw  = $request->get_param('price_min');
     $price_max_raw  = $request->get_param('price_max');
@@ -48,55 +53,91 @@ function property_search_api(WP_REST_Request $request)
         'tax_query'      => array('relation' => 'AND'),
     );
 
-    // ── Price range (only when at least one bound is provided) ────────────────
-    // FIX: Previously BETWEEN was always applied, excluding properties with
-    //      missing/empty price meta. Now we only filter when user actually
-    //      passes a bound.
-    if ($filters['price_min'] !== null && $filters['price_max'] !== null) {
-        $args['meta_query'][] = array(
+    // ── Price range ───────────────────────────────────────────────────────────
+    // IMPORTANT: We wrap every price/area filter in a relation=>OR that also
+    // catches properties where the meta key is missing or stored as empty string.
+    // Without this, MySQL's numeric comparison silently drops those rows.
+    if ($filters['price_min'] !== null || $filters['price_max'] !== null) {
+        $price_clause = array('relation' => 'OR');
+
+        // Include properties with no price meta set yet (empty string or not exists)
+        $price_clause[] = array(
             'key'     => '_property_price',
-            'value'   => array($filters['price_min'], $filters['price_max']),
-            'compare' => 'BETWEEN',
-            'type'    => 'NUMERIC',
+            'value'   => '',
+            'compare' => '=',
         );
-    } elseif ($filters['price_min'] !== null) {
-        $args['meta_query'][] = array(
+        $price_clause[] = array(
             'key'     => '_property_price',
-            'value'   => $filters['price_min'],
-            'compare' => '>=',
-            'type'    => 'NUMERIC',
+            'compare' => 'NOT EXISTS',
         );
-    } elseif ($filters['price_max'] !== null) {
-        $args['meta_query'][] = array(
-            'key'     => '_property_price',
-            'value'   => $filters['price_max'],
-            'compare' => '<=',
-            'type'    => 'NUMERIC',
-        );
+
+        // The actual numeric range
+        if ($filters['price_min'] !== null && $filters['price_max'] !== null) {
+            $price_clause[] = array(
+                'key'     => '_property_price',
+                'value'   => array($filters['price_min'], $filters['price_max']),
+                'compare' => 'BETWEEN',
+                'type'    => 'NUMERIC',
+            );
+        } elseif ($filters['price_min'] !== null) {
+            $price_clause[] = array(
+                'key'     => '_property_price',
+                'value'   => $filters['price_min'],
+                'compare' => '>=',
+                'type'    => 'NUMERIC',
+            );
+        } else {
+            $price_clause[] = array(
+                'key'     => '_property_price',
+                'value'   => $filters['price_max'],
+                'compare' => '<=',
+                'type'    => 'NUMERIC',
+            );
+        }
+
+        $args['meta_query'][] = $price_clause;
     }
 
-    // ── Area range (same pattern as price) ───────────────────────────────────
-    if ($filters['area_min'] !== null && $filters['area_max'] !== null) {
-        $args['meta_query'][] = array(
+    // ── Area range ────────────────────────────────────────────────────────────
+    // Same OR pattern: properties with empty/missing area meta are included
+    // rather than silently dropped by the numeric comparison.
+    if ($filters['area_min'] !== null || $filters['area_max'] !== null) {
+        $area_clause = array('relation' => 'OR');
+
+        $area_clause[] = array(
             'key'     => '_property_area',
-            'value'   => array($filters['area_min'], $filters['area_max']),
-            'compare' => 'BETWEEN',
-            'type'    => 'NUMERIC',
+            'value'   => '',
+            'compare' => '=',
         );
-    } elseif ($filters['area_min'] !== null) {
-        $args['meta_query'][] = array(
+        $area_clause[] = array(
             'key'     => '_property_area',
-            'value'   => $filters['area_min'],
-            'compare' => '>=',
-            'type'    => 'NUMERIC',
+            'compare' => 'NOT EXISTS',
         );
-    } elseif ($filters['area_max'] !== null) {
-        $args['meta_query'][] = array(
-            'key'     => '_property_area',
-            'value'   => $filters['area_max'],
-            'compare' => '<=',
-            'type'    => 'NUMERIC',
-        );
+
+        if ($filters['area_min'] !== null && $filters['area_max'] !== null) {
+            $area_clause[] = array(
+                'key'     => '_property_area',
+                'value'   => array($filters['area_min'], $filters['area_max']),
+                'compare' => 'BETWEEN',
+                'type'    => 'NUMERIC',
+            );
+        } elseif ($filters['area_min'] !== null) {
+            $area_clause[] = array(
+                'key'     => '_property_area',
+                'value'   => $filters['area_min'],
+                'compare' => '>=',
+                'type'    => 'NUMERIC',
+            );
+        } else {
+            $area_clause[] = array(
+                'key'     => '_property_area',
+                'value'   => $filters['area_max'],
+                'compare' => '<=',
+                'type'    => 'NUMERIC',
+            );
+        }
+
+        $args['meta_query'][] = $area_clause;
     }
 
     // ── Property type (comma-separated) ──────────────────────────────────────
@@ -140,57 +181,34 @@ function property_search_api(WP_REST_Request $request)
     }
 
     // ── Bedrooms range ────────────────────────────────────────────────────────
-    // FIX: Use meta_query numeric range instead of generating taxonomy slug
-    //      lists (which silently drops properties if slugs don't match exactly).
+    // OR pattern: properties with empty/missing meta are included, not silently dropped.
     if ($filters['beds_min'] !== null || $filters['beds_max'] !== null) {
+        $beds_clause   = array('relation' => 'OR');
+        $beds_clause[] = array('key' => '_property_bedrooms', 'value' => '', 'compare' => '=');
+        $beds_clause[] = array('key' => '_property_bedrooms', 'compare' => 'NOT EXISTS');
         if ($filters['beds_min'] !== null && $filters['beds_max'] !== null) {
-            $args['meta_query'][] = array(
-                'key'     => '_property_bedrooms',
-                'value'   => array($filters['beds_min'], $filters['beds_max']),
-                'compare' => 'BETWEEN',
-                'type'    => 'NUMERIC',
-            );
+            $beds_clause[] = array('key' => '_property_bedrooms', 'value' => array($filters['beds_min'], $filters['beds_max']), 'compare' => 'BETWEEN', 'type' => 'NUMERIC');
         } elseif ($filters['beds_min'] !== null) {
-            $args['meta_query'][] = array(
-                'key'     => '_property_bedrooms',
-                'value'   => $filters['beds_min'],
-                'compare' => '>=',
-                'type'    => 'NUMERIC',
-            );
+            $beds_clause[] = array('key' => '_property_bedrooms', 'value' => $filters['beds_min'], 'compare' => '>=', 'type' => 'NUMERIC');
         } else {
-            $args['meta_query'][] = array(
-                'key'     => '_property_bedrooms',
-                'value'   => $filters['beds_max'],
-                'compare' => '<=',
-                'type'    => 'NUMERIC',
-            );
+            $beds_clause[] = array('key' => '_property_bedrooms', 'value' => $filters['beds_max'], 'compare' => '<=', 'type' => 'NUMERIC');
         }
+        $args['meta_query'][] = $beds_clause;
     }
 
     // ── Bathrooms range ───────────────────────────────────────────────────────
     if ($filters['baths_min'] !== null || $filters['baths_max'] !== null) {
+        $baths_clause   = array('relation' => 'OR');
+        $baths_clause[] = array('key' => '_property_bathrooms', 'value' => '', 'compare' => '=');
+        $baths_clause[] = array('key' => '_property_bathrooms', 'compare' => 'NOT EXISTS');
         if ($filters['baths_min'] !== null && $filters['baths_max'] !== null) {
-            $args['meta_query'][] = array(
-                'key'     => '_property_bathrooms',
-                'value'   => array($filters['baths_min'], $filters['baths_max']),
-                'compare' => 'BETWEEN',
-                'type'    => 'NUMERIC',
-            );
+            $baths_clause[] = array('key' => '_property_bathrooms', 'value' => array($filters['baths_min'], $filters['baths_max']), 'compare' => 'BETWEEN', 'type' => 'NUMERIC');
         } elseif ($filters['baths_min'] !== null) {
-            $args['meta_query'][] = array(
-                'key'     => '_property_bathrooms',
-                'value'   => $filters['baths_min'],
-                'compare' => '>=',
-                'type'    => 'NUMERIC',
-            );
+            $baths_clause[] = array('key' => '_property_bathrooms', 'value' => $filters['baths_min'], 'compare' => '>=', 'type' => 'NUMERIC');
         } else {
-            $args['meta_query'][] = array(
-                'key'     => '_property_bathrooms',
-                'value'   => $filters['baths_max'],
-                'compare' => '<=',
-                'type'    => 'NUMERIC',
-            );
+            $baths_clause[] = array('key' => '_property_bathrooms', 'value' => $filters['baths_max'], 'compare' => '<=', 'type' => 'NUMERIC');
         }
+        $args['meta_query'][] = $baths_clause;
     }
 
     // ── Featured filter ───────────────────────────────────────────────────────
