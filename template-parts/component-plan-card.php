@@ -33,22 +33,26 @@ foreach ($plans_data as $plan) {
 <?php foreach ($plans_data as $plan):
     $is_current = $stats['subscription'] && $stats['subscription']->package_id == $plan['id'];
     $is_best_seller = ($plan['id'] === $best_seller_plan_id);
-?>
+    ?>
 
-    <div class="!mt-[0px] !mx-[0px] !mb-[0px] px-[6.833vw] md:px-[0.833vw] md:w-[30%] w-full <?= $is_best_seller ? 'bg-[var(--primary-color)]' : 'bg-white'; ?> pb-6 pt-[12.2vw] md:pt-[2.2vw] relative overflow-hidden shadow-lg rounded-[16px] flex flex-col gap-4 <?php echo $is_current ? 'border-2 border-blue-600' : ''; ?>">
+    <div
+        class="!mt-[0px] !mx-[0px] !mb-[0px] px-[6.833vw] md:px-[0.833vw] md:w-[30%] w-full <?= $is_best_seller ? 'bg-[var(--primary-color)]' : 'bg-white'; ?> pb-6 pt-[12.2vw] md:pt-[2.2vw] relative overflow-hidden shadow-lg rounded-[16px] flex flex-col gap-4 <?php echo $is_current ? 'border-2 border-blue-600' : ''; ?>">
 
         <?php if ($is_best_seller): ?>
-            <div class="bg-white text-[var(--primary-color)] absolute rounded-l-full right-[0px] top-[15px] py-2 px-4 text-[3.042vw] md:text-[1.042vw] font-semibold font-inter text-center uppercase">
+            <div
+                class="bg-white text-[var(--primary-color)] absolute rounded-l-full right-[0px] top-[15px] py-2 px-4 text-[3.042vw] md:text-[1.042vw] font-semibold font-inter text-center uppercase">
                 Best Seller
             </div>
         <?php endif; ?>
 
         <div class="flex justify-between items-start mb-2">
-            <h3 class="text-[6.875vw] md:text-[1.875vw] font-bold w-[70%] leading-[1] <?= $is_best_seller ? 'text-white' : 'text-[#1A1A1A]'; ?>">
+            <h3
+                class="text-[6.875vw] md:text-[1.875vw] font-bold w-[70%] leading-[1] <?= $is_best_seller ? 'text-white' : 'text-[#1A1A1A]'; ?>">
                 <?php echo esc_html($plan['name']); ?>
             </h3>
             <?php if ($is_current): ?>
-                <span class="px-3 py-1 bg-blue-100 text-[var(--primary-color)] text-xs font-semibold rounded">Current Plan</span>
+                <span class="px-3 py-1 bg-blue-100 text-[var(--primary-color)] text-xs font-semibold rounded">Current
+                    Plan</span>
             <?php endif; ?>
         </div>
 
@@ -56,7 +60,8 @@ foreach ($plans_data as $plan) {
             Individual homeowners listing a single property
         </p> -->
 
-        <h6 class="<?= $is_best_seller ? 'text-white' : 'text-[#1A1A1A]'; ?> text-[9.5vw] md:text-[2.5vw] font-bold font-inter">
+        <h6
+            class="<?= $is_best_seller ? 'text-white' : 'text-[#1A1A1A]'; ?> text-[9.5vw] md:text-[2.5vw] font-bold font-inter">
             $<?= $plan['price']; ?>
             <span class="text-[3.765vw] md:text-[0.833vw] font-light"></span>
         </h6>
@@ -81,7 +86,7 @@ foreach ($plans_data as $plan) {
             <li class="font-bold font-inter text-[4.67vw] md:text-[0.99vw]">
                 Featured Listing Status:
                 <span class="font-light">
-                    <?= $plan['featured_limit'] == 1 ? 'Available' : 'Up to ' . esc_html($plan['featured_limit']) . ' properties'; ?>
+                    <?= $plan['featured_limit'] == 0 ? 'Not Available' : ($plan['featured_limit'] == 1 ? 'Available' : 'Up to ' . esc_html($plan['featured_limit']) . ' properties'); ?>
                 </span>
             </li>
 
