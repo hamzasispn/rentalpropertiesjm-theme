@@ -31,17 +31,9 @@ foreach ($plans_data as $plan) {
     }
 }
 
-function plan_initials($name) {
-    $words    = explode(' ', trim($name));
-    $initials = '';
-    foreach (array_slice($words, 0, 2) as $w) {
-        $initials .= strtoupper(mb_substr($w, 0, 1));
-    }
-    return $initials ?: 'PL';
-}
 ?>
 
-<div class="grid grid-cols-1 md:grid-cols-4 gap-4 w-full">
+<div class="!font-inter grid grid-cols-1 md:grid-cols-4 gap-4 w-full">
 
     <?php foreach ($plans_data as $plan):
         $is_current     = $stats['subscription'] && $stats['subscription']->package_id == $plan['id'];
@@ -88,25 +80,40 @@ function plan_initials($name) {
             $props_label = 'Unlimited';
         }
 
-        /* Card border */
+        /* Card styles — best seller gets primary bg, white text */
         if ($is_best_seller) {
-            $card_border = 'border-2 border-[var(--primary-color)]';
+            $card_bg        = 'bg-[var(--primary-color)]';
+            $card_border    = 'border-2 border-[var(--primary-color)]';
+            $text_primary   = 'text-white';
+            $text_secondary = 'text-white/70';
+            $text_label     = 'text-white/60';
+            $divider        = 'border-white/20';
         } elseif ($is_current) {
-            $card_border = 'border-2 border-blue-400';
+            $card_bg        = 'bg-gray-100';
+            $card_border    = 'border-2 border-blue-400';
+            $text_primary   = 'text-[#1A1A1A]';
+            $text_secondary = 'text-gray-500';
+            $text_label     = 'text-gray-800';
+            $divider        = 'border-black/[0.08]';
         } else {
-            $card_border = 'border border-black/10';
+            $card_bg        = 'bg-gray-100';
+            $card_border    = 'border border-black/10';
+            $text_primary   = 'text-[#1A1A1A]';
+            $text_secondary = 'text-gray-500';
+            $text_label     = 'text-gray-800';
+            $divider        = 'border-black/[0.08]';
         }
 
         /* CTA classes */
-        $btn_filled  = 'bg-[var(--primary-color)] text-white hover:opacity-85';
+        $btn_filled  = 'bg-white text-[var(--primary-color)] hover:opacity-85';
         $btn_outline = 'border border-[var(--primary-color)] text-[var(--primary-color)] hover:opacity-85';
         $cta_class   = $is_best_seller ? $btn_filled : $btn_outline;
     ?>
 
-    <div class="relative flex flex-col gap-4 bg-white rounded-[18px] p-6 <?= $card_border; ?> hover:shadow-md transition-shadow duration-200 overflow-hidden">
+    <div class="relative flex flex-col gap-4 <?= $card_bg; ?> rounded-[24px] p-8 <?= $card_border; ?> hover:shadow-md transition-shadow duration-200 overflow-hidden">
 
         <?php if ($is_best_seller): ?>
-            <div class="absolute top-0 right-4 bg-[var(--primary-color)] text-white text-[10px] font-semibold uppercase tracking-widest px-3 py-1 rounded-b-lg">
+            <div class="absolute top-0 right-4 bg-white text-[var(--primary-color)] text-[10px] font-semibold uppercase tracking-widest px-3 py-1 rounded-b-lg">
                 Best Seller
             </div>
         <?php elseif ($is_current): ?>
@@ -118,47 +125,47 @@ function plan_initials($name) {
         <!-- Header -->
         <div class="flex items-start gap-3 <?= ($is_best_seller || $is_current) ? 'mt-4' : ''; ?>">
             <div>
-                <p class="text-[1.5vw] font-semibold text-[#1A1A1A] leading-tight m-0"><?= esc_html($plan['name']); ?></p>
-                <p class="text-md text-gray-400 m-0 mt-0.5"><?= esc_html($duration_label); ?> access</p>
+                <p class="text-[1.5vw] font-semibold font-inter <?= $text_primary; ?> leading-tight m-0"><?= esc_html($plan['name']); ?></p>
+                <p class="text-md font-inter <?= $text_secondary; ?> m-0 mt-0.5"><?= esc_html($duration_label); ?> access</p>
             </div>
         </div>
 
         <!-- Price -->
-        <div class="text-[28px] font-semibold text-[#1A1A1A] leading-none">
+        <div class="text-[28px] font-semibold font-inter <?= $text_primary; ?> leading-none">
             $<?= number_format($plan['price']); ?>
-            <span class="text-sm font-normal text-gray-400"><?= esc_html($period_label); ?></span>
+            <span class="text-sm font-normal font-inter <?= $text_secondary; ?>"><?= esc_html($period_label); ?></span>
         </div>
 
-        <hr class="border-t border-black/[0.08] m-0">
+        <hr class="border-t <?= $divider; ?> m-0">
 
         <!-- Stats -->
         <div class="flex flex-col gap-2.5">
 
             <div class="flex justify-between items-center text-[13px]">
-                <span class="text-gray-400">Duration</span>
-                <span class="font-medium text-[#1A1A1A]"><?= esc_html($duration_label); ?></span>
+                <span class="<?= $text_label; ?> <?= $is_best_seller ? 'text-white/60' : 'text-gray-800'; ?> font-inter">Duration</span>
+                <span class="font-medium font-inter <?= $text_primary; ?>"><?= esc_html($duration_label); ?></span>
             </div>
 
             <div class="flex justify-between items-center text-[13px]">
-                <span class="text-gray-400">Listings</span>
-                <span class="font-medium text-[#1A1A1A]"><?= esc_html($props_label); ?></span>
+                <span class="<?= $text_label; ?> <?= $is_best_seller ? 'text-white/60' : 'text-gray-800'; ?> font-inter">Listings</span>
+                <span class="font-medium font-inter <?= $text_primary; ?>"><?= esc_html($props_label); ?></span>
             </div>
 
             <div class="flex justify-between items-center text-[13px]">
-                <span class="text-gray-400">Featured listing</span>
+                <span class="<?= $text_label; ?> <?= $is_best_seller ? 'text-white/60' : 'text-gray-800'; ?> font-inter">Featured listing</span>
                 <?php if ($featured_is_available): ?>
-                    <span class="font-medium" style="color: var(--primary-color);"><?= esc_html($featured_label); ?></span>
+                    <span class="font-medium font-inter <?= $is_best_seller ? 'text-white' : ''; ?>" <?= !$is_best_seller ? 'style="color: var(--primary-color);"' : ''; ?>><?= esc_html($featured_label); ?></span>
                 <?php else: ?>
-                    <span class="text-gray-300"><?= esc_html($featured_label); ?></span>
+                    <span class="<?= $text_secondary; ?> font-inter"><?= esc_html($featured_label); ?></span>
                 <?php endif; ?>
             </div>
 
             <div class="flex justify-between items-center text-[13px]">
-                <span class="text-gray-400">Advanced analytics</span>
+                <span class="<?= $text_label; ?> <?= $is_best_seller ? 'text-white/60' : 'text-gray-800'; ?> font-inter">Advanced analytics</span>
                 <?php if ($plan['analytics']): ?>
-                    <span class="font-medium" style="color: var(--primary-color);">Available</span>
+                    <span class="font-medium font-inter <?= $is_best_seller ? 'text-white' : ''; ?>" <?= !$is_best_seller ? 'style="color: var(--primary-color);"' : ''; ?>>Available</span>
                 <?php else: ?>
-                    <span class="text-gray-300">Not available</span>
+                    <span class="<?= $text_secondary; ?> font-inter">Not available</span>
                 <?php endif; ?>
             </div>
 
@@ -166,12 +173,12 @@ function plan_initials($name) {
 
         <!-- Extra features -->
         <?php if (!empty($plan['features'])): ?>
-            <hr class="border-t border-black/[0.08] m-0">
+            <hr class="border-t <?= $divider; ?> m-0">
             <div class="flex flex-col gap-1.5">
                 <?php foreach ($plan['features'] as $feature): ?>
-                    <div class="flex items-start gap-2 text-[12.5px] text-gray-500">
-                        <span class="text-xs mt-0.5 shrink-0" style="color: var(--primary-color);">✓</span>
-                        <span><?= esc_html($feature); ?></span>
+                    <div class="flex items-start gap-2 md:text-[0.633vw] text-[0.1.25vw] <?= $text_secondary; ?>">
+                        <span class="text-sm mt-0.5 shrink-0 <?= $is_best_seller ? 'text-white' : ''; ?>" <?= !$is_best_seller ? 'style="color: var(--primary-color);"' : ''; ?>>✓</span>
+                        <span class="font-inter"><?= esc_html($feature); ?></span>
                     </div>
                 <?php endforeach; ?>
             </div>
