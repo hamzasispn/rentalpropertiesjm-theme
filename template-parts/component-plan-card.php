@@ -1,11 +1,13 @@
 <?php
 $all_plans = get_posts(array(
-    'post_type' => 'subscription_plan',
+    'post_type'   => 'subscription_plan',
     'post_status' => 'publish',
     'numberposts' => -1,
 ));
 
-$stats = isset($args['subscription']) ? array('subscription' => $args['subscription']) : array('subscription' => null);
+$stats = isset($args['subscription'])
+    ? array('subscription' => $args['subscription'])
+    : array('subscription' => null);
 
 if ($stats['subscription'] && $stats['subscription']->status === 'canceled') {
     $stats['subscription'] = null;
@@ -20,108 +22,376 @@ usort($plans_data, function ($a, $b) {
 });
 
 $best_seller_plan_id = null;
-$max_subscriptions = 0;
+$max_subscriptions   = 0;
 
 foreach ($plans_data as $plan) {
     if (!empty($plan['subscription_count']) && $plan['subscription_count'] > $max_subscriptions) {
-        $max_subscriptions = $plan['subscription_count'];
+        $max_subscriptions   = $plan['subscription_count'];
         $best_seller_plan_id = $plan['id'];
     }
 }
+
+/* Helper: initials from plan name */
+function plan_initials($name) {
+    $words = explode(' ', trim($name));
+    $initials = '';
+    foreach (array_slice($words, 0, 2) as $w) {
+        $initials .= strtoupper(mb_substr($w, 0, 1));
+    }
+    return $initials ?: 'PL';
+}
 ?>
 
-<?php foreach ($plans_data as $plan):
-    $is_current = $stats['subscription'] && $stats['subscription']->package_id == $plan['id'];
-    $is_best_seller = ($plan['id'] === $best_seller_plan_id);
+<style>
+.pt-plans-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 16px;
+    width: 100%;
+    font-family: inherit;
+}
+
+.pt-plan-card {
+    background: #ffffff;
+    border: 0.5px solid rgba(0,0,0,0.1);
+    border-radius: 18px;
+    padding: 22px 22px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    position: relative;
+    transition: box-shadow 0.2s ease;
+    overflow: hidden;
+}
+
+.pt-plan-card:hover {
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+}
+
+.pt-plan-card.is-best-seller {
+    border: 2px solid var(--primary-color);
+}
+
+.pt-plan-card.is-current {
+    border: 2px solid #378ADD;
+}
+
+/* Badge */
+.pt-badge {
+    position: absolute;
+    top: -1px;
+    right: 16px;
+    font-size: 10px;
+    font-weight: 600;
+    padding: 5px 12px;
+    border-radius: 0 0 10px 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.pt-badge-best {
+    background: var(--primary-color);
+    color: #fff;
+}
+
+.pt-badge-current {
+    background: #378ADD;
+    color: #E6F1FB;
+}
+
+/* Header row */
+.pt-card-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+}
+
+.pt-icon {
+    width: 42px;
+    height: 42px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    font-weight: 600;
+    flex-shrink: 0;
+    background: color-mix(in srgb, var(--primary-color) 12%, transparent);
+    color: var(--primary-color);
+}
+
+.pt-plan-name {
+    font-size: 15px;
+    font-weight: 600;
+    color: #1A1A1A;
+    margin: 0 0 2px;
+    line-height: 1.2;
+}
+
+.pt-plan-sub {
+    font-size: 12px;
+    color: #888;
+    margin: 0;
+}
+
+/* Price */
+.pt-price {
+    font-size: 28px;
+    font-weight: 600;
+    color: #1A1A1A;
+    line-height: 1;
+}
+
+.pt-price-period {
+    font-size: 13px;
+    font-weight: 400;
+    color: #999;
+}
+
+/* Divider */
+.pt-divider {
+    border: none;
+    border-top: 0.5px solid rgba(0,0,0,0.09);
+    margin: 0;
+}
+
+/* Stats */
+.pt-stats {
+    display: flex;
+    flex-direction: column;
+    gap: 9px;
+}
+
+.pt-stat-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 13px;
+}
+
+.pt-stat-label {
+    color: #888;
+}
+
+.pt-stat-value {
+    color: #1A1A1A;
+    font-weight: 500;
+}
+
+.pt-stat-value.available {
+    color: var(--primary-color);
+}
+
+.pt-stat-value.unavailable {
+    color: #bbb;
+    font-weight: 400;
+}
+
+/* Features */
+.pt-features {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.pt-feature-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    font-size: 12.5px;
+    color: #666;
+}
+
+.pt-feature-check {
+    color: var(--primary-color);
+    font-size: 12px;
+    flex-shrink: 0;
+    margin-top: 1px;
+}
+
+/* CTA */
+.pt-cta {
+    margin-top: auto;
+}
+
+.pt-btn {
+    display: block;
+    width: 100%;
+    text-align: center;
+    padding: 10px 0;
+    border-radius: 50px;
+    font-size: 13.5px;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: none;
+    box-sizing: border-box;
+    transition: opacity 0.15s, background 0.15s;
+    border: none;
+}
+
+.pt-btn:hover {
+    opacity: 0.88;
+}
+
+.pt-btn-primary {
+    background: var(--primary-color);
+    color: #fff;
+}
+
+.pt-btn-outline {
+    background: transparent;
+    border: 1.5px solid var(--primary-color);
+    color: var(--primary-color);
+}
+
+.pt-btn-disabled {
+    background: #f0f0f0;
+    color: #aaa;
+    cursor: default;
+    pointer-events: none;
+}
+</style>
+
+<div class="pt-plans-grid">
+
+    <?php foreach ($plans_data as $plan):
+        $is_current     = $stats['subscription'] && $stats['subscription']->package_id == $plan['id'];
+        $is_best_seller = ($plan['id'] === $best_seller_plan_id);
+
+        /* Duration label */
+        if ($plan['billing_cycle'] === 'days') {
+            $days = intval($plan['billing_days']);
+            if ($days === 1) {
+                $duration_label = '1 day';
+            } elseif ($days % 365 === 0) {
+                $yrs = $days / 365;
+                $duration_label = $yrs == 1 ? '1 year' : $yrs . ' years';
+            } elseif ($days % 30 === 0) {
+                $mos = $days / 30;
+                $duration_label = $mos == 1 ? '1 month' : $mos . ' months';
+            } else {
+                $duration_label = $days . ' days';
+            }
+            $period_label = '/ ' . $duration_label;
+        } else {
+            $duration_label = ucfirst($plan['billing_cycle'] ?? 'listing');
+            $period_label   = '/ ' . strtolower($duration_label);
+        }
+
+        /* Featured listing label */
+        if ($plan['featured_limit'] == 0) {
+            $featured_label = 'Not available';
+            $featured_class = 'unavailable';
+        } elseif ($plan['featured_limit'] == 1) {
+            $featured_label = '1 property';
+            $featured_class = 'available';
+        } else {
+            $featured_label = 'Up to ' . $plan['featured_limit'] . ' properties';
+            $featured_class = 'available';
+        }
+
+        /* Max properties label */
+        if (!empty($plan['max_properties'])) {
+            $props_label = $plan['max_properties'] == 1
+                ? '1 property'
+                : 'Up to ' . $plan['max_properties'] . ' properties';
+        } else {
+            $props_label = 'Unlimited';
+        }
+
+        /* Card classes */
+        $card_classes = 'pt-plan-card';
+        if ($is_best_seller) $card_classes .= ' is-best-seller';
+        if ($is_current)     $card_classes .= ' is-current';
     ?>
 
-    <div
-        class="!mt-[0px] !mx-[0px] !mb-[0px] px-[6.833vw] md:px-[0.833vw] md:w-[30%] w-full <?= $is_best_seller ? 'bg-[var(--primary-color)]' : 'bg-white'; ?> pb-6 pt-[12.2vw] md:pt-[2.2vw] relative overflow-hidden shadow-lg rounded-[16px] flex flex-col gap-4 <?php echo $is_current ? 'border-2 border-blue-600' : ''; ?>">
+    <div class="<?= esc_attr($card_classes); ?>">
 
         <?php if ($is_best_seller): ?>
-            <div
-                class="bg-white text-[var(--primary-color)] absolute rounded-l-full right-[0px] top-[15px] py-2 px-4 text-[3.042vw] md:text-[1.042vw] font-semibold font-inter text-center uppercase">
-                Best Seller
+            <div class="pt-badge pt-badge-best">Best Seller</div>
+        <?php elseif ($is_current): ?>
+            <div class="pt-badge pt-badge-current">Current Plan</div>
+        <?php endif; ?>
+
+        <!-- Header -->
+        <div class="pt-card-header">
+            <div class="pt-icon"><?= esc_html(plan_initials($plan['name'])); ?></div>
+            <div>
+                <p class="pt-plan-name"><?= esc_html($plan['name']); ?></p>
+                <p class="pt-plan-sub"><?= esc_html($duration_label); ?> access</p>
+            </div>
+        </div>
+
+        <!-- Price -->
+        <div class="pt-price">
+            $<?= number_format($plan['price']); ?>
+            <span class="pt-price-period"><?= esc_html($period_label); ?></span>
+        </div>
+
+        <hr class="pt-divider">
+
+        <!-- Stats -->
+        <div class="pt-stats">
+            <div class="pt-stat-row">
+                <span class="pt-stat-label">Duration</span>
+                <span class="pt-stat-value"><?= esc_html($duration_label); ?></span>
+            </div>
+            <div class="pt-stat-row">
+                <span class="pt-stat-label">Listings</span>
+                <span class="pt-stat-value"><?= esc_html($props_label); ?></span>
+            </div>
+            <div class="pt-stat-row">
+                <span class="pt-stat-label">Featured listing</span>
+                <span class="pt-stat-value <?= esc_attr($featured_class); ?>"><?= esc_html($featured_label); ?></span>
+            </div>
+            <div class="pt-stat-row">
+                <span class="pt-stat-label">Advanced analytics</span>
+                <?php if ($plan['analytics']): ?>
+                    <span class="pt-stat-value available">Available</span>
+                <?php else: ?>
+                    <span class="pt-stat-value unavailable">Not available</span>
+                <?php endif; ?>
+            </div>
+        </div>
+
+        <!-- Extra features -->
+        <?php if (!empty($plan['features'])): ?>
+            <hr class="pt-divider">
+            <div class="pt-features">
+                <?php foreach ($plan['features'] as $feature): ?>
+                    <div class="pt-feature-item">
+                        <span class="pt-feature-check">✓</span>
+                        <span><?= esc_html($feature); ?></span>
+                    </div>
+                <?php endforeach; ?>
             </div>
         <?php endif; ?>
 
-        <div class="flex justify-between items-start mb-2">
-            <h3
-                class="text-[6.875vw] md:text-[1.875vw] font-bold w-[70%] leading-[1] <?= $is_best_seller ? 'text-white' : 'text-[#1A1A1A]'; ?>">
-                <?php echo esc_html($plan['name']); ?>
-            </h3>
-            <?php if ($is_current): ?>
-                <span class="px-3 py-1 bg-blue-100 text-[var(--primary-color)] text-xs font-semibold rounded">Current
-                    Plan</span>
-            <?php endif; ?>
-        </div>
-
-        <!-- <p class="< ?= $is_best_seller ? 'text-white' : 'text-[#1A1A1A]'; ?> text-[3.833vw] md:text-[0.833vw] font-inter">
-            Individual homeowners listing a single property
-        </p> -->
-
-        <h6
-            class="<?= $is_best_seller ? 'text-white' : 'text-[#1A1A1A]'; ?> text-[9.5vw] md:text-[2.5vw] font-bold font-inter">
-            $<?= $plan['price']; ?>
-            <span class="text-[3.765vw] md:text-[0.833vw] font-light"></span>
-        </h6>
-
-        <ul class="list-disc mb-[2.33vw] pl-[1.7vw] flex flex-col gap-5 <?= $is_best_seller ? 'text-white' : 'text-[#1A1A1A]'; ?>">
-            <!-- < ?php if ($plan['billing_cycle'] === 'days'): ?>
-                <li class="font-bold font-inter text-[4.67vw] md:text-[0.99vw]">
-                    Listing Duration :
-                    <span class="font-light">
-                        < ?php echo $plan['billing_days'] == 1 ? $plan['billing_days'] . ' day' : $plan['billing_days'] . ' days'; ?>
-                    </span>
-                </li>
-            < ?php endif; ?> -->
-
-            <!-- <li class="font-bold font-inter text-[4.67vw] md:text-[0.99vw]">
-                Listings Included :
-                <span class="font-light">
-                    < ?= $plan['max_properties'] == 1 ? '1 property' : 'Up to ' . esc_html($plan['max_properties']) . ' properties'; ?>
-                </span>
-            </li> -->
-
-            <li class="font-bold font-inter text-[4.67vw] md:text-[0.99vw]">
-                Featured Listing Status:
-                <span class="font-light">
-                    <?= $plan['featured_limit'] == 0 ? 'Not Available' : ($plan['featured_limit'] == 1 ? 'Available' : 'Up to ' . esc_html($plan['featured_limit']) . ' properties'); ?>
-                </span>
-            </li>
-
-            <li class="font-bold font-inter text-[4.67vw] md:text-[0.99vw]">
-                Advanced Analytics :
-                <span class="font-light">
-                    <?php echo $plan['analytics'] ? 'Available' : 'Not Available'; ?>
-                </span>
-            </li>
-
-            <?php if ($plan['features']): ?>
-                <?php foreach ($plan['features'] as $feature): ?>
-                    <li class="font-bold font-inter text-[4.67vw] md:text-[0.99vw]"><?= esc_html($feature); ?></li>
-                <?php endforeach; ?>
-            <?php endif; ?>
-        </ul>
-
-        <div class="mt-auto">
+        <!-- CTA -->
+        <div class="pt-cta">
             <?php if (is_user_logged_in()): ?>
-                <?php if (!$is_current && $stats['subscription']): ?>
+
+                <?php if ($is_current): ?>
+                    <button class="pt-btn pt-btn-disabled" disabled>Current Plan</button>
+
+                <?php elseif ($stats['subscription']): ?>
                     <button
-                        class="w-full px-4 py-2 <?= $is_best_seller ? 'bg-white text-[var(--primary-color)] hover:bg-white/80' : 'bg-[var(--primary-color)] text-white hover:bg-blue-700' ?> rounded-lg transition upgrade-plan-btn"
-                        data-subscription-id="<?php echo esc_attr($stats['subscription']->id); ?>"
-                        data-plan-id="<?php echo esc_attr($plan['id']); ?>">
-                        Upgrade to <?php echo esc_html($plan['name']); ?>
+                        class="pt-btn <?= $is_best_seller ? 'pt-btn-primary' : 'pt-btn-outline'; ?> upgrade-plan-btn"
+                        data-subscription-id="<?= esc_attr($stats['subscription']->id); ?>"
+                        data-plan-id="<?= esc_attr($plan['id']); ?>">
+                        Upgrade to <?= esc_html($plan['name']); ?>
                     </button>
-                <?php elseif (!$stats['subscription']): ?>
-                    <a href="<?php echo esc_url(home_url('/checkout?plan=' . $plan['id'])); ?>"
-                        class="block w-full px-4 py-2 <?= $is_best_seller ? 'bg-white text-[var(--primary-color)] hover:bg-white/80' : 'bg-[var(--primary-color)] text-white hover:bg-blue-700' ?> rounded-lg transition text-center">
+
+                <?php else: ?>
+                    <a href="<?= esc_url(home_url('/checkout?plan=' . $plan['id'])); ?>"
+                       class="pt-btn <?= $is_best_seller ? 'pt-btn-primary' : 'pt-btn-outline'; ?>">
                         Choose Plan
                     </a>
                 <?php endif; ?>
+
             <?php else: ?>
-                <a href="<?= home_url() . '/login'; ?>"
-                    class="block px-4 py-2 font-semibold font-inter <?= $is_best_seller ? 'bg-white text-[var(--primary-color)] hover:bg-white/80' : 'bg-[var(--primary-color)] text-white hover:bg-blue-700' ?> rounded-lg transition text-[3.765vw] md:text-[0.938vw] w-full text-center">
+                <a href="<?= esc_url(home_url('/login')); ?>"
+                   class="pt-btn <?= $is_best_seller ? 'pt-btn-primary' : 'pt-btn-outline'; ?>">
                     Get Started
                 </a>
             <?php endif; ?>
@@ -129,4 +399,6 @@ foreach ($plans_data as $plan) {
 
     </div>
 
-<?php endforeach; ?>
+    <?php endforeach; ?>
+
+</div>
