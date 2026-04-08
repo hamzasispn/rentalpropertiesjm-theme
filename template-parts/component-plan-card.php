@@ -41,7 +41,7 @@ function plan_initials($name) {
 }
 ?>
 
-<div class="grid grid-cols-1 md:grid-cols-3 gap-4 w-full">
+<div class="grid grid-cols-1 md:grid-cols-4 gap-4 w-full">
 
     <?php foreach ($plans_data as $plan):
         $is_current     = $stats['subscription'] && $stats['subscription']->package_id == $plan['id'];
