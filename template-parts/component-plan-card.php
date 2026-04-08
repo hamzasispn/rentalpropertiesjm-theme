@@ -31,9 +31,8 @@ foreach ($plans_data as $plan) {
     }
 }
 
-/* Helper: initials from plan name */
 function plan_initials($name) {
-    $words = explode(' ', trim($name));
+    $words    = explode(' ', trim($name));
     $initials = '';
     foreach (array_slice($words, 0, 2) as $w) {
         $initials .= strtoupper(mb_substr($w, 0, 1));
@@ -42,232 +41,22 @@ function plan_initials($name) {
 }
 ?>
 
-<style>
-.pt-plans-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-    gap: 16px;
-    width: 100%;
-    font-family: inherit;
-}
-
-.pt-plan-card {
-    background: #ffffff;
-    border: 0.5px solid rgba(0,0,0,0.1);
-    border-radius: 18px;
-    padding: 22px 22px 20px;
-    display: flex;
-    flex-direction: column;
-    gap: 14px;
-    position: relative;
-    transition: box-shadow 0.2s ease;
-    overflow: hidden;
-}
-
-.pt-plan-card:hover {
-    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
-}
-
-.pt-plan-card.is-best-seller {
-    border: 2px solid var(--primary-color);
-}
-
-.pt-plan-card.is-current {
-    border: 2px solid #378ADD;
-}
-
-/* Badge */
-.pt-badge {
-    position: absolute;
-    top: -1px;
-    right: 16px;
-    font-size: 10px;
-    font-weight: 600;
-    padding: 5px 12px;
-    border-radius: 0 0 10px 10px;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-}
-
-.pt-badge-best {
-    background: var(--primary-color);
-    color: #fff;
-}
-
-.pt-badge-current {
-    background: #378ADD;
-    color: #E6F1FB;
-}
-
-/* Header row */
-.pt-card-header {
-    display: flex;
-    align-items: flex-start;
-    gap: 12px;
-}
-
-.pt-icon {
-    width: 42px;
-    height: 42px;
-    border-radius: 10px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 13px;
-    font-weight: 600;
-    flex-shrink: 0;
-    background: color-mix(in srgb, var(--primary-color) 12%, transparent);
-    color: var(--primary-color);
-}
-
-.pt-plan-name {
-    font-size: 15px;
-    font-weight: 600;
-    color: #1A1A1A;
-    margin: 0 0 2px;
-    line-height: 1.2;
-}
-
-.pt-plan-sub {
-    font-size: 12px;
-    color: #888;
-    margin: 0;
-}
-
-/* Price */
-.pt-price {
-    font-size: 28px;
-    font-weight: 600;
-    color: #1A1A1A;
-    line-height: 1;
-}
-
-.pt-price-period {
-    font-size: 13px;
-    font-weight: 400;
-    color: #999;
-}
-
-/* Divider */
-.pt-divider {
-    border: none;
-    border-top: 0.5px solid rgba(0,0,0,0.09);
-    margin: 0;
-}
-
-/* Stats */
-.pt-stats {
-    display: flex;
-    flex-direction: column;
-    gap: 9px;
-}
-
-.pt-stat-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    font-size: 13px;
-}
-
-.pt-stat-label {
-    color: #888;
-}
-
-.pt-stat-value {
-    color: #1A1A1A;
-    font-weight: 500;
-}
-
-.pt-stat-value.available {
-    color: var(--primary-color);
-}
-
-.pt-stat-value.unavailable {
-    color: #bbb;
-    font-weight: 400;
-}
-
-/* Features */
-.pt-features {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-}
-
-.pt-feature-item {
-    display: flex;
-    align-items: flex-start;
-    gap: 8px;
-    font-size: 12.5px;
-    color: #666;
-}
-
-.pt-feature-check {
-    color: var(--primary-color);
-    font-size: 12px;
-    flex-shrink: 0;
-    margin-top: 1px;
-}
-
-/* CTA */
-.pt-cta {
-    margin-top: auto;
-}
-
-.pt-btn {
-    display: block;
-    width: 100%;
-    text-align: center;
-    padding: 10px 0;
-    border-radius: 50px;
-    font-size: 13.5px;
-    font-weight: 600;
-    cursor: pointer;
-    text-decoration: none;
-    box-sizing: border-box;
-    transition: opacity 0.15s, background 0.15s;
-    border: none;
-}
-
-.pt-btn:hover {
-    opacity: 0.88;
-}
-
-.pt-btn-primary {
-    background: var(--primary-color);
-    color: #fff;
-}
-
-.pt-btn-outline {
-    background: transparent;
-    border: 1.5px solid var(--primary-color);
-    color: var(--primary-color);
-}
-
-.pt-btn-disabled {
-    background: #f0f0f0;
-    color: #aaa;
-    cursor: default;
-    pointer-events: none;
-}
-</style>
-
-<div class="pt-plans-grid">
+<div class="grid grid-cols-1 md:grid-cols-3 gap-4 w-full">
 
     <?php foreach ($plans_data as $plan):
         $is_current     = $stats['subscription'] && $stats['subscription']->package_id == $plan['id'];
         $is_best_seller = ($plan['id'] === $best_seller_plan_id);
 
         /* Duration label */
-        if ($plan['billing_cycle'] === 'days') {
+        if (!empty($plan['billing_cycle']) && $plan['billing_cycle'] === 'days') {
             $days = intval($plan['billing_days']);
             if ($days === 1) {
                 $duration_label = '1 day';
             } elseif ($days % 365 === 0) {
-                $yrs = $days / 365;
+                $yrs            = $days / 365;
                 $duration_label = $yrs == 1 ? '1 year' : $yrs . ' years';
             } elseif ($days % 30 === 0) {
-                $mos = $days / 30;
+                $mos            = $days / 30;
                 $duration_label = $mos == 1 ? '1 month' : $mos . ' months';
             } else {
                 $duration_label = $days . ' days';
@@ -278,19 +67,19 @@ function plan_initials($name) {
             $period_label   = '/ ' . strtolower($duration_label);
         }
 
-        /* Featured listing label */
+        /* Featured listing */
         if ($plan['featured_limit'] == 0) {
-            $featured_label = 'Not available';
-            $featured_class = 'unavailable';
+            $featured_label        = 'Not available';
+            $featured_is_available = false;
         } elseif ($plan['featured_limit'] == 1) {
-            $featured_label = '1 property';
-            $featured_class = 'available';
+            $featured_label        = '1 property';
+            $featured_is_available = true;
         } else {
-            $featured_label = 'Up to ' . $plan['featured_limit'] . ' properties';
-            $featured_class = 'available';
+            $featured_label        = 'Up to ' . $plan['featured_limit'] . ' properties';
+            $featured_is_available = true;
         }
 
-        /* Max properties label */
+        /* Max properties */
         if (!empty($plan['max_properties'])) {
             $props_label = $plan['max_properties'] == 1
                 ? '1 property'
@@ -299,68 +88,93 @@ function plan_initials($name) {
             $props_label = 'Unlimited';
         }
 
-        /* Card classes */
-        $card_classes = 'pt-plan-card';
-        if ($is_best_seller) $card_classes .= ' is-best-seller';
-        if ($is_current)     $card_classes .= ' is-current';
+        /* Card border */
+        if ($is_best_seller) {
+            $card_border = 'border-2 border-[var(--primary-color)]';
+        } elseif ($is_current) {
+            $card_border = 'border-2 border-blue-400';
+        } else {
+            $card_border = 'border border-black/10';
+        }
+
+        /* CTA classes */
+        $btn_filled  = 'bg-[var(--primary-color)] text-white hover:opacity-85';
+        $btn_outline = 'border border-[var(--primary-color)] text-[var(--primary-color)] hover:opacity-85';
+        $cta_class   = $is_best_seller ? $btn_filled : $btn_outline;
     ?>
 
-    <div class="<?= esc_attr($card_classes); ?>">
+    <div class="relative flex flex-col gap-4 bg-white rounded-[18px] p-6 <?= $card_border; ?> hover:shadow-md transition-shadow duration-200 overflow-hidden">
 
         <?php if ($is_best_seller): ?>
-            <div class="pt-badge pt-badge-best">Best Seller</div>
+            <div class="absolute top-0 right-4 bg-[var(--primary-color)] text-white text-[10px] font-semibold uppercase tracking-widest px-3 py-1 rounded-b-lg">
+                Best Seller
+            </div>
         <?php elseif ($is_current): ?>
-            <div class="pt-badge pt-badge-current">Current Plan</div>
+            <div class="absolute top-0 right-4 bg-blue-400 text-white text-[10px] font-semibold uppercase tracking-widest px-3 py-1 rounded-b-lg">
+                Current Plan
+            </div>
         <?php endif; ?>
 
         <!-- Header -->
-        <div class="pt-card-header">
-            <div class="pt-icon"><?= esc_html(plan_initials($plan['name'])); ?></div>
+        <div class="flex items-start gap-3 <?= ($is_best_seller || $is_current) ? 'mt-4' : ''; ?>">
+            <div class="w-11 h-11 rounded-xl flex items-center justify-center text-sm font-semibold shrink-0"
+                 style="background: color-mix(in srgb, var(--primary-color) 12%, transparent); color: var(--primary-color);">
+                <?= esc_html(plan_initials($plan['name'])); ?>
+            </div>
             <div>
-                <p class="pt-plan-name"><?= esc_html($plan['name']); ?></p>
-                <p class="pt-plan-sub"><?= esc_html($duration_label); ?> access</p>
+                <p class="text-[15px] font-semibold text-[#1A1A1A] leading-tight m-0"><?= esc_html($plan['name']); ?></p>
+                <p class="text-xs text-gray-400 m-0 mt-0.5"><?= esc_html($duration_label); ?> access</p>
             </div>
         </div>
 
         <!-- Price -->
-        <div class="pt-price">
+        <div class="text-[28px] font-semibold text-[#1A1A1A] leading-none">
             $<?= number_format($plan['price']); ?>
-            <span class="pt-price-period"><?= esc_html($period_label); ?></span>
+            <span class="text-sm font-normal text-gray-400"><?= esc_html($period_label); ?></span>
         </div>
 
-        <hr class="pt-divider">
+        <hr class="border-t border-black/[0.08] m-0">
 
         <!-- Stats -->
-        <div class="pt-stats">
-            <div class="pt-stat-row">
-                <span class="pt-stat-label">Duration</span>
-                <span class="pt-stat-value"><?= esc_html($duration_label); ?></span>
+        <div class="flex flex-col gap-2.5">
+
+            <div class="flex justify-between items-center text-[13px]">
+                <span class="text-gray-400">Duration</span>
+                <span class="font-medium text-[#1A1A1A]"><?= esc_html($duration_label); ?></span>
             </div>
-            <div class="pt-stat-row">
-                <span class="pt-stat-label">Listings</span>
-                <span class="pt-stat-value"><?= esc_html($props_label); ?></span>
+
+            <div class="flex justify-between items-center text-[13px]">
+                <span class="text-gray-400">Listings</span>
+                <span class="font-medium text-[#1A1A1A]"><?= esc_html($props_label); ?></span>
             </div>
-            <div class="pt-stat-row">
-                <span class="pt-stat-label">Featured listing</span>
-                <span class="pt-stat-value <?= esc_attr($featured_class); ?>"><?= esc_html($featured_label); ?></span>
-            </div>
-            <div class="pt-stat-row">
-                <span class="pt-stat-label">Advanced analytics</span>
-                <?php if ($plan['analytics']): ?>
-                    <span class="pt-stat-value available">Available</span>
+
+            <div class="flex justify-between items-center text-[13px]">
+                <span class="text-gray-400">Featured listing</span>
+                <?php if ($featured_is_available): ?>
+                    <span class="font-medium" style="color: var(--primary-color);"><?= esc_html($featured_label); ?></span>
                 <?php else: ?>
-                    <span class="pt-stat-value unavailable">Not available</span>
+                    <span class="text-gray-300"><?= esc_html($featured_label); ?></span>
                 <?php endif; ?>
             </div>
+
+            <div class="flex justify-between items-center text-[13px]">
+                <span class="text-gray-400">Advanced analytics</span>
+                <?php if ($plan['analytics']): ?>
+                    <span class="font-medium" style="color: var(--primary-color);">Available</span>
+                <?php else: ?>
+                    <span class="text-gray-300">Not available</span>
+                <?php endif; ?>
+            </div>
+
         </div>
 
         <!-- Extra features -->
         <?php if (!empty($plan['features'])): ?>
-            <hr class="pt-divider">
-            <div class="pt-features">
+            <hr class="border-t border-black/[0.08] m-0">
+            <div class="flex flex-col gap-1.5">
                 <?php foreach ($plan['features'] as $feature): ?>
-                    <div class="pt-feature-item">
-                        <span class="pt-feature-check">✓</span>
+                    <div class="flex items-start gap-2 text-[12.5px] text-gray-500">
+                        <span class="text-xs mt-0.5 shrink-0" style="color: var(--primary-color);">✓</span>
                         <span><?= esc_html($feature); ?></span>
                     </div>
                 <?php endforeach; ?>
@@ -368,15 +182,18 @@ function plan_initials($name) {
         <?php endif; ?>
 
         <!-- CTA -->
-        <div class="pt-cta">
+        <div class="mt-auto pt-1">
             <?php if (is_user_logged_in()): ?>
 
                 <?php if ($is_current): ?>
-                    <button class="pt-btn pt-btn-disabled" disabled>Current Plan</button>
+                    <button disabled
+                        class="w-full py-2.5 rounded-full text-sm font-semibold bg-gray-100 text-gray-400 cursor-not-allowed">
+                        Current Plan
+                    </button>
 
                 <?php elseif ($stats['subscription']): ?>
                     <button
-                        class="pt-btn <?= $is_best_seller ? 'pt-btn-primary' : 'pt-btn-outline'; ?> upgrade-plan-btn"
+                        class="w-full py-2.5 rounded-full text-sm font-semibold transition-opacity upgrade-plan-btn <?= $cta_class; ?>"
                         data-subscription-id="<?= esc_attr($stats['subscription']->id); ?>"
                         data-plan-id="<?= esc_attr($plan['id']); ?>">
                         Upgrade to <?= esc_html($plan['name']); ?>
@@ -384,14 +201,14 @@ function plan_initials($name) {
 
                 <?php else: ?>
                     <a href="<?= esc_url(home_url('/checkout?plan=' . $plan['id'])); ?>"
-                       class="pt-btn <?= $is_best_seller ? 'pt-btn-primary' : 'pt-btn-outline'; ?>">
+                       class="block w-full py-2.5 rounded-full text-sm font-semibold text-center transition-opacity <?= $cta_class; ?>">
                         Choose Plan
                     </a>
                 <?php endif; ?>
 
             <?php else: ?>
                 <a href="<?= esc_url(home_url('/login')); ?>"
-                   class="pt-btn <?= $is_best_seller ? 'pt-btn-primary' : 'pt-btn-outline'; ?>">
+                   class="block w-full py-2.5 rounded-full text-sm font-semibold text-center transition-opacity <?= $cta_class; ?>">
                     Get Started
                 </a>
             <?php endif; ?>
