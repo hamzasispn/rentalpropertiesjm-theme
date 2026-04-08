@@ -117,13 +117,9 @@ function plan_initials($name) {
 
         <!-- Header -->
         <div class="flex items-start gap-3 <?= ($is_best_seller || $is_current) ? 'mt-4' : ''; ?>">
-            <div class="w-11 h-11 rounded-xl flex items-center justify-center text-sm font-semibold shrink-0"
-                 style="background: color-mix(in srgb, var(--primary-color) 12%, transparent); color: var(--primary-color);">
-                <?= esc_html(plan_initials($plan['name'])); ?>
-            </div>
             <div>
-                <p class="text-[15px] font-semibold text-[#1A1A1A] leading-tight m-0"><?= esc_html($plan['name']); ?></p>
-                <p class="text-xs text-gray-400 m-0 mt-0.5"><?= esc_html($duration_label); ?> access</p>
+                <p class="text-[1.5vw] font-semibold text-[#1A1A1A] leading-tight m-0"><?= esc_html($plan['name']); ?></p>
+                <p class="text-md text-gray-400 m-0 mt-0.5"><?= esc_html($duration_label); ?> access</p>
             </div>
         </div>
 
