@@ -329,9 +329,7 @@ $subscription = property_theme_get_user_subscription($user_id) ?? array();
                 <?php endif; ?>
 
                 <!-- Available Plans -->
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <?php get_template_part('template-parts/component', 'plan-card', array('subscription' => $stats['subscription'])); ?>
-                </div>
+                <?php get_template_part('template-parts/component', 'plan-card', array('subscription' => $stats['subscription'])); ?>
             </div>
 
             <!-- Settings Tab -->
