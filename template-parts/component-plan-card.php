@@ -128,7 +128,7 @@ foreach ($plans_data as $plan) {
             <!-- Header -->
             <div class="flex items-start gap-3 <?= ($is_best_seller || $is_current) ? 'mt-4' : ''; ?>">
                 <div>
-                    <p class="text-2xl font-semibold font-inter <?= $text_primary; ?> m-0 mt-0.5"><?= esc_html($duration_label); ?>
+                    <p class="text-2xl font-semibold font-inter <?= $text_secondary; ?> m-0 mt-0.5"><?= esc_html($duration_label); ?>
                         listings</p>
                 </div>
             </div>
