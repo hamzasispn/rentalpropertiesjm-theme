@@ -5,7 +5,7 @@
 get_header();
 ?>
 
-<main class="w-[90%] mx-auto flex flex-col items-center justify-center text-center md:py-[6vw] py-[20vw]">
+<main class="w-[90%] mx-auto flex flex-col items-center justify-center text-center md:py-[5vw] py-[20vw]">
 
     <!-- Illustration -->
     <div class="relative mb-[4vw] md:mb-[2.5vw]">
