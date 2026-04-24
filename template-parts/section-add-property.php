@@ -1080,11 +1080,6 @@ document.addEventListener('DOMContentLoaded', function () {
     const planPhotoLimit = <?php echo (int)$plan_photo_limit; ?>;
     const planVideoLimit = <?php echo (int)$plan_video_limit; ?>;
 
-    function getAlpineRoot() {
-        // Find the Alpine component that has photoCount
-        return document.querySelector('[x-data*="propertyForm"]').__x ? .__x.getUnobservedData() : null;
-    }
-
     function getGalleryCounts() {
         const rows = document.querySelectorAll('#gallery-list .gallery-row');
         let photos = 0, videos = 0;
