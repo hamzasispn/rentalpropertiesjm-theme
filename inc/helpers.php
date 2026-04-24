@@ -73,3 +73,15 @@ function property_theme_add_every_minute_interval( $schedules ) {
 }
 
 add_theme_support( 'post-thumbnails' );
+
+function property_author_has_paid_plan(int $user_id): bool {
+    global $wpdb;
+    $table = $wpdb->prefix . 'user_subscriptions';
+    $plan_id = $wpdb->get_var($wpdb->prepare(
+        "SELECT plan_id FROM $table WHERE user_id = %d AND status = 'active' ORDER BY id DESC LIMIT 1",
+        $user_id
+    ));
+    if (!$plan_id) return false;
+    $price = (float) get_post_meta((int) $plan_id, '_plan_price', true);
+    return $price > 0;
+}

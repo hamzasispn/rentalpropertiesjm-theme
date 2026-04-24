@@ -93,6 +93,20 @@ add_action('rest_api_init', function () {
         'callback'            => 'admin_upload_file',
         'permission_callback' => $admin_check,
     ]);
+
+    // Get all members with subscriptions
+    register_rest_route('property-theme/v1', '/admin/members', [
+        'methods'             => 'GET',
+        'callback'            => 'admin_get_members',
+        'permission_callback' => $admin_check,
+    ]);
+
+    // Get single member detail
+    register_rest_route('property-theme/v1', '/admin/member/(?P<id>\d+)', [
+        'methods'             => 'GET',
+        'callback'            => 'admin_get_member_detail',
+        'permission_callback' => $admin_check,
+    ]);
 });
 
 function admin_get_pending_properties($request) {
@@ -465,5 +479,123 @@ function admin_upload_file($request) {
         'id'      => $attachment_id,
         'url'     => wp_get_attachment_url($attachment_id),
         'name'    => basename(get_attached_file($attachment_id)),
+    ]);
+}
+
+function admin_get_members($request) {
+    global $wpdb;
+    $table = $wpdb->prefix . 'user_subscriptions';
+
+    $users = get_users(['number' => -1, 'role__not_in' => ['administrator']]);
+    $members = [];
+
+    foreach ($users as $user) {
+        $sub = $wpdb->get_row($wpdb->prepare(
+            "SELECT s.*, p.post_title as plan_name
+             FROM $table s
+             LEFT JOIN {$wpdb->posts} p ON p.ID = s.plan_id
+             WHERE s.user_id = %d
+             ORDER BY s.id DESC LIMIT 1",
+            $user->ID
+        ));
+
+        $prop_count = count(get_posts([
+            'post_type'      => 'property',
+            'author'         => $user->ID,
+            'post_status'    => ['publish', 'pending', 'draft'],
+            'posts_per_page' => -1,
+            'fields'         => 'ids',
+        ]));
+
+        $members[] = [
+            'user_id'        => $user->ID,
+            'name'           => $user->display_name,
+            'email'          => $user->user_email,
+            'sub_status'     => $sub ? $sub->status : null,
+            'plan_name'      => $sub ? $sub->plan_name : null,
+            'expires_at'     => ($sub && $sub->expires_at) ? date('M j, Y', strtotime($sub->expires_at)) : null,
+            'property_count' => $prop_count,
+        ];
+    }
+
+    return rest_ensure_response(['success' => true, 'members' => $members]);
+}
+
+function admin_get_member_detail($request) {
+    global $wpdb;
+    $user_id = intval($request['id']);
+    $user    = get_userdata($user_id);
+    if (!$user) return new WP_Error('not_found', 'User not found', ['status' => 404]);
+
+    $table = $wpdb->prefix . 'user_subscriptions';
+    $sub   = $wpdb->get_row($wpdb->prepare(
+        "SELECT s.*, p.post_title as plan_name
+         FROM $table s
+         LEFT JOIN {$wpdb->posts} p ON p.ID = s.plan_id
+         WHERE s.user_id = %d AND s.status = 'active'
+         ORDER BY s.id DESC LIMIT 1",
+        $user_id
+    ));
+
+    $subscription = null;
+    if ($sub) {
+        $price         = (float) get_post_meta($sub->plan_id, '_plan_price', true);
+        $billing_cycle = get_post_meta($sub->plan_id, '_plan_billing_cycle', true) ?: 'monthly';
+        $started       = strtotime($sub->started_at);
+        $expires       = $sub->expires_at ? strtotime($sub->expires_at) : null;
+        $now           = time();
+        $days_left     = 0;
+        $progress_pct  = 0;
+
+        if ($expires) {
+            $total        = $expires - $started;
+            $elapsed      = $now - $started;
+            $days_left    = max(0, (int) ceil(($expires - $now) / 86400));
+            $progress_pct = $total > 0 ? min(100, (int) round(($elapsed / $total) * 100)) : 100;
+        }
+
+        $subscription = [
+            'plan_name'    => $sub->plan_name,
+            'status'       => $sub->status,
+            'price'        => $price,
+            'billing_cycle'=> $billing_cycle,
+            'started_at'   => date('M j, Y', $started),
+            'expires_at'   => $expires ? date('M j, Y', $expires) : 'No expiry',
+            'progress_pct' => 100 - $progress_pct,
+            'days_left'    => $days_left,
+        ];
+    }
+
+    $prop_ids   = get_posts([
+        'post_type'      => 'property',
+        'author'         => $user_id,
+        'post_status'    => ['publish', 'pending', 'draft'],
+        'posts_per_page' => -1,
+        'fields'         => 'ids',
+    ]);
+    $properties = [];
+    foreach ($prop_ids as $pid) {
+        $properties[] = [
+            'id'        => $pid,
+            'title'     => get_the_title($pid),
+            'status'    => get_post_status($pid),
+            'price'     => get_post_meta($pid, '_property_price', true),
+            'city'      => get_post_meta($pid, '_property_city', true),
+            'date'      => get_the_date('M j, Y', $pid),
+            'permalink' => get_permalink($pid),
+        ];
+    }
+
+    return rest_ensure_response([
+        'success' => true,
+        'member'  => [
+            'user_id'        => $user->ID,
+            'name'           => $user->display_name,
+            'email'          => $user->user_email,
+            'registered'     => date('M j, Y', strtotime($user->user_registered)),
+            'property_count' => count($properties),
+            'subscription'   => $subscription,
+            'properties'     => $properties,
+        ],
     ]);
 }

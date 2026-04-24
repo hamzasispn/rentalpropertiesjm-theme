@@ -40,6 +40,10 @@ function mytheme_register_settings()
     register_setting('mytheme_settings_group', 'mytheme_color_secondary');
     register_setting('mytheme_settings_group', 'mytheme_color_text_primary');
     register_setting('mytheme_settings_group', 'mytheme_color_text_secondary');
+
+    // Coming Soon
+    register_setting('mytheme_settings_group', 'mytheme_coming_soon');
+    register_setting('mytheme_settings_group', 'mytheme_launch_date');
 }
 add_action('admin_init', 'mytheme_register_settings');
 
@@ -116,6 +120,23 @@ function mytheme_render_settings_page()
             <p>Text Secondary</p>
             <input type="color" name="mytheme_color_text_secondary"
                 value="<?php echo esc_attr(get_option('mytheme_color_text_secondary')); ?>" />
+
+            <hr>
+
+            <h2>Coming Soon Mode</h2>
+            <p>
+                <label>
+                    <input type="checkbox" name="mytheme_coming_soon" value="1"
+                        <?php checked(get_option('mytheme_coming_soon'), '1'); ?> />
+                    <strong> Enable Coming Soon Page</strong> — non-admin visitors will be redirected to the Coming Soon page.
+                </label>
+            </p>
+            <p style="margin-top:10px;"><strong>Launch Date (optional countdown)</strong></p>
+            <input type="date" name="mytheme_launch_date"
+                value="<?php echo esc_attr(get_option('mytheme_launch_date', '')); ?>" />
+            <p style="color:#666;font-size:12px;margin-top:4px;">
+                Create a WordPress page with the "Coming Soon" template and assign it as your site's front page, or just enable this toggle — visitors will be redirected to <code>/coming-soon/</code>.
+            </p>
 
             <hr><br>
             <?php submit_button(); ?>
@@ -205,3 +226,25 @@ function mytheme_render_settings_page()
     </script>
     <?php
 }
+
+// Coming Soon redirect — non-admins sent to coming soon page when mode is enabled
+add_action('template_redirect', function () {
+    if (!get_option('mytheme_coming_soon')) return;
+    if (current_user_can('manage_options')) return;
+    if (is_page_template('page-coming-soon.php')) return;
+
+    $cs_pages = get_posts([
+        'post_type'   => 'page',
+        'meta_key'    => '_wp_page_template',
+        'meta_value'  => 'page-coming-soon.php',
+        'fields'      => 'ids',
+        'numberposts' => 1,
+    ]);
+
+    if (!empty($cs_pages)) {
+        wp_redirect(get_permalink($cs_pages[0]));
+    } else {
+        wp_redirect(home_url('/coming-soon/'));
+    }
+    exit;
+});

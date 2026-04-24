@@ -762,6 +762,12 @@ $res_cats     = get_terms(['taxonomy' => 'resource_category', 'hide_empty' => fa
             <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
             All Resources
         </button>
+
+        <div class="nav-section-label" style="margin-top:8px">Members</div>
+        <button class="nav-item" :class="{active: tab === 'members'}" @click="setTab('members')">
+            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            All Members
+        </button>
     </nav>
 
     <div class="sidebar-footer">
@@ -1253,6 +1259,124 @@ $res_cats     = get_terms(['taxonomy' => 'resource_category', 'hide_empty' => fa
             </div>
         </div>
 
+        <!-- ══ MEMBERS ══ -->
+        <div class="tab-panel" :class="{active: tab === 'members'}">
+
+            <!-- List view -->
+            <template x-if="!selectedMember">
+                <div>
+                    <div class="loading-spinner" x-show="membersLoading"><div class="spinner"></div> Loading…</div>
+                    <div x-show="!membersLoading" style="background:var(--surface);border:1px solid var(--border-subtle);border-radius:12px;overflow:hidden">
+                        <table class="data-table">
+                            <thead>
+                                <tr><th>Member</th><th>Plan</th><th>Status</th><th>Expires</th><th>Properties</th><th></th></tr>
+                            </thead>
+                            <tbody>
+                                <template x-for="m in members" :key="m.user_id">
+                                    <tr>
+                                        <td>
+                                            <div class="data-table-title" x-text="m.name"></div>
+                                            <div style="font-size:11px;color:var(--text-muted)" x-text="m.email"></div>
+                                        </td>
+                                        <td x-text="m.plan_name || '—'"></td>
+                                        <td><span class="badge" :class="m.sub_status === 'active' ? 'badge-published' : 'badge-draft'" x-text="m.sub_status || 'no plan'"></span></td>
+                                        <td x-text="m.expires_at || '—'"></td>
+                                        <td x-text="m.property_count"></td>
+                                        <td><button class="btn btn-secondary btn-sm" @click="loadMemberDetail(m.user_id)">View</button></td>
+                                    </tr>
+                                </template>
+                                <tr x-show="!membersLoading && members.length === 0">
+                                    <td colspan="6" style="text-align:center;padding:32px;color:var(--text-muted)">No members found</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </template>
+
+            <!-- Detail view -->
+            <template x-if="selectedMember">
+                <div>
+                    <button class="btn btn-secondary btn-sm" style="margin-bottom:20px" @click="selectedMember = null; memberDetail = null">← Back to Members</button>
+                    <div class="loading-spinner" x-show="memberDetailLoading"><div class="spinner"></div> Loading…</div>
+                    <div x-show="!memberDetailLoading && memberDetail" style="display:grid;gap:20px;grid-template-columns:1fr 1fr">
+
+                        <!-- Member info card -->
+                        <div style="background:var(--surface);border:1px solid var(--border-subtle);border-radius:12px;padding:20px">
+                            <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
+                                <div style="width:48px;height:48px;border-radius:50%;background:var(--gold);display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:700;color:#000;flex-shrink:0" x-text="(memberDetail?.name || '?')[0].toUpperCase()"></div>
+                                <div>
+                                    <div style="font-weight:700;font-size:16px" x-text="memberDetail?.name"></div>
+                                    <div style="color:var(--text-muted);font-size:12px" x-text="memberDetail?.email"></div>
+                                </div>
+                            </div>
+                            <div style="border-top:1px solid var(--border-subtle);padding-top:14px;display:grid;gap:8px">
+                                <div style="display:flex;justify-content:space-between;font-size:13px">
+                                    <span style="color:var(--text-muted)">Member since</span>
+                                    <span x-text="memberDetail?.registered"></span>
+                                </div>
+                                <div style="display:flex;justify-content:space-between;font-size:13px">
+                                    <span style="color:var(--text-muted)">Total properties</span>
+                                    <span x-text="memberDetail?.property_count"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Subscription card -->
+                        <div style="background:var(--surface);border:1px solid var(--border-subtle);border-radius:12px;padding:20px">
+                            <div style="font-weight:700;margin-bottom:14px;font-size:14px;text-transform:uppercase;letter-spacing:.05em;color:var(--text-muted)">Subscription</div>
+                            <template x-if="memberDetail?.subscription">
+                                <div>
+                                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+                                        <span style="font-size:15px;font-weight:600" x-text="memberDetail.subscription.plan_name"></span>
+                                        <span class="badge" :class="memberDetail.subscription.status === 'active' ? 'badge-published' : 'badge-draft'" x-text="memberDetail.subscription.status"></span>
+                                    </div>
+                                    <div style="font-size:13px;color:var(--text-muted);margin-bottom:14px" x-text="'$' + memberDetail.subscription.price + ' / ' + memberDetail.subscription.billing_cycle"></div>
+                                    <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text-muted);margin-bottom:4px">
+                                        <span x-text="'Started: ' + memberDetail.subscription.started_at"></span>
+                                        <span x-text="'Expires: ' + memberDetail.subscription.expires_at"></span>
+                                    </div>
+                                    <div style="background:var(--surface-3);border-radius:99px;height:8px;overflow:hidden">
+                                        <div :style="'width:' + memberDetail.subscription.progress_pct + '%;background:var(--gold);height:100%;border-radius:99px;transition:width 0.5s'"></div>
+                                    </div>
+                                    <div style="text-align:right;font-size:11px;color:var(--text-muted);margin-top:4px" x-text="memberDetail.subscription.days_left + ' days remaining'"></div>
+                                </div>
+                            </template>
+                            <template x-if="!memberDetail?.subscription">
+                                <div style="color:var(--text-muted);font-size:13px">No active subscription</div>
+                            </template>
+                        </div>
+
+                        <!-- Properties table -->
+                        <div style="background:var(--surface);border:1px solid var(--border-subtle);border-radius:12px;padding:20px;grid-column:1/-1">
+                            <div style="font-weight:700;margin-bottom:14px">Properties (<span x-text="memberDetail?.properties?.length || 0"></span>)</div>
+                            <template x-if="memberDetail?.properties?.length">
+                                <table class="data-table">
+                                    <thead><tr><th>Title</th><th>Status</th><th>Price</th><th>City</th><th>Date</th><th></th></tr></thead>
+                                    <tbody>
+                                        <template x-for="p in memberDetail.properties" :key="p.id">
+                                            <tr>
+                                                <td><div class="data-table-title" x-text="p.title"></div></td>
+                                                <td><span class="badge" :class="p.status==='publish'?'badge-published':(p.status==='pending'?'badge-pending':'badge-draft')" x-text="p.status"></span></td>
+                                                <td x-text="p.price ? '$'+p.price : '—'"></td>
+                                                <td x-text="p.city || '—'"></td>
+                                                <td x-text="p.date"></td>
+                                                <td><a :href="p.permalink" target="_blank" class="btn btn-secondary btn-sm">View</a></td>
+                                            </tr>
+                                        </template>
+                                    </tbody>
+                                </table>
+                            </template>
+                            <template x-if="!memberDetail?.properties?.length">
+                                <div style="color:var(--text-muted);font-size:13px">No properties yet</div>
+                            </template>
+                        </div>
+                    </div>
+                </div>
+            </template>
+
+        </div>
+
     </div><!-- /content -->
 </div><!-- /main -->
 
@@ -1286,6 +1410,11 @@ function adminPanel() {
         blogSubmitting: false,
         resourceForm: { title: '', description: '', file_url: '', file_name: '', file_type: 'pdf', category_id: '', image_id: 0, image_url: '', image_name: '' },
         resourceSubmitting: false,
+        members: [],
+        membersLoading: false,
+        selectedMember: null,
+        memberDetail: null,
+        memberDetailLoading: false,
 
         restUrl: '<?php echo esc_js($rest_url); ?>',
         nonce: '<?php echo esc_js($nonce); ?>',
@@ -1304,6 +1433,7 @@ function adminPanel() {
                 blogs: 'Blog Management',
                 'add-resource': 'Upload Resource',
                 resources: 'Resource Library',
+                members: 'Members',
             };
             return titles[this.tab] || 'Admin Panel';
         },
@@ -1314,6 +1444,7 @@ function adminPanel() {
             if (t === 'all-properties') this.loadAllProperties();
             if (t === 'blogs') this.loadBlogs();
             if (t === 'resources') this.loadResources();
+            if (t === 'members') { this.selectedMember = null; this.memberDetail = null; this.loadMembers(); }
         },
 
         async loadStats() {
@@ -1554,6 +1685,32 @@ function adminPanel() {
                 this.resourceList = this.resourceList.filter(r => r.id !== id);
                 this.showToast('Resource deleted', 'success');
             }
+        },
+
+        async loadMembers() {
+            this.membersLoading = true;
+            try {
+                const r = await fetch(this.restUrl + 'property-theme/v1/admin/members', {
+                    headers: { 'X-WP-Nonce': this.nonce }
+                });
+                const d = await r.json();
+                if (d.success) this.members = d.members;
+            } catch(e) {}
+            this.membersLoading = false;
+        },
+
+        async loadMemberDetail(userId) {
+            this.selectedMember = userId;
+            this.memberDetail = null;
+            this.memberDetailLoading = true;
+            try {
+                const r = await fetch(this.restUrl + 'property-theme/v1/admin/member/' + userId, {
+                    headers: { 'X-WP-Nonce': this.nonce }
+                });
+                const d = await r.json();
+                if (d.success) this.memberDetail = d.member;
+            } catch(e) {}
+            this.memberDetailLoading = false;
         },
 
         showToast(msg, type = 'success') {
