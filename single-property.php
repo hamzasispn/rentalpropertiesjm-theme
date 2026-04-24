@@ -57,8 +57,8 @@ while (have_posts()):
         }
     </style>
     <script
-    src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAUPkXXwkGt0xC5ongE7-62nzz6l7D3Nf4&libraries=places,marker&v=beta"
-    async>
+    src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAUPkXXwkGt0xC5ongE7-62nzz6l7D3Nf4&libraries=places,marker&v=beta&callback=initPropertyMap"
+    async defer>
 </script>
     <section class="propertyBanner">
         <div class="md:w-[80%] w-[90%] mx-auto md:pt-[9.938vw] pt-[34.824vw] flex md:flex-col flex-col-reverse">
@@ -104,14 +104,14 @@ while (have_posts()):
             </div>
 
             <!-- Property Gallery -->
-            <div x-data="{            
+            <div x-data="{
                     mainSwiper: null,
                     active: 0,
-                    images: [
-                        '<?= get_the_post_thumbnail_url(); ?>',
+                    media: [
+                        { url: '<?= esc_js(get_the_post_thumbnail_url()); ?>', type: 'image' },
                     <?php if (!empty($gallery)):
-                        foreach ($gallery as $img): ?>
-                            '<?= esc_url($img["media_url"]); ?>',
+                        foreach ($gallery as $item): ?>
+                            { url: '<?= esc_js($item["media_url"]); ?>', type: '<?= esc_js($item["type"] ?? "image"); ?>' },
                         <?php endforeach; endif; ?>
                     ],
 
@@ -145,14 +145,19 @@ while (have_posts()):
                                     d="M13.334 3.33337H11.61L9.80532 1.52871C9.68032 1.40367 9.51078 1.33341 9.33398 1.33337H6.66732C6.49052 1.33341 6.32098 1.40367 6.19598 1.52871L4.39132 3.33337H2.66732C1.93198 3.33337 1.33398 3.93137 1.33398 4.66671V12C1.33398 12.7354 1.93198 13.3334 2.66732 13.3334H13.334C14.0693 13.3334 14.6673 12.7354 14.6673 12V4.66671C14.6673 3.93137 14.0693 3.33337 13.334 3.33337ZM8.00065 11.3334C6.19398 11.3334 4.66732 9.80671 4.66732 8.00004C4.66732 6.19337 6.19398 4.66671 8.00065 4.66671C9.80732 4.66671 11.334 6.19337 11.334 8.00004C11.334 9.80671 9.80732 11.3334 8.00065 11.3334Z"
                                     fill="white" />
                             </svg>
-                            <span class="text-xs text-white" x-text="images.length + ' Photos'"></span>
+                            <span class="text-xs text-white" x-text="media.length + ' Media'"></span>
                         </div>
                         <div class="swiper h-full" x-ref="mainSwiper">
                             <div class="swiper-wrapper">
 
-                                <template x-for="(img, index) in images" :key="index">
+                                <template x-for="(item, index) in media" :key="index">
                                     <div class="swiper-slide">
-                                        <img :src="img" class="w-full h-full object-cover" />
+                                        <template x-if="item.type === 'video'">
+                                            <video :src="item.url" class="w-full h-full object-cover" controls playsinline></video>
+                                        </template>
+                                        <template x-if="item.type !== 'video'">
+                                            <img :src="item.url" class="w-full h-full object-cover" />
+                                        </template>
                                     </div>
                                 </template>
 
@@ -163,11 +168,18 @@ while (have_posts()):
                     <!-- RIGHT: STATIC 2x2 GRID -->
                     <div class="col-span-12 lg:col-span-4 grid md:grid-cols-2 grid-cols-4 gap-[1.765vw] md:gap-[0.833vw]">
 
-                        <template x-for="(img, index) in images.slice(1,5)" :key="index">
-                            <div class="h-[20.824vw] md:h-[13.021vw] rounded-[16px] overflow-hidden cursor-pointer border-2"
+                        <template x-for="(item, index) in media.slice(1,5)" :key="index">
+                            <div class="h-[20.824vw] md:h-[13.021vw] rounded-[16px] overflow-hidden cursor-pointer border-2 relative"
                                 :class="active === index + 1 ? 'border-black' : 'border-transparent'"
                                 @click="goTo(index + 1)">
-                                <img :src="img" class="w-full h-full object-cover" />
+                                <template x-if="item.type === 'video'">
+                                    <div class="w-full h-full bg-black flex items-center justify-center">
+                                        <svg class="w-10 h-10 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                                    </div>
+                                </template>
+                                <template x-if="item.type !== 'video'">
+                                    <img :src="item.url" class="w-full h-full object-cover" />
+                                </template>
                             </div>
                         </template>
 
@@ -640,13 +652,7 @@ while (have_posts()):
 
 
 <script>
-document.addEventListener('DOMContentLoaded', function () {
-
-    if (!window.google || !window.google.maps) {
-        console.log('Google Maps not loaded');
-        return;
-    }
-
+function initPropertyMap() {
     const lat = <?= esc_js($lat); ?>;
     const lng = <?= esc_js($lng); ?>;
 
@@ -681,8 +687,7 @@ document.addEventListener('DOMContentLoaded', function () {
         title: 'Property Location',
         icon: customIcon
     });
-
-});
+}
 </script>
 
 

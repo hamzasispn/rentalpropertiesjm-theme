@@ -62,6 +62,11 @@ $subscription = property_theme_get_user_subscription($user_id) ?? array();
                 class="nav-link px-4 py-3 rounded-lg hover:bg-slate-800 transition block">
                 💳 Billing
             </a>
+            <a href="#invoices" @click="activateTab('invoices', true)"
+                :class="{ 'bg-slate-800 font-semibold': activeTab === 'invoices' }"
+                class="nav-link px-4 py-3 rounded-lg hover:bg-slate-800 transition block">
+                🧾 Invoices
+            </a>
             <a href="#settings" @click="activateTab('settings', true)"
                 :class="{ 'bg-slate-800 font-semibold': activeTab === 'settings' }"
                 class="nav-link px-4 py-3 rounded-lg hover:bg-slate-800 transition block">
@@ -318,11 +323,52 @@ $subscription = property_theme_get_user_subscription($user_id) ?? array();
                             </div>
                         </div>
 
-                        <div class="flex gap-4">
+                        <!-- Payment Method -->
+                        <?php $pm = $stats['payment_method']; ?>
+                        <?php if (!empty($pm['card_last_four'])): ?>
+                        <div class="mb-6 p-4 bg-slate-50 rounded-lg flex items-center justify-between">
+                            <div>
+                                <p class="text-slate-600 text-sm">Payment Method</p>
+                                <p class="font-semibold text-slate-900 mt-1">
+                                    <?= esc_html(ucfirst($pm['card_brand'] ?? '')); ?> •••• <?= esc_html($pm['card_last_four']); ?>
+                                    <span class="text-slate-500 font-normal text-sm ml-2">Expires <?= esc_html(($pm['exp_month'] ?? '') . '/' . ($pm['exp_year'] ?? '')); ?></span>
+                                </p>
+                            </div>
+                            <button class="update-payment-btn px-4 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition text-sm">
+                                Change Card
+                            </button>
+                        </div>
+                        <?php else: ?>
+                        <div class="mb-6">
+                            <button class="update-payment-btn px-4 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition text-sm">
+                                + Add Payment Method
+                            </button>
+                        </div>
+                        <?php endif; ?>
+
+                        <div class="flex gap-4 flex-wrap items-center">
                             <button data-subscription-id="<?= $stats['subscription']->id ?>"
                                 class="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
                                 @click="confirmCancelSubscription()">
                                 Cancel Subscription
+                            </button>
+                            <button
+                                x-data="{ autoRenew: <?= $stats['auto_renew'] ? 'true' : 'false'; ?>, loading: false }"
+                                @click="
+                                    loading = true;
+                                    fetch(propertyTheme.rest_url + 'property-theme/v1/toggle-auto-renew', {
+                                        method: 'POST',
+                                        headers: { 'Content-Type': 'application/json', 'X-WP-Nonce': propertyTheme.nonce },
+                                        body: JSON.stringify({ enable: !autoRenew })
+                                    }).then(r => r.json()).then(d => {
+                                        if (d.success) { autoRenew = !autoRenew; }
+                                        loading = false;
+                                    }).catch(() => { loading = false; });
+                                "
+                                :disabled="loading"
+                                :class="autoRenew ? 'bg-green-600 hover:bg-green-700' : 'bg-slate-500 hover:bg-slate-600'"
+                                class="px-6 py-2 text-white rounded-lg transition disabled:opacity-50">
+                                <span x-text="loading ? 'Saving...' : (autoRenew ? '✓ Auto-Renew On' : 'Auto-Renew Off')"></span>
                             </button>
                         </div>
                     </div>
@@ -330,6 +376,55 @@ $subscription = property_theme_get_user_subscription($user_id) ?? array();
 
                 <!-- Available Plans -->
                 <?php get_template_part('template-parts/component', 'plan-card', array('subscription' => $stats['subscription'])); ?>
+            </div>
+
+            <!-- Invoices Tab -->
+            <div id="invoices" x-show="activeTab === 'invoices'" x-transition class="tab-content space-y-6"
+                x-data="invoicesTab()" x-init="load()">
+                <h1 class="text-3xl font-bold text-slate-900">Invoices</h1>
+
+                <div class="bg-white rounded-lg shadow p-8">
+                    <template x-if="loading">
+                        <p class="text-slate-500">Loading invoices...</p>
+                    </template>
+                    <template x-if="!loading && invoices.length === 0">
+                        <p class="text-slate-500">No invoices found.</p>
+                    </template>
+                    <template x-if="!loading && invoices.length > 0">
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-sm">
+                                <thead>
+                                    <tr class="border-b text-left text-slate-500">
+                                        <th class="pb-3 pr-4">Date</th>
+                                        <th class="pb-3 pr-4">Invoice</th>
+                                        <th class="pb-3 pr-4">Plan</th>
+                                        <th class="pb-3 pr-4">Amount</th>
+                                        <th class="pb-3 pr-4">Status</th>
+                                        <th class="pb-3"></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <template x-for="inv in invoices" :key="inv.id">
+                                        <tr class="border-b hover:bg-slate-50">
+                                            <td class="py-3 pr-4" x-text="new Date(inv.created_at).toLocaleDateString()"></td>
+                                            <td class="py-3 pr-4 text-slate-600" x-text="inv.invoice_number || inv.stripe_invoice_id.slice(0,14) + '...'"></td>
+                                            <td class="py-3 pr-4" x-text="inv.plan_name || '—'"></td>
+                                            <td class="py-3 pr-4 font-semibold" x-text="'$' + parseFloat(inv.amount).toFixed(2) + ' ' + inv.currency.toUpperCase()"></td>
+                                            <td class="py-3 pr-4">
+                                                <span :class="inv.status === 'paid' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'"
+                                                    class="px-2 py-1 rounded-full text-xs font-semibold capitalize" x-text="inv.status"></span>
+                                            </td>
+                                            <td class="py-3">
+                                                <a x-show="inv.hosted_url" :href="inv.hosted_url" target="_blank"
+                                                    class="text-blue-600 hover:underline text-xs">View</a>
+                                            </td>
+                                        </tr>
+                                    </template>
+                                </tbody>
+                            </table>
+                        </div>
+                    </template>
+                </div>
             </div>
 
             <!-- Settings Tab -->
@@ -757,6 +852,25 @@ $subscription = property_theme_get_user_subscription($user_id) ?? array();
                     errorDiv.classList.remove('hidden');
                     submitBtn.disabled = false;
                     submitBtn.textContent = 'Save Payment Method';
+                }
+            }
+        };
+    }
+
+    function invoicesTab() {
+        return {
+            invoices: [],
+            loading: true,
+            async load() {
+                try {
+                    const r = await fetch(propertyTheme.rest_url + 'property-theme/v1/user/invoices', {
+                        headers: { 'X-WP-Nonce': propertyTheme.nonce }
+                    });
+                    this.invoices = await r.json();
+                } catch(e) {
+                    this.invoices = [];
+                } finally {
+                    this.loading = false;
                 }
             }
         };

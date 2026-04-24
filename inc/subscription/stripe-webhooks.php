@@ -148,9 +148,52 @@ function property_theme_mark_webhook_event_processed($stripe_event_id) {
     );
 }
 
+function property_theme_store_invoice($user_id, $subscription_id, $invoice, $status) {
+    global $wpdb;
+
+    $table = $wpdb->prefix . 'property_invoices';
+
+    if ($wpdb->get_var("SHOW TABLES LIKE '$table'") != $table) {
+        $charset = $wpdb->get_charset_collate();
+        $wpdb->query("CREATE TABLE $table (
+            id bigint(20) UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+            user_id bigint(20) UNSIGNED NOT NULL,
+            subscription_id bigint(20) UNSIGNED NOT NULL,
+            stripe_invoice_id varchar(255) NOT NULL,
+            invoice_number varchar(100),
+            plan_name varchar(255),
+            amount decimal(10,2) NOT NULL DEFAULT 0,
+            currency varchar(10) NOT NULL DEFAULT 'usd',
+            status varchar(50) NOT NULL DEFAULT 'paid',
+            hosted_url text,
+            period_start datetime,
+            period_end datetime,
+            created_at datetime NOT NULL,
+            UNIQUE KEY stripe_invoice_id (stripe_invoice_id),
+            KEY user_id (user_id),
+            KEY status (status)
+        ) $charset;");
+    }
+
+    $wpdb->replace($table, array(
+        'user_id'           => $user_id,
+        'subscription_id'   => $subscription_id,
+        'stripe_invoice_id' => $invoice['id'],
+        'invoice_number'    => $invoice['number'] ?? '',
+        'plan_name'         => $invoice['lines']['data'][0]['description'] ?? '',
+        'amount'            => ($invoice['amount_paid'] ?? $invoice['amount_due'] ?? 0) / 100,
+        'currency'          => strtolower($invoice['currency'] ?? 'usd'),
+        'status'            => $status,
+        'hosted_url'        => $invoice['hosted_invoice_url'] ?? '',
+        'period_start'      => isset($invoice['period_start']) ? date('Y-m-d H:i:s', $invoice['period_start']) : null,
+        'period_end'        => isset($invoice['period_end'])   ? date('Y-m-d H:i:s', $invoice['period_end'])   : null,
+        'created_at'        => current_time('mysql'),
+    ));
+}
+
 /**
  * invoice.payment_succeeded
- * 
+ *
  * Triggered when an invoice is successfully paid.
  * Updates subscription status to active and syncs expiry date from Stripe.
  */
@@ -215,6 +258,8 @@ function property_theme_handle_invoice_payment_succeeded($invoice, $event_id) {
             )
         );
     }
+
+    property_theme_store_invoice($subscription->user_id, $subscription->id, $invoice, 'paid');
 
     property_theme_log_subscription_event($subscription->id, 'payment_succeeded', 'success', 'Invoice payment succeeded', array(
         'invoice_id' => $invoice['id'],
@@ -288,6 +333,8 @@ function property_theme_handle_invoice_payment_failed($invoice, $event_id) {
             )
         );
     }
+
+    property_theme_store_invoice($subscription->user_id, $subscription->id, $invoice, 'failed');
 
     property_theme_log_subscription_event($subscription->id, 'payment_failed', 'failed', 'Invoice payment failed', array(
         'invoice_id' => $invoice['id'],

@@ -847,6 +847,7 @@ if (isset($_GET['action']) && $_GET['action'] === 'delete' && isset($_GET['prope
                     <input type="file" name="property_featured_image" id="featured-image-input" style="display:none;" accept="image/*">
                 </div>
 
+                <?php if (($plan['featured_limit'] ?? 0) > 0): ?>
                 <!-- Featured Listing -->
                 <div class="bg-white rounded-lg shadow-sm border border-slate-200 p-6 mb-6">
                     <label class="flex items-center gap-3 cursor-pointer">
@@ -856,6 +857,7 @@ if (isset($_GET['action']) && $_GET['action'] === 'delete' && isset($_GET['prope
                     </label>
                     <p class="text-sm text-slate-600 mt-2">Highlight your property on homepage</p>
                 </div>
+                <?php endif; ?>
 
                 <!-- Submit Buttons -->
                 <div class="bg-white rounded-lg shadow-sm border border-slate-200 p-6 space-y-3">
