@@ -161,7 +161,7 @@ foreach ($plans_data as $plan) {
 
             <!-- Header -->
             <div
-                class="flex flex-col items-end gap-3 <?= ($is_best_seller || $is_current || $is_highlighted) && !$is_recommended ? 'mt-4' : ''; ?>">
+                class="flex items-end gap-3 <?= ($is_best_seller || $is_current || $is_highlighted) && !$is_recommended ? 'mt-4' : ''; ?>">
 
                 <div>
                     <p class="text-2xl font-semibold font-inter <?= $text_secondary; ?> m-0 mt-0.5">
@@ -172,7 +172,7 @@ foreach ($plans_data as $plan) {
                 <?php if ($plan_title === "For Realtors 30 days"): ?>
                     <div>
                         <p class="text-sm font-medium font-inter text-white m-0 mt-0.5">
-                            For Realtors
+                            (For Realtors)
                         </p>
                     </div>
                 <?php endif; ?>
