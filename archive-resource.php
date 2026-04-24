@@ -32,22 +32,6 @@ $file_icons = ['pdf' => '📄', 'doc' => '📝', 'docx' => '📝', 'ppt' => '�
 
 <main class="min-h-screen bg-slate-50">
 
-    <!-- ── Hero ── -->
-    <section class="bg-gradient-to-br from-[#080d1a] via-[#0f1729] to-[#1a2744] relative overflow-hidden">
-        <div class="absolute inset-0 pointer-events-none">
-            <div class="absolute -top-1/3 -right-1/4 w-2/3 h-2/3 rounded-full opacity-15" style="background:radial-gradient(circle,#3b82f6 0%,transparent 70%)"></div>
-        </div>
-        <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-20">
-            <span class="inline-block px-3 py-1 rounded-full text-xs font-bold tracking-widest uppercase mb-4" style="background:rgba(59,130,246,0.15);color:#60a5fa;border:1px solid rgba(59,130,246,0.3)">Resource Library</span>
-            <h1 class="text-4xl md:text-5xl font-extrabold text-white leading-tight tracking-tight mb-3">
-                Documents &amp; Guides
-            </h1>
-            <p class="text-slate-400 text-lg max-w-xl">
-                Free and members-only PDF guides, templates, and resources for Jamaica's property market.
-            </p>
-        </div>
-    </section>
-
     <!-- ── Leaderboard Ad ── -->
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
         <?php get_template_part('template-parts/component', 'ad-space', ['slot' => 'leaderboard', 'label' => 'Advertisement']); ?>
