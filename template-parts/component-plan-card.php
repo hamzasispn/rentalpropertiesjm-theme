@@ -28,6 +28,7 @@ foreach ($plans_data as $plan) {
     if (!empty($plan['subscription_count']) && $plan['subscription_count'] > $max_subscriptions) {
         $max_subscriptions = $plan['subscription_count'];
         $best_seller_plan_id = $plan['id'];
+        $title = get_the_title($plan['id']);
     }
 }
 
@@ -66,6 +67,7 @@ foreach ($plans_data as $plan) {
             $featured_label = 'Up to ' . $plan['featured_limit'] . ' properties';
             $featured_is_available = true;
         }
+
 
         /* Max properties */
         if (!empty($plan['max_properties'])) {
@@ -165,9 +167,18 @@ foreach ($plans_data as $plan) {
             <!-- Header -->
             <div
                 class="flex items-start gap-3 <?= ($is_best_seller || $is_current || $is_highlighted) && !$is_recommended ? 'mt-4' : ''; ?>">
+                <?php if ($title === "For Realtors 30 days"): ?>
+                    <div>
+                        <p class="text-md font-medium font-inter <?= $text_secondary; ?> m-0 mt-0.5">
+                            For Realtors
+                        </p>
+                    </div>
+                <?php endif; ?>
+
                 <div>
                     <p class="text-2xl font-semibold font-inter <?= $text_secondary; ?> m-0 mt-0.5">
-                        <?= esc_html($duration_label); ?> listings</p>
+                        <?= esc_html($duration_label); ?> listings
+                    </p>
                 </div>
             </div>
 
