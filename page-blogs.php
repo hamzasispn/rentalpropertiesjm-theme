@@ -68,7 +68,7 @@ $all_posts_array = $all_posts->posts;
                                     <h3
                                         class="text-base font-bold text-slate-900 mb-2 line-clamp-2 group-hover:text-blue-600 transition flex-1">
                                         
-                                            href="<?php echo get_permalink($post); ?>"><?php echo esc_html($post->post_title); ?></a>
+                                            <a href="<?php echo get_permalink($post); ?>"><?php echo esc_html($post->post_title); ?></a>
                                     </h3>
 
                                     <p class="text-slate-500 text-sm line-clamp-2 mb-4">
