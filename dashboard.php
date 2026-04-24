@@ -334,13 +334,15 @@ $subscription = property_theme_get_user_subscription($user_id) ?? array();
                                     <span class="text-slate-500 font-normal text-sm ml-2">Expires <?= esc_html(($pm['exp_month'] ?? '') . '/' . ($pm['exp_year'] ?? '')); ?></span>
                                 </p>
                             </div>
-                            <button class="update-payment-btn px-4 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition text-sm">
+                            <button type="button" @click="openUpdatePaymentModal()"
+                                class="update-payment-btn px-4 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition text-sm">
                                 Change Card
                             </button>
                         </div>
                         <?php else: ?>
                         <div class="mb-6">
-                            <button class="update-payment-btn px-4 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition text-sm">
+                            <button type="button" @click="openUpdatePaymentModal()"
+                                class="update-payment-btn px-4 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition text-sm">
                                 + Add Payment Method
                             </button>
                         </div>
@@ -355,15 +357,22 @@ $subscription = property_theme_get_user_subscription($user_id) ?? array();
                             <button
                                 x-data="{ autoRenew: <?= $stats['auto_renew'] ? 'true' : 'false'; ?>, loading: false }"
                                 @click="
+                                    if (loading) return;
                                     loading = true;
                                     fetch(propertyTheme.rest_url + 'property-theme/v1/toggle-auto-renew', {
                                         method: 'POST',
                                         headers: { 'Content-Type': 'application/json', 'X-WP-Nonce': propertyTheme.nonce },
                                         body: JSON.stringify({ enable: !autoRenew })
-                                    }).then(r => r.json()).then(d => {
-                                        if (d.success) { autoRenew = !autoRenew; }
+                                    }).then(async r => {
+                                        const d = await r.json();
+                                        if (!r.ok) { throw new Error(d.message || 'Failed to update auto-renew'); }
+                                        autoRenew = !!d.auto_renew;
+                                        // Reload so server-rendered state (expiry, status) is fresh
+                                        window.location.reload();
+                                    }).catch((e) => {
                                         loading = false;
-                                    }).catch(() => { loading = false; });
+                                        alert(e.message || 'Could not update auto-renew');
+                                    });
                                 "
                                 :disabled="loading"
                                 :class="autoRenew ? 'bg-green-600 hover:bg-green-700' : 'bg-slate-500 hover:bg-slate-600'"
@@ -708,9 +717,20 @@ $subscription = property_theme_get_user_subscription($user_id) ?? array();
             openUpdatePaymentModal() {
                 this.showUpdatePaymentModal = true;
                 this.$nextTick(() => {
-                    if (window.updateCardElement) {
-                        window.updateCardElement.mount('#update-card-element');
-                    }
+                    try {
+                        if (window.updateCardElement) {
+                            try { window.updateCardElement.unmount(); } catch (e) {}
+                            window.updateCardElement.mount('#update-card-element');
+                        } else if (window.stripe) {
+                            const els = window.stripe.elements();
+                            window.updateCardElement = els.create('card');
+                            window.updateCardElement.mount('#update-card-element');
+                            window.updateCardElement.on('change', (event) => {
+                                const errEl = document.getElementById('update-card-errors');
+                                if (errEl) errEl.textContent = event.error ? event.error.message : '';
+                            });
+                        }
+                    } catch (e) { console.error('[Stripe mount]', e); }
                 });
             },
 
@@ -805,7 +825,6 @@ $subscription = property_theme_get_user_subscription($user_id) ?? array();
                 // Handle upgrade payment form
                 document.getElementById('upgrade-payment-form')?.addEventListener('submit', (e) => this.handleUpgradePayment(e));
                 document.getElementById('update-payment-form')?.addEventListener('submit', (e) => this.handleUpdatePayment(e));
-                document.querySelector('.update-payment-btn')?.addEventListener('click', () => this.openUpdatePaymentModal());
             },
 
             async handleUpdatePayment(e) {

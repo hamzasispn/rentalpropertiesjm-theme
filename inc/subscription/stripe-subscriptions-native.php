@@ -145,9 +145,13 @@ function property_theme_create_stripe_native_subscription($user_id, $plan_id, $p
         ));
 
         // Send confirmation email (HTML)
+        $cycle_label = ($effective_billing_cycle === 'days')
+            ? (intval($plan['days'] ?? 30) . '-day')
+            : ucfirst($effective_billing_cycle);
+
         $kv = property_theme_email_kv_table(array(
             'Plan'              => esc_html($plan['name']),
-            'Billing cycle'     => esc_html(ucfirst($billing_cycle)),
+            'Billing cycle'     => esc_html($cycle_label),
             'Next billing date' => esc_html(date('F j, Y', $subscription_response['current_period_end'])),
             'Status'            => '<span style="color:#16a34a;">Active</span>',
         ));
@@ -443,6 +447,7 @@ function property_theme_update_subscription_plan($subscription_id, $new_plan_id,
         $update_response = property_theme_stripe_api_call('POST', '/v1/subscription_items/' . $current_item_id, array(
             'price' => $new_price_id,
             'proration_behavior' => $prorate ? 'create_prorations' : 'none',
+            'payment_behavior' => 'pending_if_incomplete',
         ), STRIPE_SECRET_KEY);
 
         if (isset($update_response['error'])) {
@@ -459,10 +464,87 @@ function property_theme_update_subscription_plan($subscription_id, $new_plan_id,
             array('id' => $subscription_id)
         );
 
+        // Charge the proration immediately by creating + paying an invoice
+        // (Stripe normally rolls prorations into next renewal — for upgrades we want to bill now.)
+        $charged_invoice = null;
+        if ($prorate) {
+            $invoice_create = property_theme_stripe_api_call('POST', '/v1/invoices', array(
+                'customer'      => $subscription->stripe_customer_id,
+                'subscription'  => $subscription->stripe_subscription_id,
+                'auto_advance'  => 'true',
+                'collection_method' => 'charge_automatically',
+                'description'   => 'Proration for plan change to ' . $plan['name'],
+            ), STRIPE_SECRET_KEY);
+
+            if (!isset($invoice_create['error']) && !empty($invoice_create['id'])) {
+                // Only pay if there's actually a balance due (skip on $0 / downgrade credit)
+                if (intval($invoice_create['amount_due'] ?? 0) > 0) {
+                    $paid = property_theme_stripe_api_call('POST', '/v1/invoices/' . $invoice_create['id'] . '/pay', array(), STRIPE_SECRET_KEY);
+                    if (!isset($paid['error'])) {
+                        $charged_invoice = $paid;
+                    } else {
+                        error_log('[PropertyTheme] Proration pay failed: ' . $paid['error']['message']);
+                    }
+                } else {
+                    // No charge needed — finalize so it's recorded as $0 / credit applied
+                    $charged_invoice = $invoice_create;
+                }
+            } elseif (isset($invoice_create['error'])) {
+                // "nothing to invoice" means the change had no proration — not fatal
+                error_log('[PropertyTheme] Proration invoice skipped: ' . $invoice_create['error']['message']);
+            }
+        }
+
+        // Sync subscription state back from Stripe (period dates, status, etc.)
+        $fresh_sub = property_theme_stripe_api_call('GET', '/v1/subscriptions/' . $subscription->stripe_subscription_id, array(), STRIPE_SECRET_KEY);
+        if (!isset($fresh_sub['error'])) {
+            property_theme_update_subscription_from_stripe($subscription->stripe_subscription_id, $fresh_sub);
+        }
+
+        // Store the proration invoice locally so it appears in invoices tab
+        if ($charged_invoice && function_exists('property_theme_store_invoice')) {
+            $status = ($charged_invoice['status'] === 'paid') ? 'paid' : ($charged_invoice['status'] ?? 'open');
+            property_theme_store_invoice($subscription->user_id, $subscription_id, $charged_invoice, $status);
+        }
+
+        // Send plan-change email
+        $user = get_userdata($subscription->user_id);
+        if ($user && function_exists('property_theme_send_html_email')) {
+            $amount_paid = $charged_invoice ? property_theme_format_price($charged_invoice['amount_paid'] ?? 0, strtoupper($charged_invoice['currency'] ?? 'usd')) : 'No charge';
+            $next_date   = !empty($fresh_sub['current_period_end']) ? date('F j, Y', $fresh_sub['current_period_end']) : '—';
+            $kv = property_theme_email_kv_table(array(
+                'New plan'          => esc_html($plan['name']),
+                'Billing cycle'     => esc_html(ucfirst($effective_cycle)),
+                'Charged today'     => esc_html($amount_paid),
+                'Next billing date' => esc_html($next_date),
+            ));
+            $body = '<p>Your plan has been updated. Here are the details:</p>' . $kv;
+            if ($charged_invoice && !empty($charged_invoice['hosted_invoice_url'])) {
+                property_theme_send_html_email(
+                    $user->user_email,
+                    'Plan updated — ' . get_bloginfo('name'),
+                    'Your plan has been updated',
+                    $body,
+                    array('text' => 'View invoice', 'url' => $charged_invoice['hosted_invoice_url']),
+                    '#2563eb'
+                );
+            } else {
+                property_theme_send_html_email(
+                    $user->user_email,
+                    'Plan updated — ' . get_bloginfo('name'),
+                    'Your plan has been updated',
+                    $body,
+                    array('text' => 'Open dashboard', 'url' => home_url('/dashboard/')),
+                    '#2563eb'
+                );
+            }
+        }
+
         property_theme_log_subscription_event($subscription_id, 'plan_updated', 'success', 'Plan updated', array(
             'old_plan_id' => $subscription->package_id,
             'new_plan_id' => $new_plan_id,
-            'proration' => $prorate,
+            'proration'   => $prorate,
+            'charged'     => $charged_invoice ? ($charged_invoice['amount_paid'] ?? 0) : 0,
         ));
 
         do_action('property_theme_subscription_plan_updated', $subscription->user_id, $subscription_id, $new_plan_id);

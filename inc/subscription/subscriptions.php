@@ -574,10 +574,16 @@ function property_theme_process_all_subscriptions() {
     );
 
     try {
-        // 1. Send warning emails 7 days before expiry
+        // IMPORTANT: Stripe-managed subscriptions (any row with stripe_subscription_id)
+        // are renewed/cancelled by Stripe webhooks. The legacy cron below MUST ignore
+        // them, otherwise it races the webhook and prematurely cancels active subs.
+        $stripe_filter = "AND (stripe_subscription_id IS NULL OR stripe_subscription_id = '')";
+
+        // 1. Send warning emails 7 days before expiry (legacy/non-Stripe only)
         $upcoming_expiry = $wpdb->get_results(
             "SELECT id, user_id, package_id, expiry_date FROM {$wpdb->prefix}user_subscriptions
              WHERE status = 'active'
+             $stripe_filter
              AND expiry_date > NOW()
              AND expiry_date <= DATE_ADD(NOW(), INTERVAL 7 DAY)
              AND NOT EXISTS (
@@ -593,10 +599,11 @@ function property_theme_process_all_subscriptions() {
             }
         }
 
-        // 2. Auto-renew expired subscriptions with auto_renew = 1
+        // 2. Auto-renew expired subscriptions with auto_renew = 1 (legacy/non-Stripe only)
         $expired_with_renewal = $wpdb->get_results(
             "SELECT id, user_id, package_id, expiry_date FROM {$wpdb->prefix}user_subscriptions
-             WHERE status = 'active' AND auto_renew = 1 AND expiry_date <= NOW()"
+             WHERE status = 'active' AND auto_renew = 1 AND expiry_date <= NOW()
+             $stripe_filter"
         );
 
         foreach ($expired_with_renewal as $subscription) {
@@ -630,10 +637,13 @@ function property_theme_process_all_subscriptions() {
             }
         }
 
-        // 3. Cancel non-renewing expired subscriptions
+        // 3. Cancel non-renewing expired subscriptions (legacy/non-Stripe only)
+        // Stripe rows with auto_renew=0 mean cancel_at_period_end=true. Stripe will
+        // emit customer.subscription.deleted at the right time — never cancel here.
         $expired_without_renewal = $wpdb->get_results(
             "SELECT id, user_id, package_id, expiry_date FROM {$wpdb->prefix}user_subscriptions
-             WHERE status = 'active' AND auto_renew = 0 AND expiry_date <= NOW()"
+             WHERE status = 'active' AND auto_renew = 0 AND expiry_date <= NOW()
+             $stripe_filter"
         );
 
         foreach ($expired_without_renewal as $subscription) {
