@@ -117,10 +117,23 @@ function property_theme_create_stripe_native_subscription($user_id, $plan_id, $p
             ));
         }
 
-        property_theme_save_stripe_native_subscription($user_id, $plan_id, $subscription_response, $stripe_customer_id, $stripe_price_id);
+        $local_subscription_id = property_theme_save_stripe_native_subscription($user_id, $plan_id, $subscription_response, $stripe_customer_id, $stripe_price_id);
 
         // Store Stripe customer ID
         update_user_meta($user_id, '_stripe_customer_id', $stripe_customer_id);
+
+        // Store the first invoice immediately (don't rely on webhook in dev)
+        if ($local_subscription_id && !empty($subscription_response['latest_invoice'])) {
+            $first_invoice = $subscription_response['latest_invoice'];
+            // If only ID returned, fetch the full invoice
+            if (is_string($first_invoice)) {
+                $first_invoice = property_theme_stripe_api_call('GET', '/v1/invoices/' . $first_invoice, array(), STRIPE_SECRET_KEY);
+            }
+            if (is_array($first_invoice) && !empty($first_invoice['id']) && function_exists('property_theme_store_invoice')) {
+                $invoice_status = ($first_invoice['status'] === 'paid') ? 'paid' : ($first_invoice['status'] ?? 'open');
+                property_theme_store_invoice($user_id, $local_subscription_id, $first_invoice, $invoice_status);
+            }
+        }
 
         // Log the subscription creation
         property_theme_log_subscription_event(0, 'subscription_created_native', 'success', 'Native Stripe subscription created', array(
@@ -131,25 +144,23 @@ function property_theme_create_stripe_native_subscription($user_id, $plan_id, $p
             'billing_cycle' => $billing_cycle,
         ));
 
-        // Send confirmation email
-        wp_mail(
+        // Send confirmation email (HTML)
+        $kv = property_theme_email_kv_table(array(
+            'Plan'              => esc_html($plan['name']),
+            'Billing cycle'     => esc_html(ucfirst($billing_cycle)),
+            'Next billing date' => esc_html(date('F j, Y', $subscription_response['current_period_end'])),
+            'Status'            => '<span style="color:#16a34a;">Active</span>',
+        ));
+        $body  = '<p>Thank you for subscribing to <strong>' . esc_html(get_bloginfo('name')) . '</strong>! Your subscription is active and will renew automatically on the next billing date.</p>';
+        $body .= $kv;
+        $body .= '<p style="color:#64748b;font-size:13px;margin-top:16px;">You can update your payment method, change plans, or cancel anytime from your dashboard.</p>';
+
+        property_theme_send_html_email(
             $user->user_email,
-            'Subscription Confirmed - ' . get_bloginfo('name'),
-            sprintf(
-                "Thank you for subscribing to %s!\n\n" .
-                "Plan: %s\n" .
-                "Billing Cycle: %s\n" .
-                "Next Billing Date: %s\n\n" .
-                "Your subscription is now active and will automatically renew on the next billing date.\n\n" .
-                "Manage your subscription: %s\n\n" .
-                "Best regards,\n%s Team",
-                $plan['name'],
-                $plan['name'],
-                ucfirst($billing_cycle),
-                date('F j, Y', $subscription_response['current_period_end']),
-                home_url('/dashboard/subscription/'),
-                get_bloginfo('name')
-            )
+            'Welcome to ' . get_bloginfo('name') . ' — Subscription Confirmed',
+            'Your ' . $plan['name'] . ' subscription is active',
+            $body,
+            array('text' => 'Manage subscription', 'url' => home_url('/dashboard/'))
         );
 
         // Fire action hook for custom integrations
@@ -229,23 +240,29 @@ function property_theme_save_stripe_native_subscription($user_id, $plan_id, $str
 function property_theme_update_subscription_from_stripe($stripe_subscription_id, $stripe_subscription) {
     global $wpdb;
 
+    $cancel_at_period_end = !empty($stripe_subscription['cancel_at_period_end']);
+
     $update_data = array(
         'status' => $stripe_subscription['status'],
         'current_period_start' => date('Y-m-d H:i:s', $stripe_subscription['current_period_start']),
         'current_period_end' => date('Y-m-d H:i:s', $stripe_subscription['current_period_end']),
         'expiry_date' => date('Y-m-d H:i:s', $stripe_subscription['current_period_end']),
+        'auto_renew' => $cancel_at_period_end ? 0 : 1,
         'last_webhook_event_at' => current_time('mysql'),
     );
 
     // Handle cancellation
     if ($stripe_subscription['status'] === 'canceled') {
         $update_data['canceled_at'] = date('Y-m-d H:i:s', $stripe_subscription['canceled_at'] ?? time());
+        $update_data['auto_renew'] = 0;
     }
 
     // Handle cancel at period end
-    if ($stripe_subscription['cancel_at']) {
+    if (!empty($stripe_subscription['cancel_at'])) {
         $update_data['cancel_at'] = date('Y-m-d H:i:s', $stripe_subscription['cancel_at']);
-        $update_data['cancel_at_period_end'] = (bool)$stripe_subscription['cancel_at_period_end'];
+    }
+    if (array_key_exists('cancel_at_period_end', $stripe_subscription)) {
+        $update_data['cancel_at_period_end'] = $cancel_at_period_end ? 1 : 0;
     }
 
     $result = $wpdb->update(
@@ -394,9 +411,20 @@ function property_theme_update_subscription_plan($subscription_id, $new_plan_id,
             return new WP_Error('invalid_plan', 'Invalid plan');
         }
 
-        $new_price_id = property_theme_get_stripe_price_id($new_plan_id, $billing_cycle);
+        // For 'days' billing cycle plans, override billing_cycle to match stored price
+        $effective_cycle = $billing_cycle;
+        if (isset($plan['billing_cycle']) && $plan['billing_cycle'] === 'days') {
+            $effective_cycle = 'days';
+        }
+
+        $new_price_id = property_theme_get_stripe_price_id($new_plan_id, $effective_cycle);
+        if (!$new_price_id && function_exists('property_theme_sync_stripe_price')) {
+            // Auto-sync price if missing, then retry
+            property_theme_sync_stripe_price($new_plan_id, $effective_cycle);
+            $new_price_id = property_theme_get_stripe_price_id($new_plan_id, $effective_cycle);
+        }
         if (!$new_price_id) {
-            return new WP_Error('no_price', 'Price not configured for plan');
+            return new WP_Error('no_price', 'Price not configured for plan. Please sync Stripe products first.');
         }
 
         // Get current subscription items from Stripe

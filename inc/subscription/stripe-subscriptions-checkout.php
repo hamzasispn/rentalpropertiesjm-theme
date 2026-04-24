@@ -229,9 +229,19 @@ function property_theme_toggle_auto_renew_endpoint($request) {
     // Sync with Stripe if subscription exists
     if (!empty($subscription->stripe_subscription_id)) {
         $cancel_at_period_end = $enable ? 'false' : 'true';
-        property_theme_stripe_api_call('POST', '/v1/subscriptions/' . $subscription->stripe_subscription_id, array(
+        $resp = property_theme_stripe_api_call('POST', '/v1/subscriptions/' . $subscription->stripe_subscription_id, array(
             'cancel_at_period_end' => $cancel_at_period_end,
         ), STRIPE_SECRET_KEY);
+
+        if (isset($resp['error'])) {
+            error_log('[PropertyTheme] toggle-auto-renew Stripe error: ' . $resp['error']['message']);
+            return new WP_Error('stripe_error', $resp['error']['message'], array('status' => 502));
+        }
+
+        // Sync Stripe truth back to DB
+        if (function_exists('property_theme_update_subscription_from_stripe') && isset($resp['id'])) {
+            property_theme_update_subscription_from_stripe($resp['id'], $resp);
+        }
     }
 
     return property_theme_toggle_auto_renew($user_id, $enable);

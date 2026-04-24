@@ -113,3 +113,79 @@ function property_theme_verify_stripe_webhook($payload, $sig_header, $webhook_se
 function property_theme_format_price($amount, $currency = 'USD') {
     return number_format($amount / 100, 2) . ' ' . strtoupper($currency);
 }
+
+/**
+ * Wrap content in branded HTML email template
+ *
+ * @param string $title Email heading shown in hero
+ * @param string $body_html Inner HTML body content
+ * @param array $cta Optional ['text' => 'Click', 'url' => 'https://...']
+ * @param string $accent Hex color (default brand blue)
+ * @return string Full HTML email
+ */
+function property_theme_email_template($title, $body_html, $cta = array(), $accent = '#2563eb') {
+    $site_name = esc_html(get_bloginfo('name'));
+    $site_url  = esc_url(home_url('/'));
+    $year      = date('Y');
+    $logo      = function_exists('get_custom_logo') ? get_theme_mod('custom_logo') : 0;
+    $logo_html = $logo
+        ? wp_get_attachment_image($logo, array(160, 48), false, array('style' => 'max-height:48px;width:auto;'))
+        : '<div style="font-size:22px;font-weight:700;color:#ffffff;letter-spacing:.3px;">' . $site_name . '</div>';
+
+    $cta_html = '';
+    if (!empty($cta['url']) && !empty($cta['text'])) {
+        $cta_html = '<table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin:28px 0;">
+            <tr><td bgcolor="' . esc_attr($accent) . '" style="border-radius:8px;">
+                <a href="' . esc_url($cta['url']) . '" target="_blank" style="display:inline-block;padding:14px 28px;font-family:Arial,Helvetica,sans-serif;font-size:15px;font-weight:600;color:#ffffff;text-decoration:none;border-radius:8px;">'
+                . esc_html($cta['text']) . '</a>
+            </td></tr>
+        </table>';
+    }
+
+    return '<!doctype html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>' . esc_html($title) . '</title></head>
+<body style="margin:0;padding:0;background:#f1f5f9;font-family:Arial,Helvetica,sans-serif;color:#0f172a;">
+<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background:#f1f5f9;padding:32px 12px;">
+    <tr><td align="center">
+        <table role="presentation" width="600" cellspacing="0" cellpadding="0" border="0" style="max-width:600px;width:100%;background:#ffffff;border-radius:14px;overflow:hidden;box-shadow:0 4px 24px rgba(15,23,42,.06);">
+            <tr><td style="background:' . esc_attr($accent) . ';padding:28px 32px;">' . $logo_html . '</td></tr>
+            <tr><td style="padding:36px 32px 8px 32px;">
+                <h1 style="margin:0 0 16px 0;font-size:22px;line-height:1.3;color:#0f172a;">' . esc_html($title) . '</h1>
+                <div style="font-size:15px;line-height:1.65;color:#334155;">' . $body_html . '</div>
+                ' . $cta_html . '
+            </td></tr>
+            <tr><td style="padding:18px 32px 32px 32px;font-size:13px;color:#64748b;line-height:1.55;">
+                Need help? Reply to this email and our team will get back to you.
+            </td></tr>
+            <tr><td style="background:#0f172a;color:#94a3b8;padding:20px 32px;font-size:12px;text-align:center;">
+                &copy; ' . $year . ' <a href="' . $site_url . '" style="color:#cbd5e1;text-decoration:none;">' . $site_name . '</a>. All rights reserved.
+            </td></tr>
+        </table>
+    </td></tr>
+</table>
+</body></html>';
+}
+
+/**
+ * Send a branded HTML email
+ */
+function property_theme_send_html_email($to, $subject, $title, $body_html, $cta = array(), $accent = '#2563eb') {
+    $headers = array('Content-Type: text/html; charset=UTF-8');
+    $html = property_theme_email_template($title, $body_html, $cta, $accent);
+    return wp_mail($to, $subject, $html, $headers);
+}
+
+/**
+ * Render a 2-column key/value table for email bodies
+ */
+function property_theme_email_kv_table($rows) {
+    $html = '<table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="border-collapse:collapse;margin:8px 0 4px 0;">';
+    foreach ($rows as $label => $value) {
+        $html .= '<tr>'
+            . '<td style="padding:10px 0;border-bottom:1px solid #e2e8f0;color:#64748b;font-size:13px;width:42%;">' . esc_html($label) . '</td>'
+            . '<td style="padding:10px 0;border-bottom:1px solid #e2e8f0;color:#0f172a;font-size:14px;font-weight:600;text-align:right;">' . wp_kses_post($value) . '</td>'
+            . '</tr>';
+    }
+    $html .= '</table>';
+    return $html;
+}

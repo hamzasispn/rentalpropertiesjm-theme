@@ -231,31 +231,26 @@ function property_theme_handle_invoice_payment_succeeded($invoice, $event_id) {
     $user = get_userdata($subscription->user_id);
     $plan = property_theme_get_plan($subscription->package_id);
 
-    // Send payment confirmation email
+    // Send payment confirmation email (HTML)
     if ($user) {
         $next_billing_date = date('F j, Y', $stripe_subscription['current_period_end']);
         $amount = property_theme_format_price($invoice['amount_paid'], strtoupper($invoice['currency']));
 
-        wp_mail(
+        $kv = property_theme_email_kv_table(array(
+            'Plan'              => esc_html($plan['name'] ?? 'Premium'),
+            'Amount paid'       => esc_html($amount),
+            'Invoice'           => esc_html($invoice['number'] ?? $invoice['id']),
+            'Next billing date' => esc_html($next_billing_date),
+        ));
+        $body  = '<p>Your subscription payment has been processed successfully. Thanks for staying with us!</p>' . $kv;
+
+        property_theme_send_html_email(
             $user->user_email,
-            'Payment Confirmed - ' . get_bloginfo('name'),
-            sprintf(
-                "Your subscription payment has been processed successfully!\n\n" .
-                "Payment Details:\n" .
-                "- Plan: %s\n" .
-                "- Amount: %s\n" .
-                "- Invoice ID: %s\n" .
-                "- Next Billing Date: %s\n\n" .
-                "Your subscription is active and will continue to the next billing period.\n\n" .
-                "View your invoice: %s\n\n" .
-                "Best regards,\n%s Team",
-                $plan['name'] ?? 'Premium',
-                $amount,
-                $invoice['number'] ?? $invoice['id'],
-                $next_billing_date,
-                $invoice['hosted_invoice_url'] ?? home_url('/dashboard/invoices/'),
-                get_bloginfo('name')
-            )
+            'Payment received — ' . get_bloginfo('name'),
+            'Payment confirmed',
+            $body,
+            array('text' => 'View invoice', 'url' => $invoice['hosted_invoice_url'] ?? home_url('/dashboard/')),
+            '#16a34a'
         );
     }
 
@@ -309,28 +304,24 @@ function property_theme_handle_invoice_payment_failed($invoice, $event_id) {
     $plan = property_theme_get_plan($subscription->package_id);
     $error_message = $invoice['last_payment_error']['message'] ?? 'Payment processing failed';
 
-    // Send payment failure email with action items
+    // Send payment failure email (HTML)
     if ($user) {
-        wp_mail(
+        $kv = property_theme_email_kv_table(array(
+            'Plan'    => esc_html($plan['name'] ?? 'Premium'),
+            'Invoice' => esc_html($invoice['number'] ?? $invoice['id']),
+            'Reason'  => esc_html($error_message),
+            'Status'  => '<span style="color:#dc2626;">Past due</span>',
+        ));
+        $body  = '<p>We were unable to process your most recent subscription payment. Your access may be paused if it is not resolved soon.</p>' . $kv;
+        $body .= '<p style="color:#64748b;font-size:13px;margin-top:14px;">Stripe will automatically retry the charge up to 3 more times over the next few days. To avoid interruption, please update your payment method.</p>';
+
+        property_theme_send_html_email(
             $user->user_email,
-            'Payment Failed - Action Required - ' . get_bloginfo('name'),
-            sprintf(
-                "We were unable to process your subscription payment.\n\n" .
-                "Failure Details:\n" .
-                "- Plan: %s\n" .
-                "- Reason: %s\n" .
-                "- Invoice ID: %s\n\n" .
-                "Your subscription status is now past due. Please update your payment method to avoid service interruption.\n\n" .
-                "Update Payment Method: %s\n\n" .
-                "Stripe will attempt to charge your account automatically up to 3 more times over the next few days.\n\n" .
-                "If you need help, please contact us.\n\n" .
-                "Best regards,\n%s Team",
-                $plan['name'] ?? 'Premium',
-                $error_message,
-                $invoice['number'] ?? $invoice['id'],
-                home_url('/dashboard/billing/'),
-                get_bloginfo('name')
-            )
+            'Action required: payment failed — ' . get_bloginfo('name'),
+            'Payment failed — please update your card',
+            $body,
+            array('text' => 'Update payment method', 'url' => home_url('/dashboard/')),
+            '#dc2626'
         );
     }
 
@@ -412,25 +403,23 @@ function property_theme_handle_subscription_deleted($stripe_subscription, $event
     $user = get_userdata($subscription->user_id);
     $plan = property_theme_get_plan($subscription->package_id);
 
-    // Send cancellation confirmation email
+    // Send cancellation confirmation email (HTML)
     if ($user) {
-        wp_mail(
+        $kv = property_theme_email_kv_table(array(
+            'Plan'        => esc_html($plan['name'] ?? 'Premium'),
+            'Canceled on' => esc_html(date('F j, Y \a\t g:i A', $stripe_subscription['canceled_at'] ?? time())),
+            'Access ends' => esc_html(date('F j, Y', $stripe_subscription['current_period_end'] ?? time())),
+        ));
+        $body  = '<p>Your subscription has been canceled. You\'ll keep access to premium features until the end of your current billing period.</p>' . $kv;
+        $body .= '<p style="margin-top:18px;">Changed your mind? You can reactivate your subscription anytime — your data is preserved.</p>';
+
+        property_theme_send_html_email(
             $user->user_email,
-            'Subscription Canceled - ' . get_bloginfo('name'),
-            sprintf(
-                "Your subscription has been canceled.\n\n" .
-                "Cancellation Details:\n" .
-                "- Plan: %s\n" .
-                "- Canceled On: %s\n\n" .
-                "You will lose access to premium features at the end of your current billing period.\n\n" .
-                "If you would like to reactivate your subscription, you can do so anytime: %s\n\n" .
-                "We hope to see you again soon!\n\n" .
-                "Best regards,\n%s Team",
-                $plan['name'] ?? 'Premium',
-                date('F j, Y \a\t g:i A', $stripe_subscription['canceled_at'] ?? time()),
-                home_url('/plans/'),
-                get_bloginfo('name')
-            )
+            'Subscription canceled — ' . get_bloginfo('name'),
+            'Your subscription has been canceled',
+            $body,
+            array('text' => 'Reactivate subscription', 'url' => home_url('/plans/')),
+            '#475569'
         );
     }
 
