@@ -13,6 +13,8 @@ $all_posts = new WP_Query([
     'order' => $orderby === 'title' ? 'ASC' : 'DESC',
 ]);
 
+$all_posts_array = $all_posts->posts;
+
 ?>
 
 <main class="min-h-screen bg-slate-50">
@@ -28,9 +30,9 @@ $all_posts = new WP_Query([
 
             <!-- Posts Grid -->
             <div class="lg:col-span-4">
-                <?php if (!empty($all_posts)): ?>
+                <?php if ($all_posts->have_posts()): ?>
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                        <?php foreach ($all_posts as $i => $post):
+                        <?php foreach ($all_posts_array as $i => $post):
                             setup_postdata($post);
                             $post_cats = get_the_category($post->ID);
                             ?>
@@ -65,7 +67,7 @@ $all_posts = new WP_Query([
 
                                     <h3
                                         class="text-base font-bold text-slate-900 mb-2 line-clamp-2 group-hover:text-blue-600 transition flex-1">
-                                        <a
+                                        
                                             href="<?php echo get_permalink($post); ?>"><?php echo esc_html($post->post_title); ?></a>
                                     </h3>
 
@@ -87,7 +89,7 @@ $all_posts = new WP_Query([
 
                             <?php
                             // Inject ad after every 4th post in grid
-                            if (($i + 1) % 4 === 0 && $i < count($grid_posts) - 1):
+                            if (($i + 1) % 4 === 0 && $i < count($all_posts_array) - 1):
                                 ?>
                                 <div class="sm:col-span-2">
                                     <?php get_template_part('template-parts/component', 'ad-space', ['slot' => 'banner', 'label' => 'Advertisement']); ?>
@@ -135,7 +137,7 @@ $all_posts = new WP_Query([
 
                     <!-- Recent Posts -->
                     <?php
-                    $recent = get_posts(['numberposts' => 5, 'post__not_in' => $featured_post ? [$featured_post->ID] : []]);
+                    $recent = get_posts(['numberposts' => 5]);
                     if ($recent):
                         ?>
                         <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
@@ -199,10 +201,9 @@ $all_posts = new WP_Query([
                         </div>
                     <?php endif; ?>
 
-
-
                     <!-- Sidebar Ad -->
                     <?php get_template_part('template-parts/component', 'ad-space', ['slot' => 'sidebar', 'label' => 'Advertisement']); ?>
+
                 </div>
             </aside>
 
