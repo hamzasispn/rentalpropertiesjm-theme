@@ -219,9 +219,82 @@ require_once get_template_directory() . '/inc/subscription/stripe-migration.php'
 require_once get_template_directory() . '/inc/subscription/stripe-products-setup.php';
 require_once get_template_directory() . '/inc/subscription/property-deactivation.php';
 require_once get_template_directory() . '/inc/resources-post-type.php';
-
+require_once get_template_directory() . '/inc/admin-panel.php';
 
 require_once get_template_directory() . '/admin/migration-page.php';
+
+// Show pending properties count in admin bar for admins
+add_action('wp_before_admin_bar_render', function () {
+    if (!current_user_can('manage_options')) return;
+    global $wp_admin_bar;
+    $pending = wp_count_posts('property');
+    $count   = intval($pending->pending ?? 0);
+    if ($count > 0) {
+        $wp_admin_bar->add_node([
+            'id'    => 'pending_properties',
+            'title' => 'Pending Properties <span style="background:#eab308;color:#000;padding:1px 7px;border-radius:10px;font-size:11px;font-weight:700;">' . $count . '</span>',
+            'href'  => home_url('/admin-panel'),
+        ]);
+    }
+});
+
+// Track property page views automatically
+add_action('template_redirect', function () {
+    if (!is_singular('property')) return;
+    $post_id = get_the_ID();
+    if (!$post_id || get_post_status($post_id) !== 'publish') return;
+
+    // Skip admin, bots, and the property owner's own views
+    if (is_admin()) return;
+    $user_agent = $_SERVER['HTTP_USER_AGENT'] ?? '';
+    if (stripos($user_agent, 'bot') !== false || stripos($user_agent, 'crawl') !== false) return;
+
+    global $wpdb;
+    $wpdb->insert(
+        $wpdb->prefix . 'property_analytics',
+        [
+            'property_id' => $post_id,
+            'user_id'     => get_current_user_id() ?: null,
+            'event_type'  => 'page_view',
+            'event_data'  => null,
+            'ip_address'  => $_SERVER['REMOTE_ADDR'] ?? '',
+            'user_agent'  => substr($user_agent, 0, 500),
+            'created_at'  => current_time('mysql'),
+        ],
+        ['%d', '%d', '%s', '%s', '%s', '%s', '%s']
+    );
+});
+
+// REST endpoint for client-side event tracking (contact clicks, WhatsApp clicks, etc.)
+add_action('rest_api_init', function () {
+    register_rest_route('property-theme/v1', '/track-event', [
+        'methods'             => 'POST',
+        'callback'            => function (WP_REST_Request $req) {
+            $post_id    = intval($req->get_param('property_id'));
+            $event_type = sanitize_text_field($req->get_param('event_type') ?? '');
+            $allowed    = ['contact_click', 'whatsapp_click', 'phone_click', 'gallery_view'];
+            if (!$post_id || !in_array($event_type, $allowed, true)) {
+                return new WP_Error('invalid', 'Invalid params', ['status' => 400]);
+            }
+            global $wpdb;
+            $wpdb->insert(
+                $wpdb->prefix . 'property_analytics',
+                [
+                    'property_id' => $post_id,
+                    'user_id'     => get_current_user_id() ?: null,
+                    'event_type'  => $event_type,
+                    'event_data'  => null,
+                    'ip_address'  => $_SERVER['REMOTE_ADDR'] ?? '',
+                    'user_agent'  => substr($_SERVER['HTTP_USER_AGENT'] ?? '', 0, 500),
+                    'created_at'  => current_time('mysql'),
+                ],
+                ['%d', '%d', '%s', '%s', '%s', '%s', '%s']
+            );
+            return rest_ensure_response(['success' => true]);
+        },
+        'permission_callback' => '__return_true',
+    ]);
+});
 
 add_action('init', function () {
 

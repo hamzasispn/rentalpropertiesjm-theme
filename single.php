@@ -85,6 +85,9 @@ get_header();
                             </article>
                         </section>
 
+                        <!-- Mid-content Ad -->
+                        <?php get_template_part('template-parts/component', 'ad-space', ['slot' => 'banner', 'label' => 'Advertisement', 'class' => 'my-8']); ?>
+
                         <!-- Tags Section -->
                         <?php
                         $tags = get_the_tags();
@@ -220,6 +223,9 @@ get_header();
                     <!-- Sidebar -->
                     <aside class="lg:col-span-1">
                         <div class="sticky top-24 space-y-6">
+                            <!-- Sidebar Ad -->
+                            <?php get_template_part('template-parts/component', 'ad-space', ['slot' => 'sidebar', 'label' => 'Advertisement']); ?>
+
                             <!-- Search Widget -->
                             <div
                                 class="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow duration-200">

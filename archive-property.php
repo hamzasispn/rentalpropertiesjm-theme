@@ -102,6 +102,15 @@ $listing_statuses_archive = get_terms(array('taxonomy' => 'property_listing_stat
 
                 <!-- Buy / Rent Toggle — top of filter bar -->
                 <div class="flex gap-2 mb-4 pb-4 border-b border-slate-100">
+                    <!-- All properties button -->
+                    <button type="button"
+                        @click="filters.listingStatus = ''; applyFilters()"
+                        :class="filters.listingStatus === ''
+                            ? 'bg-[var(--primary-color)] text-white border-[var(--primary-color)] shadow-sm'
+                            : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-50'"
+                        class="px-6 py-2 rounded-full border text-sm font-semibold transition font-inter">
+                        All
+                    </button>
                     <template x-for="status in listingStatuses" :key="status.slug">
                         <button type="button"
                             @click="filters.listingStatus = status.slug; applyFilters()"
@@ -321,6 +330,11 @@ $listing_statuses_archive = get_terms(array('taxonomy' => 'property_listing_stat
                 </div>
             </div>
 
+            <!-- Ad Banner — shown between filters and results -->
+            <div class="mb-6">
+                <?php get_template_part('template-parts/component', 'ad-space', ['slot' => 'leaderboard', 'label' => 'Advertisement']); ?>
+            </div>
+
             <!-- Results Section -->
             <div>
 
@@ -418,7 +432,7 @@ $listing_statuses_archive = get_terms(array('taxonomy' => 'property_listing_stat
                 location: initialParams.location || '',
                 keyword: initialParams.keyword || '',
                 featured: initialParams.featured === 'true' ? true : false,
-                listingStatus: initialParams.listing_status || 'buy',
+                listingStatus: initialParams.listing_status || '',
             },
             sortBy: initialParams.sort || 'newest',
             viewType: initialParams.view || 'grid',
@@ -456,10 +470,7 @@ $listing_statuses_archive = get_terms(array('taxonomy' => 'property_listing_stat
                 this.geocoder = new google.maps.Geocoder();
                 this.fetchExchangeRate();
                 this.buildPriceOptions();
-                // Default to first listing status (Buy) if not set via URL param
-                if (!this.filters.listingStatus && this.listingStatuses.length > 0) {
-                    this.filters.listingStatus = this.listingStatuses[0].slug;
-                }
+                // No default listing status — show all properties
                 this.applyFilters();
                 this.setupInfiniteScroll();
             },
@@ -680,7 +691,7 @@ $listing_statuses_archive = get_terms(array('taxonomy' => 'property_listing_stat
                     location: '',
                     keyword: '',
                     featured: false,
-                    listingStatus: this.listingStatuses.length ? this.listingStatuses[0].slug : 'buy',
+                    listingStatus: '',
                 };
                 this.sortBy = 'newest';
                 this.selectedCurrency = 'usd';

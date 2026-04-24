@@ -38,6 +38,11 @@ get_header();
         </div>
     </section>
 
+    <!-- Top Banner Ad -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6">
+        <?php get_template_part('template-parts/component', 'ad-space', ['slot' => 'leaderboard', 'label' => 'Advertisement']); ?>
+    </div>
+
     <!-- Content with Sidebar -->
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-16">
         <div class="grid grid-cols-1 lg:grid-cols-6 gap-8">
@@ -180,6 +185,9 @@ get_header();
             <!-- Sidebar -->
             <aside class="lg:col-span-2">
                 <div class="sticky top-24 space-y-6">
+                    <!-- Sidebar Ad -->
+                    <?php get_template_part('template-parts/component', 'ad-space', ['slot' => 'sidebar', 'label' => 'Advertisement']); ?>
+
                     <!-- Search Widget -->
                     <div
                         class="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow duration-200">

@@ -19,6 +19,26 @@ $logo = $args['logo'] ?? '';
             </a>
         </div>
 
+        <!-- Mobile login button (always visible in header) -->
+        <?php if (!is_user_logged_in()): ?>
+        <a href="<?= home_url('/login'); ?>" class="lg:hidden flex-shrink-0 flex items-center gap-1.5 px-3 py-2 rounded bg-[var(--primary-color)] text-white text-[3.5vw] sm:text-[2.5vw] font-bold" style="white-space:nowrap">
+            <svg class="w-[4vw] h-[4vw] sm:w-[3vw] sm:h-[3vw]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/>
+                <polyline points="10 17 15 12 10 7"/>
+                <line x1="15" y1="12" x2="3" y2="12"/>
+            </svg>
+            Login
+        </a>
+        <?php else: ?>
+        <a href="<?= home_url('/dashboard'); ?>" class="lg:hidden flex-shrink-0 flex items-center gap-1.5 px-3 py-2 rounded bg-[var(--primary-color)] text-white text-[3.5vw] sm:text-[2.5vw] font-bold" style="white-space:nowrap">
+            <svg class="w-[4vw] h-[4vw] sm:w-[3vw] sm:h-[3vw]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                <circle cx="12" cy="7" r="4"/>
+            </svg>
+            Dashboard
+        </a>
+        <?php endif; ?>
+
         <!-- Mobile menu toggle -->
         <button class="lg:hidden flex-shrink-0 z-50 p-2  rounded bg-[var(--primary-color)]" @click="mobileOpen = !mobileOpen" :aria-expanded="mobileOpen" aria-label="Toggle menu">
             <svg class="w-[7vw] h-[7vw] sm:w-[5vw] sm:h-[5vw] text-white transition-transform duration-300" :style="mobileOpen ? 'transform: rotate(45deg)' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">

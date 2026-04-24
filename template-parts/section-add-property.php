@@ -139,9 +139,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_property'])) {
         exit;
     }
 
+    // New properties go to 'pending' for admin approval; edits keep their current status
+    $existing_status = $is_edit ? get_post_status($property_id) : 'pending';
+    // Admins can bypass approval
+    $resolved_status = ($is_edit && $existing_status === 'publish') ? 'publish' : (current_user_can('manage_options') ? 'publish' : 'pending');
+
     $post_data = array(
         'post_type'    => 'property',
-        'post_status'  => 'publish',
+        'post_status'  => $resolved_status,
         'post_title'   => sanitize_text_field($_POST['property_title'] ?? 'Untitled Property'),
         'post_content' => sanitize_textarea_field($_POST['property_description'] ?? ''),
     );

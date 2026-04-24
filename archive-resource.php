@@ -23,6 +23,11 @@ $home_url = get_home_url();
         </div>
     </div>
 
+    <!-- Banner Ad -->
+    <div class="max-w-5xl mx-auto px-4 py-6">
+        <?php get_template_part('template-parts/component', 'ad-space', ['slot' => 'leaderboard', 'label' => 'Advertisement']); ?>
+    </div>
+
     <!-- Main Content -->
     <div class="max-w-[90%] mx-auto px-4 py-10"
         x-data="resourceArchive('<?php echo esc_js($home_url); ?>')">

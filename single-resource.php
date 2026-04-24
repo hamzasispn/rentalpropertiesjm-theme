@@ -38,6 +38,11 @@ $related_query = new WP_Query($related_args);
 ?>
 
 <div class="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
+    <!-- Top Ad Banner -->
+    <div class="max-w-5xl mx-auto px-4 pt-6">
+        <?php get_template_part('template-parts/component', 'ad-space', ['slot' => 'banner', 'label' => 'Advertisement']); ?>
+    </div>
+
     <div class="max-w-5xl mx-auto px-4 py-10 md:py-14">
 
         <!-- Breadcrumb -->

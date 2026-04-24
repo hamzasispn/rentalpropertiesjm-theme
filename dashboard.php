@@ -499,6 +499,17 @@ $subscription = property_theme_get_user_subscription($user_id) ?? array();
                 if (pushToUrl) {
                     history.pushState(null, '', `#${tabId}`);
                 }
+                // Delay chart init so x-show has time to show the canvas
+                if (tabId === 'analytics') {
+                    setTimeout(() => {
+                        // Destroy old instance so chart re-renders with correct dimensions
+                        if (window.analyticsChartInstance) {
+                            window.analyticsChartInstance.destroy();
+                            window.analyticsChartInstance = null;
+                        }
+                        this.initChart();
+                    }, 50);
+                }
             },
 
             // Agent form methods
