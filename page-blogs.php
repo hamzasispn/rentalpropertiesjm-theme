@@ -20,7 +20,7 @@ $all_posts_array = $all_posts->posts;
 <main class="min-h-screen bg-slate-50">
 
     <!-- ── Leaderboard Ad ── -->
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 my-4">
         <?php get_template_part('template-parts/component', 'ad-space', ['slot' => 'leaderboard', 'label' => 'Advertisement']); ?>
     </div>
 
@@ -67,8 +67,9 @@ $all_posts_array = $all_posts->posts;
 
                                     <h3
                                         class="text-base font-bold text-slate-900 mb-2 line-clamp-2 group-hover:text-blue-600 transition flex-1">
-                                        
-                                            <a href="<?php echo get_permalink($post); ?>"><?php echo esc_html($post->post_title); ?></a>
+
+                                        <a
+                                            href="<?php echo get_permalink($post); ?>"><?php echo esc_html($post->post_title); ?></a>
                                     </h3>
 
                                     <p class="text-slate-500 text-sm line-clamp-2 mb-4">
@@ -155,7 +156,8 @@ $all_posts_array = $all_posts->posts;
                                             <a href="<?php echo get_permalink($rp); ?>"
                                                 class="text-sm font-semibold text-slate-800 hover:text-blue-600 transition line-clamp-2"><?php echo esc_html($rp->post_title); ?></a>
                                             <div class="text-xs text-slate-400 mt-0.5">
-                                                <?php echo get_the_date('M d, Y', $rp); ?></div>
+                                                <?php echo get_the_date('M d, Y', $rp); ?>
+                                            </div>
                                         </div>
                                     </li>
                                 <?php endforeach; ?>
@@ -202,7 +204,9 @@ $all_posts_array = $all_posts->posts;
                     <?php endif; ?>
 
                     <!-- Sidebar Ad -->
-                    <?php get_template_part('template-parts/component', 'ad-space', ['slot' => 'sidebar', 'label' => 'Advertisement']); ?>
+                    <div class="my-4">
+                        <?php get_template_part('template-parts/component', 'ad-space', ['slot' => 'sidebar', 'label' => 'Advertisement']); ?>
+                    </div>
 
                 </div>
             </aside>
