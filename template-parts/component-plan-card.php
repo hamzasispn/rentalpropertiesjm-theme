@@ -28,7 +28,6 @@ foreach ($plans_data as $plan) {
     if (!empty($plan['subscription_count']) && $plan['subscription_count'] > $max_subscriptions) {
         $max_subscriptions = $plan['subscription_count'];
         $best_seller_plan_id = $plan['id'];
-        $title = get_the_title($plan['id']);
     }
 }
 
@@ -37,10 +36,11 @@ foreach ($plans_data as $plan) {
 <div class="!font-inter grid grid-cols-1 md:grid-cols-4 gap-4 w-full">
 
     <?php foreach ($plans_data as $plan):
+        $plan_title = get_the_title($plan['id']);
         $is_current = $stats['subscription'] && $stats['subscription']->package_id == $plan['id'];
         $is_best_seller = ($plan['id'] === $best_seller_plan_id);
-        $is_recommended = ($plan['id'] == 163);   // bold banner, pop treatment
-        $is_highlighted = ($plan['id'] == 166);   // primary-colour card, no badge
+        $is_recommended = ($plan['id'] == 163);
+        $is_highlighted = ($plan['id'] == 166);
     
         /* Duration label */
         if (!empty($plan['billing_cycle']) && $plan['billing_cycle'] === 'days') {
@@ -68,7 +68,6 @@ foreach ($plans_data as $plan) {
             $featured_is_available = true;
         }
 
-
         /* Max properties */
         if (!empty($plan['max_properties'])) {
             $props_label = $plan['max_properties'] == 1
@@ -83,7 +82,6 @@ foreach ($plans_data as $plan) {
          * Priority: recommended (163) > highlighted (166) > current > default
          * ---------------------------------------------------------------- */
         if ($is_recommended) {
-            // Bold pop card — primary bg + scale-up + glow
             $card_bg = 'bg-[var(--primary-color)]';
             $card_border = 'border-2 border-[var(--primary-color)]';
             $card_extra = 'shadow-2xl ring-4 ring-[var(--primary-color)]/40 scale-[1.03] z-10';
@@ -92,7 +90,6 @@ foreach ($plans_data as $plan) {
             $text_label = 'text-white/60';
             $divider = 'border-white/20';
         } elseif ($is_highlighted) {
-            // Highlighted — same colours as best-seller, no badge
             $card_bg = 'bg-[var(--primary-color)]';
             $card_border = 'border-2 border-[var(--primary-color)]';
             $card_extra = '';
@@ -131,9 +128,7 @@ foreach ($plans_data as $plan) {
             <?php if ($is_recommended): ?>
                 <!-- Attention-grabbing "Recommended" banner -->
                 <div class="absolute top-0 left-0 right-0 overflow-hidden rounded-t-[22px]">
-                    <!-- Shimmer stripe -->
                     <div class="relative flex items-center justify-center gap-2 bg-white py-2 px-4">
-                        <!-- animated shimmer layer -->
                         <div
                             class="absolute inset-0 -translate-x-full animate-[shimmer_2.2s_ease-in-out_infinite] bg-gradient-to-r from-transparent via-[var(--primary-color)]/10 to-transparent">
                         </div>
@@ -166,8 +161,8 @@ foreach ($plans_data as $plan) {
 
             <!-- Header -->
             <div
-                class="flex items-start gap-3 <?= ($is_best_seller || $is_current || $is_highlighted) && !$is_recommended ? 'mt-4' : ''; ?>">
-                <?php if ($title === "For Realtors 30 days"): ?>
+                class="flex flex-col items-start gap-3 <?= ($is_best_seller || $is_current || $is_highlighted) && !$is_recommended ? 'mt-4' : ''; ?>">
+                <?php if ($plan_title === "For Realtors 30 days"): ?>
                     <div>
                         <p class="text-md font-medium font-inter <?= $text_secondary; ?> m-0 mt-0.5">
                             For Realtors
