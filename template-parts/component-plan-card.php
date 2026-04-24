@@ -41,7 +41,7 @@ foreach ($plans_data as $plan) {
         $is_best_seller = ($plan['id'] === $best_seller_plan_id);
         $is_recommended = ($plan['id'] == 163);
         $is_highlighted = ($plan['id'] == 166);
-    
+
         /* Duration label */
         if (!empty($plan['billing_cycle']) && $plan['billing_cycle'] === 'days') {
             $days = intval($plan['billing_days']);
@@ -161,20 +161,21 @@ foreach ($plans_data as $plan) {
 
             <!-- Header -->
             <div
-                class="flex flex-col items-start gap-3 <?= ($is_best_seller || $is_current || $is_highlighted) && !$is_recommended ? 'mt-4' : ''; ?>">
-                <?php if ($plan_title === "For Realtors 30 days"): ?>
-                    <div>
-                        <p class="text-md font-medium font-inter <?= $text_secondary; ?> m-0 mt-0.5">
-                            For Realtors
-                        </p>
-                    </div>
-                <?php endif; ?>
+                class="flex flex-col items-end gap-3 <?= ($is_best_seller || $is_current || $is_highlighted) && !$is_recommended ? 'mt-4' : ''; ?>">
 
                 <div>
                     <p class="text-2xl font-semibold font-inter <?= $text_secondary; ?> m-0 mt-0.5">
                         <?= esc_html($duration_label); ?> listings
                     </p>
                 </div>
+
+                <?php if ($plan_title === "For Realtors 30 days"): ?>
+                    <div>
+                        <p class="text-sm font-medium font-inter text-white m-0 mt-0.5">
+                            For Realtors
+                        </p>
+                    </div>
+                <?php endif; ?>
             </div>
 
             <!-- Price -->
