@@ -180,25 +180,8 @@ function property_theme_update_subscription_plan_endpoint($request)
         return $result;
     }
 
-    // Downgrade: if new plan has fewer property slots, draft excess published properties
-    $old_max = intval($old_plan['max_properties'] ?? 0);
-    $new_max = intval($new_plan['max_properties'] ?? 0);
-
-    if ($new_max > 0 && $new_max < $old_max) {
-        $published = $wpdb->get_col($wpdb->prepare(
-            "SELECT ID FROM {$wpdb->posts}
-             WHERE post_author = %d AND post_type = 'property' AND post_status = 'publish'
-             ORDER BY post_date ASC",
-            $user_id
-        ));
-
-        if (count($published) > $new_max) {
-            $to_draft = array_slice($published, $new_max);
-            foreach ($to_draft as $pid) {
-                wp_update_post(array('ID' => intval($pid), 'post_status' => 'draft'));
-            }
-        }
-    }
+    // Enforce property limits for the (new) plan — drafts oldest published over the cap
+    property_theme_enforce_property_limit($user_id, intval($new_plan['max_properties'] ?? 0));
 
     return array(
         'success' => true,

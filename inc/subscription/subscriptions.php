@@ -541,8 +541,14 @@ function property_theme_get_subscription_stats($user_id) {
     ));
 
     $days_remaining = 0;
-    if ($subscription && $subscription->expiry_date) {
-        $days_remaining = ceil((strtotime($subscription->expiry_date) - time()) / 86400);
+    if ($subscription) {
+        // Prefer Stripe's current_period_end (source of truth) over local expiry_date
+        $end_ts = !empty($subscription->current_period_end)
+            ? strtotime($subscription->current_period_end)
+            : (!empty($subscription->expiry_date) ? strtotime($subscription->expiry_date) : 0);
+        if ($end_ts > 0) {
+            $days_remaining = max(0, (int) ceil(($end_ts - time()) / 86400));
+        }
     }
 
     $payment_method = property_theme_get_payment_method($user_id);
@@ -681,10 +687,19 @@ function property_theme_process_all_subscriptions() {
     return $stats;
 }
 
+// Stripe is the source of truth for subscription state.
+// The legacy cron only exists for historical/non-Stripe rows. We unschedule any
+// previously-registered every-minute event to stop it racing the Stripe webhook.
 add_action('init', function () {
-    error_log('[v0] Subscription system checking cron...');
-    error_log('[v0] Scheduling subscription processing cron...');
-    wp_schedule_event(time(), 'every_minute', 'property_theme_subscription_processing');
+    $next = wp_next_scheduled('property_theme_subscription_processing');
+    while ($next) {
+        wp_unschedule_event($next, 'property_theme_subscription_processing');
+        $next = wp_next_scheduled('property_theme_subscription_processing');
+    }
+    // Run once a day at most for non-Stripe rows (no-op if there are none).
+    if (!wp_next_scheduled('property_theme_subscription_processing')) {
+        wp_schedule_event(time() + DAY_IN_SECONDS, 'daily', 'property_theme_subscription_processing');
+    }
 });
 
 add_action('property_theme_subscription_processing', 'property_theme_process_all_subscriptions');

@@ -367,11 +367,11 @@ $subscription = property_theme_get_user_subscription($user_id) ?? array();
                                         const d = await r.json();
                                         if (!r.ok) { throw new Error(d.message || 'Failed to update auto-renew'); }
                                         autoRenew = !!d.auto_renew;
-                                        // Reload so server-rendered state (expiry, status) is fresh
-                                        window.location.reload();
+                                        window.toast && window.toast(autoRenew ? 'Auto-renew is on' : 'Auto-renew is off — your plan will end at the period’s end', 'success');
+                                        setTimeout(() => window.location.reload(), 700);
                                     }).catch((e) => {
                                         loading = false;
-                                        alert(e.message || 'Could not update auto-renew');
+                                        window.toast && window.toast(e.message || 'Could not update auto-renew', 'error');
                                     });
                                 "
                                 :disabled="loading"
@@ -480,7 +480,7 @@ $subscription = property_theme_get_user_subscription($user_id) ?? array();
 </div>
 
 <!-- Payment Modal for Upgrades -->
-<div id="upgrade-payment-modal" x-show="showUpgradeModal" x-transition style="display: none;"
+<div id="upgrade-payment-modal" x-show="showUpgradeModal" x-cloak x-transition
     class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
     <div class="bg-white rounded-lg max-w-md w-full p-8">
         <div class="flex justify-between items-center mb-6">
@@ -518,7 +518,7 @@ $subscription = property_theme_get_user_subscription($user_id) ?? array();
 </div>
 
 <!-- Update Payment Method Modal -->
-<div id="update-payment-modal" x-show="showUpdatePaymentModal" x-transition style="display: none;"
+<div id="update-payment-modal" x-show="showUpdatePaymentModal" x-cloak x-transition
     class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
     <div class="bg-white rounded-lg max-w-md w-full p-8">
         <div class="flex justify-between items-center mb-6">
@@ -549,6 +549,53 @@ $subscription = property_theme_get_user_subscription($user_id) ?? array();
     </div>
 </div>
 
+
+<!-- Toast notifications -->
+<style>[x-cloak]{display:none !important;}</style>
+<div x-data="toastBus()" x-init="register()"
+     class="fixed top-6 right-6 z-[60] flex flex-col gap-3 pointer-events-none" style="max-width:380px;">
+    <template x-for="t in toasts" :key="t.id">
+        <div x-transition:enter="transition ease-out duration-200"
+             x-transition:enter-start="opacity-0 translate-x-4"
+             x-transition:enter-end="opacity-100 translate-x-0"
+             x-transition:leave="transition ease-in duration-150"
+             x-transition:leave-end="opacity-0 translate-x-4"
+             :class="{
+                'bg-emerald-50 border-emerald-200 text-emerald-900': t.type==='success',
+                'bg-red-50 border-red-200 text-red-900': t.type==='error',
+                'bg-blue-50 border-blue-200 text-blue-900': t.type==='info'
+             }"
+             class="pointer-events-auto border rounded-lg shadow-lg px-4 py-3 flex items-start gap-3">
+            <svg class="w-5 h-5 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                <template x-if="t.type==='success'"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.7-9.7a1 1 0 00-1.4-1.4L9 10.2 7.7 8.9a1 1 0 10-1.4 1.4l2 2a1 1 0 001.4 0l4-4z" clip-rule="evenodd"/></template>
+                <template x-if="t.type==='error'"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.7 7.3a1 1 0 011.4 0L10 8.6l1.3-1.3a1 1 0 111.4 1.4L11.4 10l1.3 1.3a1 1 0 11-1.4 1.4L10 11.4l-1.3 1.3a1 1 0 01-1.4-1.4L8.6 10 7.3 8.7a1 1 0 010-1.4z" clip-rule="evenodd"/></template>
+                <template x-if="t.type==='info'"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm-1-7a1 1 0 112 0v3a1 1 0 11-2 0v-3zm1-5a1 1 0 100 2 1 1 0 000-2z" clip-rule="evenodd"/></template>
+            </svg>
+            <div class="flex-1">
+                <p x-show="t.title" x-text="t.title" class="font-semibold text-sm"></p>
+                <p x-text="t.message" class="text-sm leading-snug"></p>
+            </div>
+            <button @click="dismiss(t.id)" class="text-slate-400 hover:text-slate-700 -mt-1">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+            </button>
+        </div>
+    </template>
+</div>
+<script>
+function toastBus() {
+    return {
+        toasts: [],
+        register() {
+            window.toast = (message, type = 'info', title = '', timeout = 4500) => {
+                const id = Date.now() + Math.random();
+                this.toasts.push({ id, message, type, title });
+                setTimeout(() => this.dismiss(id), timeout);
+            };
+        },
+        dismiss(id) { this.toasts = this.toasts.filter(t => t.id !== id); }
+    };
+}
+</script>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://js.stripe.com/v3/"></script>
@@ -620,7 +667,7 @@ $subscription = property_theme_get_user_subscription($user_id) ?? array();
             saveAgentInfo() {
                 localStorage.setItem('agent_phone', this.agentPhone);
                 localStorage.setItem('agent_whatsapp', this.agentWhatsapp);
-                alert('Contact information saved');
+                window.toast && window.toast('Contact information saved', 'success');
             },
 
             // Cancel subscription
@@ -633,7 +680,7 @@ $subscription = property_theme_get_user_subscription($user_id) ?? array();
                 try {
                     const subscriptionId = document.querySelector('[data-subscription-id]')?.dataset.subscriptionId;
                     if (!subscriptionId) {
-                        alert('Subscription ID missing');
+                        window.toast && window.toast('Subscription ID missing', 'error');
                         return;
                     }
 
@@ -657,11 +704,11 @@ $subscription = property_theme_get_user_subscription($user_id) ?? array();
                         throw new Error(data.message || 'Cancel failed');
                     }
 
-                    alert(data.message || 'Subscription will cancel at period end');
-                    window.location.reload();
+                    window.toast && window.toast(data.message || 'Subscription will cancel at the end of the period', 'success', 'Subscription canceled');
+                    setTimeout(() => window.location.reload(), 900);
                 } catch (error) {
                     console.error('[Cancel Subscription]', error);
-                    alert(error.message);
+                    window.toast && window.toast(error.message || 'Could not cancel', 'error');
                 } finally {
                     this.cancelLoading = false;
                 }
@@ -685,14 +732,14 @@ $subscription = property_theme_get_user_subscription($user_id) ?? array();
 
                     const data = await response.json();
                     if (data.success) {
-                        alert('Account deleted. Redirecting...');
-                        window.location.href = '/';
+                        window.toast && window.toast('Account deleted. Redirecting...', 'success');
+                        setTimeout(() => { window.location.href = '/'; }, 900);
                     } else {
-                        alert('Error deleting account');
+                        window.toast && window.toast(data.message || 'Error deleting account', 'error');
                     }
                 } catch (error) {
                     console.error('Delete error:', error);
-                    alert('Error deleting account');
+                    window.toast && window.toast('Error deleting account', 'error');
                 } finally {
                     this.deleteLoading = false;
                 }
@@ -716,22 +763,34 @@ $subscription = property_theme_get_user_subscription($user_id) ?? array();
 
             openUpdatePaymentModal() {
                 this.showUpdatePaymentModal = true;
-                this.$nextTick(() => {
+                // Wait until the modal is actually visible (non-zero size) before mounting,
+                // otherwise Stripe.js throws postMessage / target-origin errors.
+                const tryMount = (attempt = 0) => {
+                    const target = document.getElementById('update-card-element');
+                    if (!target || target.offsetParent === null || target.offsetWidth < 10) {
+                        if (attempt < 30) return setTimeout(() => tryMount(attempt + 1), 50);
+                    }
                     try {
+                        if (!window.stripe) {
+                            window.toast && window.toast('Stripe.js not loaded yet — please retry', 'error');
+                            return;
+                        }
                         if (window.updateCardElement) {
                             try { window.updateCardElement.unmount(); } catch (e) {}
-                            window.updateCardElement.mount('#update-card-element');
-                        } else if (window.stripe) {
-                            const els = window.stripe.elements();
-                            window.updateCardElement = els.create('card');
-                            window.updateCardElement.mount('#update-card-element');
-                            window.updateCardElement.on('change', (event) => {
-                                const errEl = document.getElementById('update-card-errors');
-                                if (errEl) errEl.textContent = event.error ? event.error.message : '';
-                            });
                         }
-                    } catch (e) { console.error('[Stripe mount]', e); }
-                });
+                        const els = window.stripe.elements();
+                        window.updateCardElement = els.create('card');
+                        window.updateCardElement.mount('#update-card-element');
+                        window.updateCardElement.on('change', (event) => {
+                            const errEl = document.getElementById('update-card-errors');
+                            if (errEl) errEl.textContent = event.error ? event.error.message : '';
+                        });
+                    } catch (e) {
+                        console.error('[Stripe mount]', e);
+                        window.toast && window.toast('Could not load card form — please refresh', 'error');
+                    }
+                };
+                this.$nextTick(() => tryMount());
             },
 
             initChart() {
@@ -797,32 +856,13 @@ $subscription = property_theme_get_user_subscription($user_id) ?? array();
             },
 
             initStripe() {
+                // Lazy-init: just load Stripe.js. Card elements are created on demand
+                // when their respective modals open (avoids the postMessage / hidden-iframe
+                // errors that come from mounting into a display:none container).
+                if (typeof Stripe !== 'function') return;
                 const publishableKey = 'pk_test_51S1WzxB1fVG7OgbP1M3aDl9FmKiPor8xJT1vtqgAj33mY37UK75L0oMgSMaQswkQyjpyW9daLLpmWfK5HGjSN49e00VY6HZueY';
                 window.stripe = Stripe(publishableKey);
-                const elements = window.stripe.elements();
-                window.upgradeCardElement = elements.create('card');
-                const updateElements = window.stripe.elements();
-                window.updateCardElement = updateElements.create('card');
 
-                window.upgradeCardElement.on('change', (event) => {
-                    const displayError = document.getElementById('upgrade-card-errors');
-                    if (event.error) {
-                        displayError.textContent = event.error.message;
-                    } else {
-                        displayError.textContent = '';
-                    }
-                });
-
-                window.updateCardElement.on('change', (event) => {
-                    const displayError = document.getElementById('update-card-errors');
-                    if (event.error) {
-                        displayError.textContent = event.error.message;
-                    } else {
-                        displayError.textContent = '';
-                    }
-                });
-
-                // Handle upgrade payment form
                 document.getElementById('upgrade-payment-form')?.addEventListener('submit', (e) => this.handleUpgradePayment(e));
                 document.getElementById('update-payment-form')?.addEventListener('submit', (e) => this.handleUpdatePayment(e));
             },
@@ -863,8 +903,8 @@ $subscription = property_theme_get_user_subscription($user_id) ?? array();
                         throw new Error(data.message || 'Failed to update payment method');
                     }
 
-                    alert('Payment method updated successfully!');
-                    location.reload();
+                    window.toast && window.toast('Payment method updated', 'success');
+                    setTimeout(() => location.reload(), 700);
                 } catch (error) {
                     console.error('Update payment error:', error);
                     errorDiv.textContent = error.message;
@@ -900,14 +940,17 @@ $subscription = property_theme_get_user_subscription($user_id) ?? array();
 
             const planId = btn.dataset.planId;
             const subscriptionId = btn.dataset.subscriptionId;
+            const billingCycle = btn.dataset.billingCycle || 'monthly';
 
             if (!planId || !subscriptionId) {
-                alert('Invalid subscription or plan');
+                window.toast && window.toast('Invalid subscription or plan', 'error');
                 return;
             }
 
+            const originalText = btn.innerText;
             btn.disabled = true;
-            btn.innerText = 'Updating...';
+            btn.innerText = 'Updating…';
+            window.toast && window.toast('Processing your plan change…', 'info', 'One moment', 8000);
 
             try {
                 const response = await fetch(
@@ -921,7 +964,7 @@ $subscription = property_theme_get_user_subscription($user_id) ?? array();
                         body: JSON.stringify({
                             subscription_id: subscriptionId,
                             plan_id: planId,
-                            billing_cycle: 'monthly',
+                            billing_cycle: billingCycle,
                             prorate: true,
                         }),
                     }
@@ -930,17 +973,17 @@ $subscription = property_theme_get_user_subscription($user_id) ?? array();
                 const result = await response.json();
 
                 if (!response.ok || !result.success) {
-                    throw new Error(result.message || 'Upgrade failed');
+                    throw new Error(result.message || 'Plan change failed');
                 }
 
-                alert('Plan updated successfully');
-                window.location.reload();
+                window.toast && window.toast('Plan updated successfully', 'success');
+                setTimeout(() => window.location.reload(), 800);
 
             } catch (err) {
                 console.error(err);
-                alert(err.message || 'Something went wrong');
+                window.toast && window.toast(err.message || 'Something went wrong', 'error');
                 btn.disabled = false;
-                btn.innerText = 'Upgrade / Downgrade';
+                btn.innerText = originalText || 'Upgrade / Downgrade';
             }
         });
     });

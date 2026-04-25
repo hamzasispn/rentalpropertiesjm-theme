@@ -206,8 +206,10 @@ function property_theme_handle_invoice_payment_succeeded($invoice, $event_id) {
         return;
     }
 
-    // Get subscription from Stripe to sync data
-    $stripe_subscription = property_theme_stripe_api_call('GET', '/v1/subscriptions/' . $subscription_id, array(), STRIPE_SECRET_KEY);
+    // Get subscription from Stripe to sync data (expand items for period fields on API 2025+)
+    $stripe_subscription = property_theme_stripe_api_call('GET', '/v1/subscriptions/' . $subscription_id, array(
+        'expand[0]' => 'items.data.price',
+    ), STRIPE_SECRET_KEY);
 
     if (isset($stripe_subscription['error'])) {
         error_log('[PropertyTheme] Failed to fetch subscription: ' . $stripe_subscription['error']['message']);
@@ -233,7 +235,8 @@ function property_theme_handle_invoice_payment_succeeded($invoice, $event_id) {
 
     // Send payment confirmation email (HTML)
     if ($user) {
-        $next_billing_date = date('F j, Y', $stripe_subscription['current_period_end']);
+        list(, $period_end_ts) = property_theme_resolve_subscription_period($stripe_subscription);
+        $next_billing_date = date('F j, Y', $period_end_ts);
         $amount = property_theme_format_price($invoice['amount_paid'], strtoupper($invoice['currency']));
 
         $kv = property_theme_email_kv_table(array(

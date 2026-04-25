@@ -11,6 +11,44 @@ require_once get_template_directory() . '/inc/subscription/stripe-products-setup
 require_once get_template_directory() . '/inc/subscription/stripe-helper.php';
 
 /**
+ * Resolve [period_start, period_end] from a Stripe subscription object.
+ *
+ * Stripe API 2025+ moved current_period_start/end from the subscription to its
+ * SubscriptionItems. Fall back to the first item, then to billing_cycle_anchor +
+ * the price's interval if needed. Always returns valid timestamps.
+ */
+function property_theme_resolve_subscription_period($sub) {
+    $start = isset($sub['current_period_start']) && $sub['current_period_start']
+        ? intval($sub['current_period_start']) : 0;
+    $end   = isset($sub['current_period_end']) && $sub['current_period_end']
+        ? intval($sub['current_period_end']) : 0;
+
+    // Newer Stripe API: pull from first subscription item
+    if ((!$start || !$end) && !empty($sub['items']['data'][0])) {
+        $item = $sub['items']['data'][0];
+        if (!$start && !empty($item['current_period_start'])) $start = intval($item['current_period_start']);
+        if (!$end   && !empty($item['current_period_end']))   $end   = intval($item['current_period_end']);
+    }
+
+    if (!$start) {
+        $start = !empty($sub['billing_cycle_anchor']) ? intval($sub['billing_cycle_anchor'])
+               : (!empty($sub['start_date']) ? intval($sub['start_date']) : time());
+    }
+
+    if (!$end) {
+        // Compute from price interval as last resort
+        $price = !empty($sub['items']['data'][0]['price']) ? $sub['items']['data'][0]['price'] : array();
+        $interval = $price['recurring']['interval'] ?? 'month';
+        $count    = max(1, intval($price['recurring']['interval_count'] ?? 1));
+        $map = array('day' => 86400, 'week' => 604800, 'month' => 2629800, 'year' => 31557600);
+        $secs = ($map[$interval] ?? 2629800) * $count;
+        $end  = $start + $secs;
+    }
+
+    return array($start, $end);
+}
+
+/**
  * Create a Stripe Native Subscription
  * 
  * This replaces the old PaymentIntent flow. It:
@@ -88,7 +126,8 @@ function property_theme_create_stripe_native_subscription($user_id, $plan_id, $p
             'collection_method' => 'charge_automatically', // Auto-charge on renewal
             'payment_behavior' => 'allow_incomplete', // Allow incomplete for retries
             'off_session' => 'true',
-            'expand[]' => 'latest_invoice.payment_intent', // Get payment status
+            'expand[0]' => 'latest_invoice.payment_intent',
+            'expand[1]' => 'items.data.price',
             'metadata[user_id]' => $user_id,
             'metadata[plan_id]' => $plan_id,
             'metadata[billing_cycle]' => $effective_billing_cycle,
@@ -146,7 +185,7 @@ function property_theme_create_stripe_native_subscription($user_id, $plan_id, $p
 
         // Send confirmation email (HTML)
         $cycle_label = ($effective_billing_cycle === 'days')
-            ? (intval($plan['days'] ?? 30) . '-day')
+            ? (intval($plan['billing_days'] ?? 14) . '-day')
             : ucfirst($effective_billing_cycle);
 
         $kv = property_theme_email_kv_table(array(
@@ -207,6 +246,8 @@ function property_theme_save_stripe_native_subscription($user_id, $plan_id, $str
         array('user_id' => $user_id, 'status' => 'active')
     );
 
+    list($period_start, $period_end) = property_theme_resolve_subscription_period($stripe_subscription);
+
     // Insert new subscription with Stripe data
     $result = $wpdb->insert(
         $wpdb->prefix . 'user_subscriptions',
@@ -216,11 +257,11 @@ function property_theme_save_stripe_native_subscription($user_id, $plan_id, $str
             'stripe_subscription_id' => $stripe_subscription['id'],
             'stripe_customer_id' => $stripe_customer_id,
             'stripe_price_id' => $stripe_price_id,
-            'status' => $stripe_subscription['status'], // active, incomplete, past_due, etc.
-            'expiry_date' => date('Y-m-d H:i:s', $stripe_subscription['current_period_end']),
-            'current_period_start' => date('Y-m-d H:i:s', $stripe_subscription['current_period_start']),
-            'current_period_end' => date('Y-m-d H:i:s', $stripe_subscription['current_period_end']),
-            'auto_renew' => 1, // Always true for native subscriptions
+            'status' => $stripe_subscription['status'],
+            'expiry_date' => date('Y-m-d H:i:s', $period_end),
+            'current_period_start' => date('Y-m-d H:i:s', $period_start),
+            'current_period_end' => date('Y-m-d H:i:s', $period_end),
+            'auto_renew' => 1,
         )
     );
 
@@ -245,12 +286,13 @@ function property_theme_update_subscription_from_stripe($stripe_subscription_id,
     global $wpdb;
 
     $cancel_at_period_end = !empty($stripe_subscription['cancel_at_period_end']);
+    list($period_start, $period_end) = property_theme_resolve_subscription_period($stripe_subscription);
 
     $update_data = array(
         'status' => $stripe_subscription['status'],
-        'current_period_start' => date('Y-m-d H:i:s', $stripe_subscription['current_period_start']),
-        'current_period_end' => date('Y-m-d H:i:s', $stripe_subscription['current_period_end']),
-        'expiry_date' => date('Y-m-d H:i:s', $stripe_subscription['current_period_end']),
+        'current_period_start' => date('Y-m-d H:i:s', $period_start),
+        'current_period_end' => date('Y-m-d H:i:s', $period_end),
+        'expiry_date' => date('Y-m-d H:i:s', $period_end),
         'auto_renew' => $cancel_at_period_end ? 0 : 1,
         'last_webhook_event_at' => current_time('mysql'),
     );
@@ -496,7 +538,9 @@ function property_theme_update_subscription_plan($subscription_id, $new_plan_id,
         }
 
         // Sync subscription state back from Stripe (period dates, status, etc.)
-        $fresh_sub = property_theme_stripe_api_call('GET', '/v1/subscriptions/' . $subscription->stripe_subscription_id, array(), STRIPE_SECRET_KEY);
+        $fresh_sub = property_theme_stripe_api_call('GET', '/v1/subscriptions/' . $subscription->stripe_subscription_id, array(
+            'expand[0]' => 'items.data.price',
+        ), STRIPE_SECRET_KEY);
         if (!isset($fresh_sub['error'])) {
             property_theme_update_subscription_from_stripe($subscription->stripe_subscription_id, $fresh_sub);
         }
@@ -512,9 +556,12 @@ function property_theme_update_subscription_plan($subscription_id, $new_plan_id,
         if ($user && function_exists('property_theme_send_html_email')) {
             $amount_paid = $charged_invoice ? property_theme_format_price($charged_invoice['amount_paid'] ?? 0, strtoupper($charged_invoice['currency'] ?? 'usd')) : 'No charge';
             $next_date   = !empty($fresh_sub['current_period_end']) ? date('F j, Y', $fresh_sub['current_period_end']) : '—';
+            $cycle_label = ($effective_cycle === 'days')
+                ? (intval($plan['billing_days'] ?? 14) . '-day')
+                : ucfirst($effective_cycle);
             $kv = property_theme_email_kv_table(array(
                 'New plan'          => esc_html($plan['name']),
-                'Billing cycle'     => esc_html(ucfirst($effective_cycle)),
+                'Billing cycle'     => esc_html($cycle_label),
                 'Charged today'     => esc_html($amount_paid),
                 'Next billing date' => esc_html($next_date),
             ));

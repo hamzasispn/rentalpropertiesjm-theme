@@ -3,6 +3,48 @@
  * Property Activation/Deactivation - After subscription status change
  */
 
+/**
+ * Enforce a user's property cap by drafting the oldest published listings
+ * that exceed the limit. Marks them as auto-deactivated so they're auto
+ * re-published if the user later upgrades back.
+ *
+ * @param int $user_id
+ * @param int $max_properties Cap from the new plan; 0 means unlimited
+ * @return int Number of properties drafted
+ */
+function property_theme_enforce_property_limit($user_id, $max_properties) {
+    $user_id = intval($user_id);
+    $max_properties = intval($max_properties);
+    if ($user_id <= 0 || $max_properties <= 0) {
+        return 0;
+    }
+
+    global $wpdb;
+    $published = $wpdb->get_col($wpdb->prepare(
+        "SELECT ID FROM {$wpdb->posts}
+         WHERE post_author = %d AND post_type = 'property' AND post_status = 'publish'
+         ORDER BY post_date ASC",
+        $user_id
+    ));
+
+    if (count($published) <= $max_properties) {
+        return 0;
+    }
+
+    $to_draft = array_slice($published, $max_properties);
+    $count = 0;
+    foreach ($to_draft as $pid) {
+        $pid = intval($pid);
+        // Use direct DB update to bypass any save_post filters that may re-publish
+        $ok = wp_update_post(array('ID' => $pid, 'post_status' => 'draft'), true);
+        if (!is_wp_error($ok)) {
+            update_post_meta($pid, '_property_auto_deactivated', 1);
+            $count++;
+        }
+    }
+    return $count;
+}
+
 add_action('init', function () {
     if (!wp_next_scheduled('check_user_subscription_status')) {
         wp_schedule_event(time(), 'hourly', 'check_user_subscription_status');
