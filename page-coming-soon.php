@@ -52,8 +52,8 @@ $launch_date = get_option('mytheme_launch_date', '2025-09-01T00:00:00');
                         },
                         rise: {
                             '0%': { opacity: '0', transform: 'translateY(0) scale(1)' },
-                            '10%': { opacity: '0.6' },
-                            '90%': { opacity: '0.2' },
+                            '10%': { opacity: '0.5' },
+                            '90%': { opacity: '0.15' },
                             '100%': { opacity: '0', transform: 'translateY(-100vh) scale(0.5)' },
                         },
                     },
@@ -108,18 +108,18 @@ $launch_date = get_option('mytheme_launch_date', '2025-09-01T00:00:00');
 
         {{-- Glow blob top-left --}}
         <div class="pointer-events-none absolute -top-[40%] -left-[20%] w-[80%] h-[80%] rounded-full animate-drift1"
-            style="background: radial-gradient(circle, rgba(234,179,8,0.12) 0%, transparent 70%);">
+            style="background: radial-gradient(circle, rgba(255,255,255,0.06) 0%, transparent 70%);">
         </div>
 
         {{-- Glow blob bottom-right --}}
         <div class="pointer-events-none absolute -bottom-[40%] -right-[20%] w-[70%] h-[70%] rounded-full animate-drift2"
-            style="background: radial-gradient(circle, rgba(255,255,255,0.06) 0%, transparent 70%);">
+            style="background: radial-gradient(circle, rgba(255,255,255,0.04) 0%, transparent 70%);">
         </div>
 
         {{-- Floating particles --}}
         <div class="pointer-events-none absolute inset-0 overflow-hidden">
             <template x-for="(p, i) in particles" :key="i">
-                <div class="absolute rounded-full bg-yellow-400 opacity-0 animate-rise"
+                <div class="absolute rounded-full bg-white opacity-0 animate-rise"
                     :style="`left:${p.left}; bottom:${p.bottom}; width:${p.size}; height:${p.size}; animation-duration:${p.duration}; animation-delay:${p.delay};`">
                 </div>
             </template>
@@ -142,17 +142,17 @@ $launch_date = get_option('mytheme_launch_date', '2025-09-01T00:00:00');
 
             {{-- Badge --}}
             <span
-                class="inline-block border border-yellow-400/30 bg-yellow-400/10 text-yellow-400 text-xs font-bold tracking-widest uppercase px-4 py-1 rounded-full mb-6">
+                class="inline-block border border-white/30 bg-white/10 text-white text-xs font-bold tracking-widest uppercase px-4 py-1 rounded-full mb-6">
                 Coming Soon
             </span>
 
             {{-- Heading --}}
             <h1 class="text-5xl sm:text-6xl font-black leading-none tracking-tight text-white mb-5">
-                Something <span class="text-yellow-400">Amazing</span><br>Is Coming
+                Something <span class="text-white/60">Amazing</span><br>Is Coming
             </h1>
 
             {{-- Subtitle --}}
-            <p class="text-base text-slate-400 leading-relaxed mb-10 max-w-md mx-auto">
+            <p class="text-base text-white/40 leading-relaxed mb-10 max-w-md mx-auto">
                 We're putting the finishing touches on Jamaica's premier property rental platform.
                 Be the first to know when we launch.
             </p>
@@ -166,9 +166,9 @@ $launch_date = get_option('mytheme_launch_date', '2025-09-01T00:00:00');
                 { val: secs,  label: 'Seconds' },
             ]" :key="item.label">
                     <div class="bg-white/5 border border-white/10 rounded-xl px-5 py-4 min-w-[72px] text-center">
-                        <span class="block text-4xl font-black text-yellow-400 tabular-nums leading-none"
+                        <span class="block text-4xl font-black text-white tabular-nums leading-none"
                             x-text="item.val"></span>
-                        <span class="block text-[11px] font-semibold text-slate-500 uppercase tracking-widest mt-2"
+                        <span class="block text-[11px] font-semibold text-white/40 uppercase tracking-widest mt-2"
                             x-text="item.label"></span>
                     </div>
                 </template>
@@ -177,15 +177,15 @@ $launch_date = get_option('mytheme_launch_date', '2025-09-01T00:00:00');
             {{-- Notify form --}}
             <form @submit="submit($event)" class="flex gap-2 max-w-md mx-auto mb-6">
                 <input x-model="email" type="email" placeholder="Enter your email address" required
-                    class="flex-1 px-4 py-3 rounded-xl border border-white/10 bg-white/5 text-sm text-white placeholder-slate-500 outline-none focus:border-yellow-400 focus:bg-white/10 transition-colors">
+                    class="flex-1 px-4 py-3 rounded-xl border border-white/10 bg-white/5 text-sm text-white placeholder-white/30 outline-none focus:border-white/40 focus:bg-white/10 transition-colors">
                 <button type="submit" :disabled="submitted"
-                    :class="submitted ? 'opacity-60 cursor-not-allowed' : 'hover:bg-yellow-300 active:scale-95'"
+                    :class="submitted ? 'opacity-60 cursor-not-allowed' : 'hover:bg-white/90 active:scale-95'"
                     x-text="submitted ? '✓ Subscribed!' : 'Notify Me'"
-                    class="px-5 py-3 bg-yellow-400 text-black font-bold text-sm rounded-xl transition-all whitespace-nowrap"></button>
+                    class="px-5 py-3 bg-white text-navy font-bold text-sm rounded-xl transition-all whitespace-nowrap"></button>
             </form>
 
             {{-- Footer --}}
-            <p class="text-xs text-slate-600">
+            <p class="text-xs text-white/20">
                 © <?php echo esc_html(date('Y')); ?> <?php echo esc_html($site_name); ?>. All rights reserved.
             </p>
 
