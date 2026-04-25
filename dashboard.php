@@ -334,14 +334,18 @@ $subscription = property_theme_get_user_subscription($user_id) ?? array();
                                     <span class="text-slate-500 font-normal text-sm ml-2">Expires <?= esc_html(($pm['exp_month'] ?? '') . '/' . ($pm['exp_year'] ?? '')); ?></span>
                                 </p>
                             </div>
-                            <button type="button" @click="openUpdatePaymentModal()"
+                            <!-- FIXED: dispatch event instead of calling parent method directly -->
+                            <button type="button"
+                                @click="$dispatch('open-update-payment-modal')"
                                 class="update-payment-btn px-4 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition text-sm">
                                 Change Card
                             </button>
                         </div>
                         <?php else: ?>
                         <div class="mb-6">
-                            <button type="button" @click="openUpdatePaymentModal()"
+                            <!-- FIXED: dispatch event instead of calling parent method directly -->
+                            <button type="button"
+                                @click="$dispatch('open-update-payment-modal')"
                                 class="update-payment-btn px-4 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition text-sm">
                                 + Add Payment Method
                             </button>
@@ -367,7 +371,7 @@ $subscription = property_theme_get_user_subscription($user_id) ?? array();
                                         const d = await r.json();
                                         if (!r.ok) { throw new Error(d.message || 'Failed to update auto-renew'); }
                                         autoRenew = !!d.auto_renew;
-                                        window.toast && window.toast(autoRenew ? 'Auto-renew is on' : 'Auto-renew is off — your plan will end at the period’s end', 'success');
+                                        window.toast && window.toast(autoRenew ? 'Auto-renew is on' : 'Auto-renew is off — your plan will end at the period\'s end', 'success');
                                         setTimeout(() => window.location.reload(), 700);
                                     }).catch((e) => {
                                         loading = false;
@@ -517,13 +521,27 @@ $subscription = property_theme_get_user_subscription($user_id) ?? array();
     </div>
 </div>
 
-<!-- Update Payment Method Modal -->
-<div id="update-payment-modal" x-show="showUpdatePaymentModal" x-transition
+<!--
+    =====================================================================
+    UPDATE PAYMENT METHOD MODAL
+    FIXED: Uses its own x-data with open/close driven by window events
+    dispatched via Alpine's $dispatch or window.dispatchEvent().
+    This avoids the cross-component scope issue where x-show on a sibling
+    element couldn't reliably react to state owned by the dashboard() root.
+    =====================================================================
+-->
+<div id="update-payment-modal"
+    x-data="{ open: false }"
+    x-on:open-update-payment-modal.window="open = true; mountUpdateCard()"
+    x-on:close-update-payment-modal.window="open = false; unmountUpdateCard()"
+    x-show="open"
+    x-transition
     class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
     <div class="bg-white rounded-lg max-w-md w-full p-8">
         <div class="flex justify-between items-center mb-6">
             <h2 class="text-2xl font-bold text-slate-900">Update Payment Method</h2>
-            <button @click="closeUpdatePaymentModal()" class="text-slate-400 hover:text-slate-600">
+            <!-- FIXED: dispatch close event instead of calling parent closeUpdatePaymentModal() -->
+            <button @click="$dispatch('close-update-payment-modal')" class="text-slate-400 hover:text-slate-600">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12">
                     </path>
@@ -595,6 +613,53 @@ function toastBus() {
         dismiss(id) { this.toasts = this.toasts.filter(t => t.id !== id); }
     };
 }
+
+// =====================================================================
+// mountUpdateCard / unmountUpdateCard
+// Defined globally so the modal's own x-data scope can call them.
+// Stripe card mounting is decoupled from the dashboard() component
+// entirely — no cross-scope method calls needed.
+// =====================================================================
+function mountUpdateCard() {
+    const tryMount = (attempt = 0) => {
+        const target = document.getElementById('update-card-element');
+        // Wait until the element is visible in the DOM (x-show animates in)
+        if (!target || target.offsetParent === null || target.offsetWidth < 10) {
+            if (attempt < 40) return setTimeout(() => tryMount(attempt + 1), 50);
+            console.warn('[Stripe] update-card-element never became visible');
+            return;
+        }
+        try {
+            if (!window.stripe) {
+                window.toast && window.toast('Stripe.js not loaded yet — please retry', 'error');
+                return;
+            }
+            // Unmount any previous instance cleanly
+            if (window.updateCardElement) {
+                try { window.updateCardElement.unmount(); } catch (e) {}
+                window.updateCardElement = null;
+            }
+            const els = window.stripe.elements();
+            window.updateCardElement = els.create('card');
+            window.updateCardElement.mount('#update-card-element');
+            window.updateCardElement.on('change', (event) => {
+                const errEl = document.getElementById('update-card-errors');
+                if (errEl) errEl.textContent = event.error ? event.error.message : '';
+            });
+        } catch (e) {
+            console.error('[Stripe mount]', e);
+            window.toast && window.toast('Could not load card form — please refresh', 'error');
+        }
+    };
+    tryMount();
+}
+
+function unmountUpdateCard() {
+    if (window.updateCardElement) {
+        try { window.updateCardElement.unmount(); } catch (e) {}
+        window.updateCardElement = null;
+    }
+}
 </script>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -604,7 +669,6 @@ function toastBus() {
         return {
             activeTab: 'overview',
             showUpgradeModal: false,
-            showUpdatePaymentModal: false,
             agentPhone: localStorage.getItem('agent_phone') || '',
             agentWhatsapp: localStorage.getItem('agent_whatsapp') || '',
             cancelLoading: false,
@@ -619,7 +683,6 @@ function toastBus() {
                 const fullHash = window.location.hash.replace('#', '');
                 let activeTabName = 'overview';
 
-                // Parse hash which may contain: tab?param=value
                 if (fullHash) {
                     const [tabName, queryString] = fullHash.split('?');
 
@@ -627,7 +690,6 @@ function toastBus() {
                         activeTabName = tabName;
                         console.log('[v0] Opening tab from hash:', tabName);
 
-                        // If there are query params in the hash, log them
                         if (queryString) {
                             const hashParams = new URLSearchParams(queryString);
                             const propertyId = hashParams.get('property_id');
@@ -650,10 +712,8 @@ function toastBus() {
                 if (pushToUrl) {
                     history.pushState(null, '', `#${tabId}`);
                 }
-                // Delay chart init so x-show has time to show the canvas
                 if (tabId === 'analytics') {
                     setTimeout(() => {
-                        // Destroy old instance so chart re-renders with correct dimensions
                         if (window.analyticsChartInstance) {
                             window.analyticsChartInstance.destroy();
                             window.analyticsChartInstance = null;
@@ -754,43 +814,9 @@ function toastBus() {
                 });
             },
 
-            closeUpdatePaymentModal() {
-                this.showUpdatePaymentModal = false;
-                if (window.updateCardElement) {
-                    window.updateCardElement.unmount();
-                }
-            },
-
-            openUpdatePaymentModal() {
-                this.showUpdatePaymentModal = true;
-                const tryMount = (attempt = 0) => {
-                    console.log("Btn Opening")
-                    const target = document.getElementById('update-card-element');
-                    if (!target || target.offsetParent === null || target.offsetWidth < 10) {
-                        if (attempt < 30) return setTimeout(() => tryMount(attempt + 1), 50);
-                    }
-                    try {
-                        if (!window.stripe) {
-                            window.toast && window.toast('Stripe.js not loaded yet — please retry', 'error');
-                            return;
-                        }
-                        if (window.updateCardElement) {
-                            try { window.updateCardElement.unmount(); } catch (e) {}
-                        }
-                        const els = window.stripe.elements();
-                        window.updateCardElement = els.create('card');
-                        window.updateCardElement.mount('#update-card-element');
-                        window.updateCardElement.on('change', (event) => {
-                            const errEl = document.getElementById('update-card-errors');
-                            if (errEl) errEl.textContent = event.error ? event.error.message : '';
-                        });
-                    } catch (e) {
-                        console.error('[Stripe mount]', e);
-                        window.toast && window.toast('Could not load card form — please refresh', 'error');
-                    }
-                };
-                this.$nextTick(() => tryMount());
-            },
+            // NOTE: openUpdatePaymentModal / closeUpdatePaymentModal removed from dashboard().
+            // The modal now manages itself via window events. Buttons use $dispatch() directly.
+            // Stripe card mounting is handled by the global mountUpdateCard() / unmountUpdateCard().
 
             initChart() {
                 const ctx = document.getElementById('analyticsChart');
@@ -900,6 +926,8 @@ function toastBus() {
                     }
 
                     window.toast && window.toast('Payment method updated', 'success');
+                    // Close modal via event then reload
+                    window.dispatchEvent(new CustomEvent('close-update-payment-modal'));
                     setTimeout(() => location.reload(), 700);
                 } catch (error) {
                     console.error('Update payment error:', error);
