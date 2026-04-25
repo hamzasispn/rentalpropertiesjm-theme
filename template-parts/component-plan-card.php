@@ -39,8 +39,8 @@ foreach ($plans_data as $plan) {
         $plan_title = get_the_title($plan['id']);
         $is_current = $stats['subscription'] && $stats['subscription']->package_id == $plan['id'];
         $is_best_seller = ($plan['id'] === $best_seller_plan_id);
-        $is_recommended = ($plan['id'] == 163);
-        $is_highlighted = ($plan['id'] == 166);
+        $is_recommended = ($plan['id'] == 205);
+        $is_highlighted = ($plan['id'] == 207);
 
         /* Duration label */
         if (!empty($plan['billing_cycle']) && $plan['billing_cycle'] === 'days') {
