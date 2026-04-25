@@ -483,43 +483,6 @@ $subscription = property_theme_get_user_subscription($user_id) ?? array();
     </div>
 </div>
 
-<!-- Payment Modal for Upgrades -->
-<div id="upgrade-payment-modal" x-show="showUpgradeModal" x-transition
-    class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-    <div class="bg-white rounded-lg max-w-md w-full p-8">
-        <div class="flex justify-between items-center mb-6">
-            <h2 class="text-2xl font-bold text-slate-900">Upgrade Payment</h2>
-            <button @click="closeUpgradeModal()" class="text-slate-400 hover:text-slate-600">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12">
-                    </path>
-                </svg>
-            </button>
-        </div>
-
-        <div class="mb-6">
-            <p class="text-slate-600 mb-2">You're upgrading to <span id="upgrade-plan-name"
-                    class="font-semibold text-slate-900"></span></p>
-            <p class="text-2xl font-bold text-blue-600">Amount due: $<span id="upgrade-amount">0.00</span></p>
-        </div>
-
-        <form id="upgrade-payment-form" class="space-y-6">
-            <div>
-                <label class="block text-sm font-medium text-slate-700 mb-2">Card Information</label>
-                <div id="upgrade-card-element" class="p-4 border border-slate-300 rounded-lg bg-white"></div>
-                <div id="upgrade-card-errors" class="text-red-600 text-sm mt-2" role="alert"></div>
-            </div>
-
-            <button type="submit" id="upgrade-submit-btn"
-                class="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-slate-400 text-white font-bold py-3 px-4 rounded-lg transition">
-                Complete Upgrade
-            </button>
-
-            <div id="upgrade-error"
-                class="hidden bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm"></div>
-        </form>
-    </div>
-</div>
 
 <!--
     =====================================================================
@@ -668,7 +631,6 @@ function unmountUpdateCard() {
     function dashboard() {
         return {
             activeTab: 'overview',
-            showUpgradeModal: false,
             agentPhone: localStorage.getItem('agent_phone') || '',
             agentWhatsapp: localStorage.getItem('agent_whatsapp') || '',
             cancelLoading: false,
