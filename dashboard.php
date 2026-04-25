@@ -480,7 +480,7 @@ $subscription = property_theme_get_user_subscription($user_id) ?? array();
 </div>
 
 <!-- Payment Modal for Upgrades -->
-<div id="upgrade-payment-modal" x-show="showUpgradeModal" x-cloak x-transition
+<div id="upgrade-payment-modal" x-show="showUpgradeModal" x-transition
     class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
     <div class="bg-white rounded-lg max-w-md w-full p-8">
         <div class="flex justify-between items-center mb-6">
@@ -518,7 +518,7 @@ $subscription = property_theme_get_user_subscription($user_id) ?? array();
 </div>
 
 <!-- Update Payment Method Modal -->
-<div id="update-payment-modal" x-show="showUpdatePaymentModal" x-cloak x-transition
+<div id="update-payment-modal" x-show="showUpdatePaymentModal" x-transition
     class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
     <div class="bg-white rounded-lg max-w-md w-full p-8">
         <div class="flex justify-between items-center mb-6">
