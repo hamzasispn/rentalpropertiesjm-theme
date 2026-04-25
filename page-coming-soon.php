@@ -106,17 +106,14 @@ $launch_date = get_option('mytheme_launch_date', '2025-09-01T00:00:00');
         },
     }" x-init="init()" class="relative min-h-screen flex flex-col items-center justify-center px-6 py-16">
 
-        {{-- Glow blob top-left --}}
         <div class="pointer-events-none absolute -top-[40%] -left-[20%] w-[80%] h-[80%] rounded-full animate-drift1"
             style="background: radial-gradient(circle, rgba(255,255,255,0.06) 0%, transparent 70%);">
         </div>
 
-        {{-- Glow blob bottom-right --}}
         <div class="pointer-events-none absolute -bottom-[40%] -right-[20%] w-[70%] h-[70%] rounded-full animate-drift2"
             style="background: radial-gradient(circle, rgba(255,255,255,0.04) 0%, transparent 70%);">
         </div>
 
-        {{-- Floating particles --}}
         <div class="pointer-events-none absolute inset-0 overflow-hidden">
             <template x-for="(p, i) in particles" :key="i">
                 <div class="absolute rounded-full bg-white opacity-0 animate-rise"
@@ -125,10 +122,8 @@ $launch_date = get_option('mytheme_launch_date', '2025-09-01T00:00:00');
             </template>
         </div>
 
-        {{-- Content --}}
         <div class="relative z-10 w-full max-w-xl text-center">
 
-            {{-- Logo --}}
             <div class="mb-10">
                 <?php if ($logo): ?>
                     <img src="<?php echo esc_url($logo); ?>" alt="<?php echo esc_attr($site_name); ?>"
@@ -140,24 +135,20 @@ $launch_date = get_option('mytheme_launch_date', '2025-09-01T00:00:00');
                 <?php endif; ?>
             </div>
 
-            {{-- Badge --}}
             <span
                 class="inline-block border border-white/30 bg-white/10 text-white text-xs font-bold tracking-widest uppercase px-4 py-1 rounded-full mb-6">
                 Coming Soon
             </span>
 
-            {{-- Heading --}}
             <h1 class="text-5xl sm:text-6xl font-black leading-none tracking-tight text-white mb-5">
                 Something <span class="text-white/60">Amazing</span><br>Is Coming
             </h1>
 
-            {{-- Subtitle --}}
             <p class="text-base text-white/40 leading-relaxed mb-10 max-w-md mx-auto">
                 We're putting the finishing touches on Jamaica's premier property rental platform.
                 Be the first to know when we launch.
             </p>
 
-            {{-- Countdown --}}
             <div class="flex justify-center gap-3 mb-10 flex-wrap">
                 <template x-for="item in [
                 { val: days,  label: 'Days' },
@@ -174,7 +165,6 @@ $launch_date = get_option('mytheme_launch_date', '2025-09-01T00:00:00');
                 </template>
             </div>
 
-            {{-- Notify form --}}
             <form @submit="submit($event)" class="flex gap-2 max-w-md mx-auto mb-6">
                 <input x-model="email" type="email" placeholder="Enter your email address" required
                     class="flex-1 px-4 py-3 rounded-xl border border-white/10 bg-white/5 text-sm text-white placeholder-white/30 outline-none focus:border-white/40 focus:bg-white/10 transition-colors">
@@ -184,7 +174,6 @@ $launch_date = get_option('mytheme_launch_date', '2025-09-01T00:00:00');
                     class="px-5 py-3 bg-white text-navy font-bold text-sm rounded-xl transition-all whitespace-nowrap"></button>
             </form>
 
-            {{-- Footer --}}
             <p class="text-xs text-white/20">
                 © <?php echo esc_html(date('Y')); ?> <?php echo esc_html($site_name); ?>. All rights reserved.
             </p>
