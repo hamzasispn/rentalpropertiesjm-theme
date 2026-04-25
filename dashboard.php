@@ -763,9 +763,8 @@ function toastBus() {
 
             openUpdatePaymentModal() {
                 this.showUpdatePaymentModal = true;
-                // Wait until the modal is actually visible (non-zero size) before mounting,
-                // otherwise Stripe.js throws postMessage / target-origin errors.
                 const tryMount = (attempt = 0) => {
+                    console.log("Btn Opening")
                     const target = document.getElementById('update-card-element');
                     if (!target || target.offsetParent === null || target.offsetWidth < 10) {
                         if (attempt < 30) return setTimeout(() => tryMount(attempt + 1), 50);
@@ -856,9 +855,6 @@ function toastBus() {
             },
 
             initStripe() {
-                // Lazy-init: just load Stripe.js. Card elements are created on demand
-                // when their respective modals open (avoids the postMessage / hidden-iframe
-                // errors that come from mounting into a display:none container).
                 if (typeof Stripe !== 'function') return;
                 const publishableKey = 'pk_test_51S1WzxB1fVG7OgbP1M3aDl9FmKiPor8xJT1vtqgAj33mY37UK75L0oMgSMaQswkQyjpyW9daLLpmWfK5HGjSN49e00VY6HZueY';
                 window.stripe = Stripe(publishableKey);
