@@ -338,7 +338,7 @@ while (have_posts()):
                     <p class="text-gray-500 text-[3.765vw] md:text-[0.833vw]"><?= get_the_content(); ?></p>
                 </div>
 
-                <?php if (!property_author_has_paid_plan($author_id)): ?>
+                <?php if (property_author_has_paid_plan($author_id)): ?>
                 <div class="md:mt-[1.25vw] mt-[5.647vw]">
                     <?php get_template_part('template-parts/component', 'ad-space', ['slot' => 'banner', 'label' => 'Advertisement']); ?>
                 </div>
@@ -640,7 +640,7 @@ while (have_posts()):
                     ></div>
                 </div>
 
-                <?php if (!property_author_has_paid_plan($author_id)): ?>
+                <?php if (property_author_has_paid_plan($author_id)): ?>
                 <div class="mt-[3.765vw] md:mt-[0.833vw]">
                     <?php get_template_part('template-parts/component', 'ad-space', ['slot' => 'sidebar', 'label' => 'Advertisement']); ?>
                 </div>
