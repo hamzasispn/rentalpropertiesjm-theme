@@ -45,10 +45,29 @@ function property_theme_enforce_property_limit($user_id, $max_properties) {
     return $count;
 }
 
+/**
+ * Schedule the hourly subscription-status sweep.
+ *
+ * `wp_schedule_event` writes to the `cron` option. Under load (parallel admin-ajax
+ * or REST hits) two requests can race and one of them gets "The cron event list
+ * could not be saved." The schedule is global state — losing one race is harmless
+ * because the other request did persist the schedule. We swallow the WP_Error so
+ * it doesn't pollute error.log on every request.
+ *
+ * Also: only attempt to schedule on full page loads, not REST/AJAX/cron requests
+ * (which fire `init` constantly and don't need to own the scheduling decision).
+ */
 add_action('init', function () {
-    if (!wp_next_scheduled('check_user_subscription_status')) {
-        wp_schedule_event(time(), 'hourly', 'check_user_subscription_status');
-    }
+    if (defined('DOING_AJAX')   && DOING_AJAX)   return;
+    if (defined('DOING_CRON')   && DOING_CRON)   return;
+    if (defined('REST_REQUEST') && REST_REQUEST) return;
+
+    if (wp_next_scheduled('check_user_subscription_status')) return;
+
+    $result = wp_schedule_event(time() + 60, 'hourly', 'check_user_subscription_status', array(), true);
+    // $result is true on success, WP_Error on failure (e.g. could_not_set race).
+    // We deliberately don't log — the next request will reschedule cleanly.
+    unset($result);
 });
 
 add_action('check_user_subscription_status', 'handle_subscription_property_status');

@@ -120,24 +120,20 @@ foreach ($property_data['gallery'] as $item) {
 }
 
 // ── Form submission ───────────────────────────────────────────────────────
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_property'])) {
+// IMPORTANT: the actual handler now lives in inc/property-form-handler.php and
+// runs on `template_redirect` (BEFORE get_header()). The old inline handler
+// here ran AFTER headers were sent, so wp_redirect() silently no-op'd and users
+// thought their property never saved. Don't put a POST handler back here.
+if (false && $_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_property'])) {
     if (!wp_verify_nonce($_POST['property_form_nonce'] ?? '', 'add_property_nonce')) {
         wp_die('Security check failed: Invalid nonce.');
     }
 
-    // NOTE: We intentionally do NOT block submission here based on the publish cap.
-    // New listings always go through as `pending` for admin review; the cap is enforced
-    // at approval time (admin_approve_property) and by the hourly cron that drafts the
-    // oldest published listings if a user is over their plan. This way:
-    //   - max_properties = 0 (unlimited) plans never get falsely blocked
-    //   - users at their cap can still queue more listings for review (admins decide)
-    //   - "property didn't add" never happens silently — it always lands in pending
-
     $errors = array();
-    if (empty(sanitize_text_field($_POST['property_title'] ?? '')))   $errors[] = 'Property title is required.';
-    if (empty(sanitize_text_field($_POST['property_price'] ?? '')))   $errors[] = 'Price is required.';
-    if (empty(sanitize_text_field($_POST['property_city']  ?? '')))   $errors[] = 'City is required.';
-    if (empty(sanitize_text_field($_POST['property_type']  ?? '')))   $errors[] = 'Property type is required.';
+    if (empty(sanitize_text_field($_POST['property_title'] ?? ''))) $errors[] = 'Property title is required.';
+    if (empty(sanitize_text_field($_POST['property_price'] ?? ''))) $errors[] = 'Price is required.';
+    if (empty(sanitize_text_field($_POST['property_city']  ?? ''))) $errors[] = 'City is required.';
+    if (empty(sanitize_text_field($_POST['property_type']  ?? ''))) $errors[] = 'Property type is required.';
 
     if (!empty($errors)) {
         set_transient('property_form_errors_' . $current_user->ID, $errors, 30);
@@ -459,6 +455,9 @@ if (isset($_GET['action']) && $_GET['action'] === 'delete' && isset($_GET['prope
                   <?php echo $plan_google_map ? 'true' : 'false'; ?>
               )">
             <?php wp_nonce_field('add_property_nonce', 'property_form_nonce'); ?>
+            <?php if ($is_edit && $property_id): ?>
+                <input type="hidden" name="property_id_edit" value="<?php echo (int) $property_id; ?>">
+            <?php endif; ?>
 
             <!-- Live client-side validation summary -->
             <div x-show="Object.keys(formErrors).length > 0"
