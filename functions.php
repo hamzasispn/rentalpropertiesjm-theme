@@ -225,6 +225,18 @@ require_once get_template_directory() . '/inc/property-cron.php';
 
 require_once get_template_directory() . '/admin/migration-page.php';
 
+/**
+ * Author archives: query property post type (not blog posts) so the
+ * realtor profile pages don't 404 on /author/{name}/page/2/.
+ */
+add_action('pre_get_posts', function ($query) {
+    if (is_admin() || !$query->is_main_query()) return;
+    if (!$query->is_author()) return;
+    $query->set('post_type', array('property'));
+    $query->set('post_status', 'publish');
+    $query->set('posts_per_page', 9);
+});
+
 // Show pending properties count in admin bar for admins
 add_action('wp_before_admin_bar_render', function () {
     if (!current_user_can('manage_options')) return;

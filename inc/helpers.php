@@ -85,3 +85,11 @@ function property_author_has_paid_plan(int $user_id): bool {
     $price = (float) get_post_meta((int) $plan_id, '_plan_price', true);
     return $price > 0;
 }
+
+/**
+ * Free-plan author: either has no active subscription or their active plan
+ * costs $0. Free listers' single-property pages monetise via ads.
+ */
+function property_author_is_free_plan(int $user_id): bool {
+    return !property_author_has_paid_plan($user_id);
+}

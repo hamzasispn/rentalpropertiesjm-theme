@@ -19,20 +19,28 @@ $author_facebook = get_the_author_meta('facebook', $author_id);
 $author_instagram= get_the_author_meta('instagram', $author_id);
 $display_name    = $author->display_name ?? '';
 
-// Pagination
-$paged    = max(1, get_query_var('paged') ?: (intval($_GET['paged'] ?? 1)));
+// Pagination — drive the SECOND query off the same `paged` var WordPress uses
+// for the main author query so /author/{name}/page/2/ resolves correctly.
+$paged    = max(1, intval(get_query_var('paged')) ?: intval(get_query_var('page')) ?: intval($_GET['paged'] ?? 1));
 $per_page = 9;
 
-// Properties listed by this realtor (only published)
-$properties_query = new WP_Query(array(
+$orderby_param = sanitize_key($_GET['orderby'] ?? 'date');
+$query_args = array(
     'post_type'      => 'property',
     'post_status'    => 'publish',
     'author'         => $author_id,
     'posts_per_page' => $per_page,
     'paged'          => $paged,
-    'orderby'        => sanitize_key($_GET['orderby'] ?? 'date'),
     'order'          => 'DESC',
-));
+);
+if ($orderby_param === 'meta_value_num') {
+    $query_args['meta_key'] = '_property_price';
+    $query_args['orderby']  = 'meta_value_num';
+} else {
+    $query_args['orderby'] = $orderby_param;
+}
+
+$properties_query = new WP_Query($query_args);
 
 $total_properties = $properties_query->found_posts;
 ?>
@@ -153,17 +161,24 @@ $total_properties = $properties_query->found_posts;
             </div>
 
             <!-- Pagination -->
-            <div class="flex justify-center mt-12">
+            <?php if ($properties_query->max_num_pages > 1): ?>
+            <div class="flex justify-center mt-12 gap-2 flex-wrap [&_a]:px-4 [&_a]:py-2 [&_a]:rounded-lg [&_a]:bg-white [&_a]:border [&_a]:border-slate-200 [&_a]:text-slate-700 [&_a]:hover:bg-blue-50 [&_a]:hover:text-blue-700 [&_a]:transition [&_span.current]:px-4 [&_span.current]:py-2 [&_span.current]:rounded-lg [&_span.current]:bg-blue-600 [&_span.current]:text-white [&_span.dots]:px-2 [&_span.dots]:py-2 [&_span.dots]:text-slate-400">
                 <?php
+                $pagination_base = trailingslashit(get_author_posts_url($author_id)) . '%_%';
                 echo paginate_links(array(
+                    'base'      => $pagination_base,
+                    'format'    => 'page/%#%/',
                     'total'     => $properties_query->max_num_pages,
                     'current'   => $paged,
-                    'format'    => '?paged=%#%',
                     'prev_text' => '←',
                     'next_text' => '→',
+                    'add_args'  => array_filter(array(
+                        'orderby' => $orderby_param !== 'date' ? $orderby_param : false,
+                    )),
                 ));
                 ?>
             </div>
+            <?php endif; ?>
 
         <?php else: ?>
             <div class="text-center py-16 bg-white border border-slate-200 rounded-xl">

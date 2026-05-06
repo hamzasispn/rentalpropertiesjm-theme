@@ -180,25 +180,33 @@ function property_theme_get_admin_emails() {
 
 /* ────────────────────────────────────────────────────────────────────────── *
  *  Block direct publishing for non-admin authors (safety net)
- *  If somehow code/path tries to publish a property authored by a non-admin,
- *  bounce it back to pending. Admin approval is mandatory.
+ *  Only force "pending" when the *current actor* is a non-admin who is trying
+ *  to publish their own property for the first time. This must NOT trigger
+ *  on:
+ *    - admin approval (current user is admin),
+ *    - cron / system updates (no current user — bypass),
+ *    - re-saving an already-published listing,
+ *    - the auto-deactivated → publish flow done programmatically.
  * ────────────────────────────────────────────────────────────────────────── */
 
 add_filter('wp_insert_post_data', function ($data, $postarr) {
     if (($data['post_type'] ?? '') !== 'property') return $data;
     if (($data['post_status'] ?? '') !== 'publish') return $data;
 
-    $author_id = intval($data['post_author'] ?? ($postarr['post_author'] ?? 0));
-    if (!$author_id) return $data;
+    // System / cron / WP-CLI: no logged-in user → trust caller
+    $current_user_id = get_current_user_id();
+    if (!$current_user_id) return $data;
 
-    if (user_can($author_id, 'manage_options')) return $data;
+    // Admin actor: trust them (this is the approval path)
+    if (user_can($current_user_id, 'manage_options')) return $data;
 
-    // Allow updates on already-published listings (just an edit, not a new publish)
+    // Already-published listings being re-saved are just edits, not new publishes
     if (!empty($postarr['ID'])) {
         $existing = get_post_status($postarr['ID']);
         if ($existing === 'publish') return $data;
     }
 
+    // Non-admin user trying to publish — bounce to pending
     $data['post_status'] = 'pending';
     return $data;
 }, 10, 2);

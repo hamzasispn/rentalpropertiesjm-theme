@@ -1282,7 +1282,10 @@ $res_cats     = get_terms(['taxonomy' => 'resource_category', 'hide_empty' => fa
                                         <td><span class="badge" :class="m.sub_status === 'active' ? 'badge-published' : 'badge-draft'" x-text="m.sub_status || 'no plan'"></span></td>
                                         <td x-text="m.expires_at || '—'"></td>
                                         <td x-text="m.property_count"></td>
-                                        <td><button class="btn btn-secondary btn-sm" @click="loadMemberDetail(m.user_id)">View</button></td>
+                                        <td class="whitespace-nowrap flex gap-1.5">
+                                            <button class="btn btn-secondary btn-sm" @click="loadMemberDetail(m.user_id)">View</button>
+                                            <button class="btn btn-sm bg-red-600 hover:bg-red-700 text-white" @click="deleteMember(m)">Delete</button>
+                                        </td>
                                     </tr>
                                 </template>
                                 <tr x-show="!membersLoading && members.length === 0">
@@ -1297,7 +1300,13 @@ $res_cats     = get_terms(['taxonomy' => 'resource_category', 'hide_empty' => fa
             <!-- Detail view -->
             <template x-if="selectedMember">
                 <div>
-                    <button class="btn btn-secondary btn-sm" style="margin-bottom:20px" @click="selectedMember = null; memberDetail = null">← Back to Members</button>
+                    <div class="flex justify-between items-center mb-5 gap-3 flex-wrap">
+                        <button class="btn btn-secondary btn-sm" @click="selectedMember = null; memberDetail = null">← Back to Members</button>
+                        <button class="btn btn-sm bg-red-600 hover:bg-red-700 text-white"
+                                @click="deleteMember({ user_id: memberDetail?.user_id || selectedMember, name: memberDetail?.name, email: memberDetail?.email })">
+                            Delete Member
+                        </button>
+                    </div>
                     <div class="loading-spinner" x-show="memberDetailLoading"><div class="spinner"></div> Loading…</div>
                     <div x-show="!memberDetailLoading && memberDetail" style="display:grid;gap:20px;grid-template-columns:1fr 1fr">
 
@@ -1711,6 +1720,36 @@ function adminPanel() {
                 if (d.success) this.memberDetail = d.member;
             } catch(e) {}
             this.memberDetailLoading = false;
+        },
+
+        async deleteMember(member) {
+            if (!member || !member.user_id) return;
+            const label = member.name || member.email || ('user #' + member.user_id);
+            if (!confirm(`Delete ${label}? This will also delete all their properties, leads and subscription history. This cannot be undone.`)) return;
+
+            try {
+                const r = await fetch(this.restUrl + 'property-theme/v1/admin/delete-member', {
+                    method: 'POST',
+                    headers: {
+                        'X-WP-Nonce': this.nonce,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ user_id: member.user_id })
+                });
+                const d = await r.json();
+                if (!r.ok || !d.success) {
+                    this.showToast(d.message || 'Could not delete member', 'error');
+                    return;
+                }
+                this.members = this.members.filter(m => m.user_id !== member.user_id);
+                if (this.selectedMember === member.user_id) {
+                    this.selectedMember = null;
+                    this.memberDetail = null;
+                }
+                this.showToast(`${label} deleted (${d.deleted_properties || 0} properties removed)`, 'success');
+            } catch(e) {
+                this.showToast('Network error while deleting member', 'error');
+            }
         },
 
         showToast(msg, type = 'success') {

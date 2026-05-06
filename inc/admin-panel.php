@@ -107,6 +107,13 @@ add_action('rest_api_init', function () {
         'callback'            => 'admin_get_member_detail',
         'permission_callback' => $admin_check,
     ]);
+
+    // Delete a member (and their properties + subscriptions)
+    register_rest_route('property-theme/v1', '/admin/delete-member', [
+        'methods'             => 'POST',
+        'callback'            => 'admin_delete_member',
+        'permission_callback' => $admin_check,
+    ]);
 });
 
 function admin_get_pending_properties($request) {
@@ -519,6 +526,65 @@ function admin_get_members($request) {
     }
 
     return rest_ensure_response(['success' => true, 'members' => $members]);
+}
+
+/**
+ * Delete a member: their properties, leads on those properties, subscription rows,
+ * then the user account. Refuses to delete administrators or the current user.
+ */
+function admin_delete_member($request) {
+    global $wpdb;
+
+    $user_id = intval($request->get_param('user_id'));
+    if (!$user_id) {
+        return new WP_Error('missing_id', 'User ID required', ['status' => 400]);
+    }
+
+    $user = get_userdata($user_id);
+    if (!$user) {
+        return new WP_Error('not_found', 'User not found', ['status' => 404]);
+    }
+
+    if (in_array('administrator', (array) $user->roles, true)) {
+        return new WP_Error('forbidden', 'Cannot delete an administrator account.', ['status' => 403]);
+    }
+
+    if ($user_id === get_current_user_id()) {
+        return new WP_Error('forbidden', 'You cannot delete your own account here.', ['status' => 403]);
+    }
+
+    // Force-delete the user's properties (and the leads attached to them)
+    $property_ids = get_posts([
+        'post_type'      => 'property',
+        'author'         => $user_id,
+        'post_status'    => 'any',
+        'posts_per_page' => -1,
+        'fields'         => 'ids',
+    ]);
+
+    $deleted_properties = 0;
+    foreach ($property_ids as $pid) {
+        $wpdb->delete($wpdb->prefix . 'property_leads',     ['property_id' => $pid], ['%d']);
+        $wpdb->delete($wpdb->prefix . 'property_analytics', ['property_id' => $pid], ['%d']);
+        if (wp_delete_post($pid, true)) $deleted_properties++;
+    }
+
+    // Drop subscription rows
+    $wpdb->delete($wpdb->prefix . 'user_subscriptions', ['user_id' => $user_id], ['%d']);
+
+    // Delete the user account itself
+    require_once ABSPATH . 'wp-admin/includes/user.php';
+    $deleted = wp_delete_user($user_id);
+
+    if (!$deleted) {
+        return new WP_Error('delete_failed', 'Could not delete user account.', ['status' => 500]);
+    }
+
+    return rest_ensure_response([
+        'success'            => true,
+        'message'            => 'Member and all related data deleted.',
+        'deleted_properties' => $deleted_properties,
+    ]);
 }
 
 function admin_get_member_detail($request) {

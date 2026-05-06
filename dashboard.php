@@ -645,6 +645,13 @@ function unmountUpdateCard() {
                 const fullHash = window.location.hash.replace('#', '');
                 let activeTabName = 'overview';
 
+                // After saving a property the redirect lands here without a hash —
+                // jump to the add-property tab so the success/review banner shows.
+                const urlSearch = new URLSearchParams(window.location.search);
+                if (!fullHash && (urlSearch.has('saved') || urlSearch.has('property_id') || urlSearch.has('error'))) {
+                    activeTabName = 'add-property';
+                }
+
                 if (fullHash) {
                     const [tabName, queryString] = fullHash.split('?');
 

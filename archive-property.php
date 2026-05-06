@@ -19,7 +19,7 @@ $filter_params = array(
     'location' => sanitize_text_field($_GET['location'] ?? ''),
     'keyword' => sanitize_text_field($_GET['keyword'] ?? ''),
     'sort' => sanitize_text_field($_GET['sort'] ?? 'newest'),
-    'view' => sanitize_text_field($_GET['view'] ?? 'grid'),
+    'view' => sanitize_text_field($_GET['view'] ?? 'list'),
     'featured' => sanitize_text_field($_GET['featured'] ?? ''),
     'listing_status' => sanitize_text_field($_GET['listing_status'] ?? ''),
     'currency' => sanitize_text_field($_GET['currency'] ?? 'usd'),
@@ -96,309 +96,337 @@ $listing_statuses_archive = get_terms(array('taxonomy' => 'property_listing_stat
 ?>
             x-data="propertyArchiveFiltering(<?php echo htmlspecialchars(json_encode($filter_params)); ?>, <?php echo htmlspecialchars(json_encode($cities_data)); ?>, <?php echo htmlspecialchars(json_encode($property_type_hierarchy)); ?>, <?php echo htmlspecialchars(json_encode($bedrooms)); ?>, <?php echo htmlspecialchars(json_encode($bathrooms)); ?>, <?php echo htmlspecialchars(json_encode($listing_statuses_archive)); ?>)">
 
-            <!-- Top Filter Bar - Sticky -->
-            <div
-                class="bg-white rounded-xl shadow-sm p-[1.765vw] md:p-4 border border-slate-200 mb-6 sticky top-0 z-50">
+            <!-- ─────────────────────────────────────────────────────────────────
+                 REAL-ESTATE FILTER BAR (Zillow / Realtor.com style)
+                 - Big city/location search
+                 - Inline pill toggles for Buy/Rent/All
+                 - Inline dropdown chips for Price, Beds, Baths, Type
+                 - "More filters" expander for everything else
+                 ───────────────────────────────────────────────────────────────── -->
+            <div class="mb-6 sticky top-0 z-50 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/80 rounded-2xl shadow-md border border-slate-200">
 
-                <!-- Buy / Rent Toggle — top of filter bar -->
-                <div class="flex gap-2 mb-4 pb-4 border-b border-slate-100">
-                    <!-- All properties button -->
-                    <button type="button"
-                        @click="filters.listingStatus = ''; applyFilters()"
-                        :class="filters.listingStatus === ''
-                            ? 'bg-[var(--primary-color)] text-white border-[var(--primary-color)] shadow-sm'
-                            : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-50'"
-                        class="px-6 py-2 rounded-full border text-sm font-semibold transition font-inter">
-                        All
-                    </button>
-                    <template x-for="status in listingStatuses" :key="status.slug">
+                <!-- Row 1: Search + Buy/Rent toggle + Sort/View -->
+                <div class="px-4 md:px-5 pt-4 md:pt-5 pb-3 flex flex-col lg:flex-row lg:items-center gap-3">
+
+                    <!-- Buy / Rent / All segmented toggle -->
+                    <div class="inline-flex items-center bg-slate-100 rounded-full p-1 gap-1 self-start lg:self-auto">
                         <button type="button"
-                            @click="filters.listingStatus = status.slug; applyFilters()"
-                            :class="filters.listingStatus === status.slug
-                                ? 'bg-[var(--primary-color)] text-white border-[var(--primary-color)] shadow-sm'
-                                : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-50'"
-                            class="px-6 py-2 rounded-full border text-sm font-semibold transition font-inter"
-                            x-text="status.name">
+                            @click="filters.listingStatus = ''; applyFilters()"
+                            :class="filters.listingStatus === ''
+                                ? 'bg-white text-[var(--primary-color)] shadow-sm'
+                                : 'text-slate-600 hover:text-slate-900'"
+                            class="px-4 md:px-5 py-1.5 rounded-full text-sm font-semibold transition font-inter">
+                            All
                         </button>
-                    </template>
+                        <template x-for="status in listingStatuses" :key="status.slug">
+                            <button type="button"
+                                @click="filters.listingStatus = status.slug; applyFilters()"
+                                :class="filters.listingStatus === status.slug
+                                    ? 'bg-white text-[var(--primary-color)] shadow-sm'
+                                    : 'text-slate-600 hover:text-slate-900'"
+                                class="px-4 md:px-5 py-1.5 rounded-full text-sm font-semibold transition font-inter"
+                                x-text="status.name">
+                            </button>
+                        </template>
+                    </div>
+
+                    <!-- Big search: Parish dropdown + free-text location -->
+                    <div class="flex-1 flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-full pl-4 pr-2 py-1.5 focus-within:ring-2 focus-within:ring-[var(--primary-color)]/30 focus-within:border-[var(--primary-color)] transition">
+                        <svg class="w-5 h-5 text-slate-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                        </svg>
+                        <select id="city-select" x-model="filters.city"
+                            @change="resetLocationSuggestions(); applyFilters()"
+                            class="bg-transparent border-0 text-sm font-medium text-slate-800 focus:outline-none focus:ring-0 px-0 py-1 max-w-[160px]">
+                            <option value="">Any parish</option>
+                            <template x-for="city in citiesList" :key="city">
+                                <option :value="city" x-text="city"></option>
+                            </template>
+                        </select>
+                        <span class="w-px h-5 bg-slate-300 hidden md:block"></span>
+                        <input type="text" x-model="filters.location" @input="searchLocations($event)"
+                            @focus="showLocationSuggestions = true"
+                            @blur="setTimeout(() => showLocationSuggestions = false, 200)"
+                            @keydown.enter.prevent="applyFilters()"
+                            placeholder="Address, neighbourhood…"
+                            class="flex-1 bg-transparent border-0 text-sm placeholder-slate-400 text-slate-800 focus:outline-none focus:ring-0 px-1 py-1 min-w-0">
+                        <button type="button" @click="applyFilters()"
+                            class="bg-[var(--primary-color)] hover:bg-blue-700 text-white text-sm font-semibold px-4 md:px-5 py-2 rounded-full transition shrink-0">
+                            Search
+                        </button>
+
+                        <div x-show="showLocationSuggestions && locationSuggestions.length"
+                             class="absolute top-full left-4 right-4 md:left-auto md:right-auto md:w-[420px] mt-1 bg-white border border-slate-200 rounded-xl shadow-xl z-30 max-h-72 overflow-y-auto">
+                            <template x-for="location in locationSuggestions" :key="location">
+                                <button type="button"
+                                    @click="filters.location = location; showLocationSuggestions = false; applyFilters()"
+                                    class="w-full text-left px-4 py-2.5 hover:bg-blue-50 text-slate-800 text-sm flex items-center gap-2 font-inter"
+                                    >
+                                    <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a2 2 0 01-2.828 0l-4.243-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                                    <span x-text="location"></span>
+                                </button>
+                            </template>
+                        </div>
+                    </div>
+
+                    <!-- View toggle + Sort -->
+                    <div class="flex items-center gap-2 self-start lg:self-auto">
+                        <div class="hidden md:inline-flex bg-slate-100 rounded-lg p-1">
+                            <button type="button" @click="viewType = 'list'"
+                                :class="viewType === 'list' ? 'bg-white text-[var(--primary-color)] shadow-sm' : 'text-slate-500 hover:text-slate-800'"
+                                class="p-2 rounded-md transition" title="List view">
+                                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M3 4h18v2H3V4zm0 7h18v2H3v-2zm0 7h18v2H3v-2z"/></svg>
+                            </button>
+                            <button type="button" @click="viewType = 'grid'"
+                                :class="viewType === 'grid' ? 'bg-white text-[var(--primary-color)] shadow-sm' : 'text-slate-500 hover:text-slate-800'"
+                                class="p-2 rounded-md transition" title="Grid view">
+                                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M3 3h7v7H3zm11 0h7v7h-7zm-11 11h7v7H3zm11 0h7v7h-7z"/></svg>
+                            </button>
+                        </div>
+                        <select x-model="sortBy" @change="applyFilters()"
+                            class="px-3 py-2 border border-slate-200 bg-white rounded-lg focus:ring-2 focus:ring-[var(--primary-color)]/30 focus:border-[var(--primary-color)] text-slate-900 text-sm font-medium">
+                            <option value="newest">Newest</option>
+                            <option value="featured">Featured</option>
+                            <option value="price-low">Price: Low → High</option>
+                            <option value="price-high">Price: High → Low</option>
+                        </select>
+                    </div>
                 </div>
 
-                <div class="flex items-center justify-between md:justify-normal md:gap-3 flex-wrap">
-                    <!-- Plus Button to Toggle Filters -->
+                <!-- Row 2: Inline filter chips (Price / Beds / Baths / Home Type / More) -->
+                <div class="px-4 md:px-5 pb-4 flex items-center gap-2 flex-wrap border-t border-slate-100 pt-3">
+
+                    <!-- Price chip -->
+                    <div class="relative" x-data="{ open: false }" @click.outside="open = false">
+                        <button type="button" @click="open = !open"
+                            :class="filters.priceRange ? 'border-[var(--primary-color)] text-[var(--primary-color)] bg-blue-50' : 'border-slate-200 text-slate-700 hover:border-slate-300'"
+                            class="inline-flex items-center gap-2 px-4 py-2 border rounded-full text-sm font-medium bg-white transition">
+                            <span x-text="filters.priceRange ? (priceRangeOptions.find(o => o.value === filters.priceRange)?.label || 'Price') : 'Price'"></span>
+                            <svg class="w-4 h-4" :class="open && 'rotate-180'" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                        </button>
+                        <div x-show="open" x-transition
+                             class="absolute top-full left-0 mt-2 bg-white border border-slate-200 rounded-xl shadow-xl z-30 w-72 p-2">
+                            <div class="text-xs font-semibold text-slate-500 uppercase tracking-wide px-3 pt-2 pb-1 flex items-center justify-between">
+                                <span>Price (<span x-text="selectedCurrency === 'jmd' ? 'JMD' : 'USD'"></span>)</span>
+                                <select x-model="selectedCurrency" @change="onCurrencyChange()"
+                                    class="text-xs border border-slate-200 rounded px-2 py-0.5 normal-case font-medium">
+                                    <option value="usd">USD</option>
+                                    <option value="jmd">JMD</option>
+                                </select>
+                            </div>
+                            <button type="button"
+                                @click="filters.priceRange = ''; applyPriceRange(''); applyFilters(); open = false"
+                                :class="!filters.priceRange ? 'bg-blue-50 text-[var(--primary-color)] font-semibold' : 'text-slate-700'"
+                                class="w-full text-left px-3 py-2 rounded-lg text-sm hover:bg-slate-50">Any Price</button>
+                            <template x-for="opt in priceRangeOptions" :key="opt.value">
+                                <button type="button"
+                                    @click="filters.priceRange = opt.value; applyPriceRange(opt.value); applyFilters(); open = false"
+                                    :class="filters.priceRange === opt.value ? 'bg-blue-50 text-[var(--primary-color)] font-semibold' : 'text-slate-700'"
+                                    class="w-full text-left px-3 py-2 rounded-lg text-sm hover:bg-slate-50"
+                                    x-text="opt.label"></button>
+                            </template>
+                        </div>
+                    </div>
+
+                    <!-- Beds chip -->
+                    <div class="relative" x-data="{ open: false }" @click.outside="open = false">
+                        <button type="button" @click="open = !open"
+                            :class="filters.beds ? 'border-[var(--primary-color)] text-[var(--primary-color)] bg-blue-50' : 'border-slate-200 text-slate-700 hover:border-slate-300'"
+                            class="inline-flex items-center gap-2 px-4 py-2 border rounded-full text-sm font-medium bg-white transition">
+                            <span x-text="filters.beds ? (filters.beds + '+ Beds') : 'Beds'"></span>
+                            <svg class="w-4 h-4" :class="open && 'rotate-180'" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                        </button>
+                        <div x-show="open" x-transition
+                             class="absolute top-full left-0 mt-2 bg-white border border-slate-200 rounded-xl shadow-xl z-30 w-56 p-2">
+                            <button type="button"
+                                @click="filters.beds = 0; applyFilters(); open = false"
+                                :class="!filters.beds ? 'bg-blue-50 text-[var(--primary-color)] font-semibold' : 'text-slate-700'"
+                                class="w-full text-left px-3 py-2 rounded-lg text-sm hover:bg-slate-50">Any</button>
+                            <template x-for="term in bedroomTerms" :key="term.term_id">
+                                <button type="button"
+                                    @click="filters.beds = parseInt(term.name); applyFilters(); open = false"
+                                    :class="filters.beds === parseInt(term.name) ? 'bg-blue-50 text-[var(--primary-color)] font-semibold' : 'text-slate-700'"
+                                    class="w-full text-left px-3 py-2 rounded-lg text-sm hover:bg-slate-50"
+                                    x-text="term.name + '+ Beds'"></button>
+                            </template>
+                        </div>
+                    </div>
+
+                    <!-- Baths chip -->
+                    <div class="relative" x-data="{ open: false }" @click.outside="open = false">
+                        <button type="button" @click="open = !open"
+                            :class="filters.baths ? 'border-[var(--primary-color)] text-[var(--primary-color)] bg-blue-50' : 'border-slate-200 text-slate-700 hover:border-slate-300'"
+                            class="inline-flex items-center gap-2 px-4 py-2 border rounded-full text-sm font-medium bg-white transition">
+                            <span x-text="filters.baths ? (filters.baths + '+ Baths') : 'Baths'"></span>
+                            <svg class="w-4 h-4" :class="open && 'rotate-180'" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                        </button>
+                        <div x-show="open" x-transition
+                             class="absolute top-full left-0 mt-2 bg-white border border-slate-200 rounded-xl shadow-xl z-30 w-56 p-2">
+                            <button type="button"
+                                @click="filters.baths = 0; applyFilters(); open = false"
+                                :class="!filters.baths ? 'bg-blue-50 text-[var(--primary-color)] font-semibold' : 'text-slate-700'"
+                                class="w-full text-left px-3 py-2 rounded-lg text-sm hover:bg-slate-50">Any</button>
+                            <template x-for="term in bathroomTerms" :key="term.term_id">
+                                <button type="button"
+                                    @click="filters.baths = parseFloat(term.name); applyFilters(); open = false"
+                                    :class="filters.baths === parseFloat(term.name) ? 'bg-blue-50 text-[var(--primary-color)] font-semibold' : 'text-slate-700'"
+                                    class="w-full text-left px-3 py-2 rounded-lg text-sm hover:bg-slate-50"
+                                    x-text="term.name + '+ Baths'"></button>
+                            </template>
+                        </div>
+                    </div>
+
+                    <!-- Home type chip (opens the property-type panel) -->
                     <button type="button" @click="showFilters = !showFilters"
-                        class="flex items-center gap-2 md:px-4 md:py-2.5 px-[4.235vw] py-[2.353vw] bg-gradient-to-r from-[var(--primary-color)] to-blue-700 hover:from-blue-700 hover:to-[var(--primary-color)] text-white font-semibold rounded-lg transition-all shadow-sm hover:shadow-md">
-                        <svg class="md:w-5 md:h-5 w-[2.353vw] h-[2.353vw]" fill="none" stroke="currentColor"
-                            viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4">
-                            </path>
-                        </svg>
-                        <span x-text="showFilters ? 'Hide Filters' : 'Show Filters'"
-                            class="text-[3vw] md:text-[0.938vw]"></span>
+                        :class="filters.types.length ? 'border-[var(--primary-color)] text-[var(--primary-color)] bg-blue-50' : 'border-slate-200 text-slate-700 hover:border-slate-300'"
+                        class="inline-flex items-center gap-2 px-4 py-2 border rounded-full text-sm font-medium bg-white transition">
+                        <span x-text="filters.types.length ? (filters.types.length + ' Home types') : 'Home Type'"></span>
+                        <svg class="w-4 h-4" :class="showFilters && 'rotate-180'" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                     </button>
 
-                    <!-- Quick Stats -->
-                    <div class="text-slate-700 font-medium ml-auto hidden md:block font-inter">
-                        Found <span x-text="totalResults" class="text-[var(--primary-color)] font-bold"></span>
-                        properties
-                    </div>
+                    <!-- Featured -->
+                    <button type="button" @click="filters.featured = !filters.featured; applyFilters()"
+                        :class="filters.featured ? 'border-amber-500 text-amber-600 bg-amber-50' : 'border-slate-200 text-slate-700 hover:border-slate-300'"
+                        class="inline-flex items-center gap-1.5 px-4 py-2 border rounded-full text-sm font-medium bg-white transition">
+                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2l2.39 7.36H22l-6.18 4.49L18.21 22 12 17.27 5.79 22l2.39-8.15L2 9.36h7.61L12 2z"/></svg>
+                        Featured
+                    </button>
 
-                    <!-- View Toggle -->
-                    <div class="flex gap-2 border-l pl-4 hidden md:block">
-                        <button type="button" @click="viewType = 'grid'"
-                            :class="viewType === 'grid' ? 'bg-[var(--primary-color)] text-white' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'"
-                            class="p-2.5 rounded-lg transition-all" title="Grid view">
-                            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                                <path d="M3 3h7v7H3zm11 0h7v7h-7zm-11 11h7v7H3zm11 0h7v7h-7z"></path>
-                            </svg>
-                        </button>
-                        <button type="button" @click="viewType = 'list'"
-                            :class="viewType === 'list' ? 'bg-[var(--primary-color)] text-white' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'"
-                            class="p-2.5 rounded-lg transition-all" title="List view">
-                            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                                <path d="M3 4h18v2H3V4zm0 7h18v2H3v-2zm0 7h18v2H3v-2z"></path>
-                            </svg>
+                    <div class="ml-auto flex items-center gap-3">
+                        <span class="text-slate-500 text-sm hidden md:inline-flex items-center gap-1">
+                            <span x-text="totalResults" class="font-bold text-slate-900"></span>
+                            <span>homes</span>
+                        </span>
+                        <button type="button" @click="clearFilters()"
+                            class="text-sm text-slate-500 hover:text-red-600 underline-offset-2 hover:underline transition">
+                            Clear all
                         </button>
                     </div>
-
-                    <!-- Sort Dropdown -->
-                    <select x-model="sortBy" @change="applyFilters()"
-                        class="md:px-4 md:py-2.5 px-[4.235vw] py-[2.353vw] border border-slate-300 rounded-lg focus:ring-2 focus:ring-[var(--primary-color)] focus:border-transparent text-slate-900 text-[2.824vw] md:text-sm font-medium bg-white">
-                        <option value="newest">Newest First</option>
-                        <option value="featured">Featured First</option>
-                        <option value="price-low">Price: Low to High</option>
-                        <option value="price-high">Price: High to Low</option>
-                    </select>
                 </div>
 
-                <!-- Expandable Filters Panel -->
-                <div x-show="showFilters" x-transition class="mt-6 pt-6 border-t border-slate-200">
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-                        <!-- City Filter with TomSelect Dropdown -->
-                        <div>
-                            <label
-                                class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2 font-inter">Parish</label>
-                            <select id="city-select" x-model="filters.city"
-                                @change="resetLocationSuggestions(); applyFilters()"
-                                class="w-full px-4 py-2.5 border border-slate-300 rounded-lg text-sm text-slate-900 focus:ring-2 focus:ring-[var(--primary-color)] focus:border-transparent transition">
-                                <option value="">Select a parish...</option>
-                                <template x-for="city in citiesList" :key="city">
-                                    <option :value="city" x-text="city"></option>
-                                </template>
-                            </select>
-                        </div>
-
-                        <!-- Location Filter with Google API Autocomplete (appears after city selection) -->
-                        <div class="relative" x-show="filters.city">
-                            <label
-                                class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2 font-inter">Location</label>
-                            <input type="text" x-model="filters.location" @input="searchLocations($event)"
-                                @focus="showLocationSuggestions = true"
-                                @blur="setTimeout(() => showLocationSuggestions = false, 200)"
-                                placeholder="Search location..."
-                                class="w-full px-4 py-2.5 border font-inter border-slate-300 rounded-lg text-sm text-slate-900 placeholder-slate-500 focus:ring-2 focus:ring-[var(--primary-color)] focus:border-transparent transition">
-
-                            <!-- Location Suggestions from Google API -->
-                            <div x-show="showLocationSuggestions && locationSuggestions.length"
-                                class="absolute top-full left-0 right-0 mt-2 bg-white border border-slate-300 rounded-lg shadow-lg z-20 max-h-56 overflow-y-auto">
-                                <template x-for="location in locationSuggestions" :key="location">
-                                    <button type="button"
-                                        @click="filters.location = location; showLocationSuggestions = false; applyFilters()"
-                                        class="w-full text-left px-4 py-2.5 hover:bg-blue-50 text-slate-900 text-sm transition font-inter"
-                                        x-text="location"></button>
+                <!-- Row 3: expandable property-type panel (kept) -->
+                <div x-show="showFilters" x-transition
+                     class="border-t border-slate-100 px-4 md:px-5 py-4 bg-slate-50/50 rounded-b-2xl">
+                    <div x-show="propertyTypeHierarchy.length > 0">
+                        <div x-data="{
+                            propertyTypeTab: propertyTypeHierarchy.length > 0 ? propertyTypeHierarchy[0].parent.term_id : '',
+                        }">
+                            <div class="flex gap-1 border-b border-slate-200 mb-4 flex-wrap">
+                                <template x-for="group in propertyTypeHierarchy" :key="group.parent.term_id">
+                                    <button type="button" @click="propertyTypeTab = group.parent.term_id"
+                                        :class="propertyTypeTab === group.parent.term_id ? 'border-[var(--primary-color)] text-[var(--primary-color)]' : 'border-transparent text-slate-600 hover:text-slate-900'"
+                                        class="px-3 py-2 font-semibold text-sm border-b-2 transition font-inter">
+                                        <span x-text="group.parent.name"></span>
+                                    </button>
                                 </template>
                             </div>
-                        </div>
-
-                        <!-- Property Type Filter with Tabs -->
-                        <div x-show="propertyTypeHierarchy.length > 0" class="col-span-full">
-                            <label
-                                class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-3">Property
-                                Type</label>
-                            <div x-data="{
-                                propertyTypeTab: propertyTypeHierarchy.length > 0 ? propertyTypeHierarchy[0].parent.term_id : '',
-                            }" class="bg-slate-50 rounded-lg p-4 border border-slate-200">
-                                <!-- Tab Headers -->
-                                <div class="flex gap-2 border-b border-slate-300 mb-4 flex-wrap">
-                                    <template x-for="group in propertyTypeHierarchy" :key="group.parent.term_id">
-                                        <button type="button" @click="propertyTypeTab = group.parent.term_id"
-                                            :class="propertyTypeTab === group.parent.term_id ? 'border-[var(--primary-color)] text-[var(--primary-color)] bg-white' : 'border-transparent text-slate-600 hover:text-slate-900'"
-                                            class="px-4 py-2.5 font-semibold text-sm border-b-2 transition rounded-t font-inter">
-                                            <span x-text="group.parent.name"></span>
+                            <template x-for="group in propertyTypeHierarchy" :key="group.parent.term_id">
+                                <div x-show="propertyTypeTab === group.parent.term_id" x-transition
+                                    class="flex flex-wrap gap-2">
+                                    <template x-for="child in group.children" :key="child.slug">
+                                        <button type="button"
+                                            @click="filters.types.includes(child.slug) ? filters.types.splice(filters.types.indexOf(child.slug), 1) : filters.types.push(child.slug); applyFilters();"
+                                            :class="filters.types.includes(child.slug) ? 'bg-[var(--primary-color)] text-white border-[var(--primary-color)]' : 'bg-white text-slate-700 border-slate-200 hover:border-slate-300'"
+                                            class="px-3 py-1.5 rounded-full border text-sm font-medium transition flex items-center gap-2">
+                                            <span x-html="child.icon" class="w-4 h-4 fill-current block"></span>
+                                            <span x-text="child.name"></span>
                                         </button>
                                     </template>
                                 </div>
+                            </template>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
-                                <!-- Tab Content - Child Filters -->
-                                <template x-for="group in propertyTypeHierarchy" :key="group.parent.term_id">
-                                    <div x-show="propertyTypeTab === group.parent.term_id" x-transition
-                                        class="flex flex-wrap gap-2">
-                                        <template x-for="child in group.children" :key="child.slug">
-                                            <button type="button"
-                                                @click="filters.types.includes(child.slug) ? filters.types.splice(filters.types.indexOf(child.slug), 1) : filters.types.push(child.slug); applyFilters();"
-                                                :class="filters.types.includes(child.slug) ? 'bg-[var(--primary-color)] text-white border-[var(--primary-color)]' : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-50'"
-                                                class="px-4 py-2 rounded-full border text-sm font-medium transition font-inter flex items-center gap-2">
-                                                <span x-html="child.icon"
-                                                    class="w-5 h-5 fill-[var(--primary-color)] block"></span>
-                                                <span x-text="child.name"></span>
-                                            </button>
-                                        </template>
+            <!-- Results + Ad Sidebar Layout -->
+            <div class="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-6">
+
+                <!-- Results column -->
+                <div>
+                    <!-- Top leaderboard ad -->
+                    <div class="mb-6">
+                        <?php get_template_part('template-parts/component', 'ad-space', ['slot' => 'leaderboard', 'label' => 'Sponsored']); ?>
+                    </div>
+
+                    <!-- Skeleton Cards Loading State -->
+                    <div x-show="loading" :class="viewType === 'list' ? 'space-y-4' : 'grid grid-cols-1 md:grid-cols-2 gap-6'">
+                        <template x-for="i in [1,2,3,4,5,6]" :key="i">
+                            <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden animate-pulse"
+                                 :class="viewType === 'list' && 'flex items-center'">
+                                <div :class="viewType === 'list' ? 'h-40 w-1/3 shrink-0' : 'h-56'" class="bg-gradient-to-r from-slate-200 to-slate-100"></div>
+                                <div class="p-6 flex-1">
+                                    <div class="h-6 bg-slate-200 rounded w-3/4 mb-4"></div>
+                                    <div class="h-4 bg-slate-200 rounded w-full mb-3"></div>
+                                    <div class="h-4 bg-slate-200 rounded w-2/3 mb-6"></div>
+                                    <div class="flex gap-2 mb-4">
+                                        <div class="h-8 bg-slate-200 rounded-full w-20"></div>
+                                        <div class="h-8 bg-slate-200 rounded-full w-20"></div>
                                     </div>
-                                </template>
-                            </div>
-                        </div>
-
-                        <div
-                            class="grid-cols-2 grid md:grid-cols-5 gap-8 lg:col-span-5 md:col-span-2 col-span-1 px-2 py-2">
-                            <!-- Bedrooms Dropdown -->
-                            <div>
-                                <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2">
-                                    Bedrooms (Min)
-                                </label>
-                                <select x-model.number="filters.beds" @change="applyFilters()"
-                                    class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm text-slate-900 focus:ring-2 focus:ring-[var(--primary-color)] focus:border-transparent">
-                                    <option value="0">Any</option>
-                                    <template x-for="term in bedroomTerms" :key="term.term_id">
-                                        <option :value="parseInt(term.name)" x-text="term.name + '+'"></option>
-                                    </template>
-                                </select>
-                            </div>
-
-                            <!-- Bathrooms Dropdown -->
-                            <div>
-                                <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2">
-                                    Bathrooms (Min)
-                                </label>
-                                <select x-model.number="filters.baths" @change="applyFilters()"
-                                    class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm text-slate-900 focus:ring-2 focus:ring-[var(--primary-color)] focus:border-transparent">
-                                    <option value="0">Any</option>
-                                    <template x-for="term in bathroomTerms" :key="term.term_id">
-                                        <option :value="parseFloat(term.name)" x-text="term.name + '+'"></option>
-                                    </template>
-                                </select>
-                            </div>
-
-                            <!-- Price Range Dropdown (single) -->
-                            <div>
-                                <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2">
-                                    Price Range <span class="normal-case text-slate-400" x-text="selectedCurrency === 'jmd' ? '(JMD)' : '(USD)'"></span>
-                                </label>
-                                <select x-model="filters.priceRange" @change="applyPriceRange($event.target.value); applyFilters()"
-                                    class="w-full px-2 py-1.5 border border-slate-300 rounded text-xs text-slate-900 focus:ring-2 focus:ring-[var(--primary-color)] focus:border-transparent">
-                                    <option value="">Any Price</option>
-                                    <template x-for="opt in priceRangeOptions" :key="opt.value">
-                                        <option :value="opt.value" x-text="opt.label"></option>
-                                    </template>
-                                </select>
-                            </div>
-
-                            <!-- Area — commented out per requirements -->
-                            <!-- Area Range filter removed -->
-                        </div>
-
-                        <!-- Featured Filter -->
-                        <div class="flex items-end">
-                            <label class="flex items-center cursor-pointer group gap-2">
-                                <input type="checkbox" x-model="filters.featured" @change="applyFilters()"
-                                    class="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 cursor-pointer">
-                                <span
-                                    class="text-sm font-medium text-slate-900 group-hover:text-blue-600 transition">Featured
-                                    Only</span>
-                            </label>
-                        </div>
-
-                        <!-- Currency Selector -->
-                        <div class="flex items-end">
-                            <div class="w-full">
-                                <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2">Currency</label>
-                                <select x-model="selectedCurrency" @change="onCurrencyChange()"
-                                    class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm text-slate-900 focus:ring-2 focus:ring-[var(--primary-color)] focus:border-transparent">
-                                    <option value="usd">USD ($)</option>
-                                    <option value="jmd">JMD (J$)</option>
-                                </select>
-                                <p class="text-xs text-slate-500 mt-1" x-show="selectedCurrency === 'jmd'" x-text="`1 USD = ${usdToJmdRate.toFixed(2)} JMD`"></p>
-                            </div>
-                        </div>
-
-                        <!-- Clear Filters Button -->
-                        <div class="flex items-end">
-                            <button @click="clearFilters()"
-                                class="w-full bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white font-semibold py-2.5 px-4 rounded-lg transition-all shadow-sm hover:shadow-md text-sm">
-                                Clear All
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Ad Banner — shown between filters and results -->
-            <div class="mb-6">
-                <?php get_template_part('template-parts/component', 'ad-space', ['slot' => 'leaderboard', 'label' => 'Advertisement']); ?>
-            </div>
-
-            <!-- Results Section -->
-            <div>
-
-
-                <!-- Skeleton Cards Loading State - Dynamic placeholder instead of spinner -->
-                <div x-show="loading" class="space-y-6 grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <template x-for="i in [1,2,3,4,5,6]" :key="i">
-                        <div
-                            class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden animate-pulse">
-                            <div class="h-56 bg-gradient-to-r from-slate-200 to-slate-100"></div>
-                            <div class="p-6">
-                                <div class="h-6 bg-slate-200 rounded w-3/4 mb-4"></div>
-                                <div class="h-4 bg-slate-200 rounded w-full mb-3"></div>
-                                <div class="h-4 bg-slate-200 rounded w-2/3 mb-6"></div>
-                                <div class="flex gap-2 mb-4">
-                                    <div class="h-8 bg-slate-200 rounded-full w-20"></div>
-                                    <div class="h-8 bg-slate-200 rounded-full w-20"></div>
                                 </div>
-                                <div class="h-10 bg-slate-200 rounded w-full"></div>
                             </div>
-                        </div>
-                    </template>
-                </div>
-
-                <!-- Grid View -->
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6" x-show="!loading && viewType === 'grid'">
-                    <template x-for="property in properties" :key="property.id">
-                        <template x-if="property">
-                            <?php get_template_part('template-parts/component', 'property-card'); ?>
                         </template>
-                    </template>
-                </div>
-
-                <!-- List View -->
-                <div class="space-y-4" x-show="!loading && viewType === 'list'">
-                    <template x-for="property in properties" :key="property.id">
-                        <template x-if="property">
-                            <?php get_template_part('template-parts/component', 'property-card'); ?>
-                        </template>
-                    </template>
-                </div>
-
-                <!-- No Results State -->
-                <div x-show="!loading && allProperties.length === 0"
-                    class="bg-white rounded-xl shadow-sm border border-slate-200 p-12 text-center">
-                    <div class="mb-4 text-5xl">🔍</div>
-                    <p class="text-slate-600 text-lg mb-6 font-medium">No properties found matching your criteria.</p>
-                    <button @click="clearFilters()"
-                        class="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-bold py-3 px-8 rounded-lg transition-all shadow-sm hover:shadow-md">Reset
-                        Filters</button>
-                </div>
-
-                <!-- Infinite Scroll Loading Indicator -->
-                <div x-show="loading && allProperties.length > 0" class="flex justify-center mt-10">
-                    <div
-                        class="inline-flex items-center gap-2 px-6 py-3 bg-white rounded-lg shadow-sm border border-slate-200">
-                        <div class="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin">
-                        </div>
-                        <span class="text-slate-700 font-medium">Loading more...</span>
                     </div>
+
+                    <!-- Grid View -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6" x-show="!loading && viewType === 'grid'">
+                        <template x-for="property in properties" :key="property.id">
+                            <template x-if="property">
+                                <?php get_template_part('template-parts/component', 'property-card'); ?>
+                            </template>
+                        </template>
+                    </div>
+
+                    <!-- List View (default) -->
+                    <div class="space-y-4" x-show="!loading && viewType === 'list'">
+                        <template x-for="property in properties" :key="property.id">
+                            <template x-if="property">
+                                <?php get_template_part('template-parts/component', 'property-card'); ?>
+                            </template>
+                        </template>
+                    </div>
+
+                    <!-- No Results State -->
+                    <div x-show="!loading && allProperties.length === 0"
+                        class="bg-white rounded-xl shadow-sm border border-slate-200 p-12 text-center">
+                        <div class="mb-4 text-5xl">🔍</div>
+                        <p class="text-slate-600 text-lg mb-6 font-medium">No properties found matching your criteria.</p>
+                        <button @click="clearFilters()"
+                            class="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-bold py-3 px-8 rounded-lg transition-all shadow-sm hover:shadow-md">Reset
+                            Filters</button>
+                    </div>
+
+                    <!-- Infinite Scroll Loading Indicator -->
+                    <div x-show="loading && allProperties.length > 0" class="flex justify-center mt-10">
+                        <div class="inline-flex items-center gap-2 px-6 py-3 bg-white rounded-lg shadow-sm border border-slate-200">
+                            <div class="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+                            <span class="text-slate-700 font-medium">Loading more...</span>
+                        </div>
+                    </div>
+
+                    <!-- Infinite Scroll Trigger Element -->
+                    <div id="infinite-scroll-trigger" x-ref="infiniteScrollTrigger" class="py-8"></div>
                 </div>
 
-                <!-- Infinite Scroll Trigger Element -->
-                <div id="infinite-scroll-trigger" x-ref="infiniteScrollTrigger" class="py-8"></div>
+                <!-- Ads sidebar — sticky on desktop, hidden on small screens -->
+                <aside class="hidden lg:block">
+                    <div class="sticky top-[180px] flex flex-col gap-6">
+                        <?php get_template_part('template-parts/component', 'ad-space', ['slot' => 'sidebar', 'label' => 'Sponsored']); ?>
+                        <?php get_template_part('template-parts/component', 'ad-space', ['slot' => 'sidebar', 'label' => 'Sponsored']); ?>
+
+                        <!-- Newsletter / promo card -->
+                        <div class="bg-gradient-to-br from-blue-700 to-indigo-700 text-white rounded-xl p-5 shadow-lg">
+                            <p class="text-xs font-bold uppercase tracking-wider text-blue-200 mb-2">List your property</p>
+                            <h4 class="text-xl font-bold mb-2 leading-tight">Reach buyers across Jamaica</h4>
+                            <p class="text-sm text-blue-50 mb-4">Get your listing in front of thousands of property seekers every month.</p>
+                            <a href="<?php echo esc_url(home_url('/pricing')); ?>"
+                               class="inline-flex items-center gap-1.5 bg-white text-blue-700 hover:bg-blue-50 font-semibold text-sm px-4 py-2 rounded-lg transition">
+                                See pricing
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg>
+                            </a>
+                        </div>
+                    </div>
+                </aside>
             </div>
         </div>
     </div>
@@ -435,7 +463,7 @@ $listing_statuses_archive = get_terms(array('taxonomy' => 'property_listing_stat
                 listingStatus: initialParams.listing_status || '',
             },
             sortBy: initialParams.sort || 'newest',
-            viewType: initialParams.view || 'grid',
+            viewType: initialParams.view || 'list',
             allProperties: [],
             properties: [],
             loading: false,

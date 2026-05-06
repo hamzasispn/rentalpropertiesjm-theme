@@ -402,8 +402,22 @@ if (isset($_GET['action']) && $_GET['action'] === 'delete' && isset($_GET['prope
         </div>
         <?php endif; ?>
 
+        <!-- Submission overlay (full-screen so user can't double-submit / think it froze) -->
+        <div x-data="{ submitting: false }"
+             x-on:submit.window="submitting = true"
+             x-show="submitting"
+             x-cloak
+             class="fixed inset-0 z-[9999] bg-slate-900/60 flex flex-col items-center justify-center gap-4">
+            <div class="w-16 h-16 border-[5px] border-white border-t-transparent rounded-full animate-spin"></div>
+            <p class="text-white font-semibold text-base">
+                <?php echo $is_edit ? 'Saving your changes…' : 'Creating your listing…'; ?>
+            </p>
+            <p class="text-slate-300 text-sm">Please don't close this tab. Uploading media may take a moment.</p>
+        </div>
+
         <form method="POST" enctype="multipart/form-data"
               class="grid grid-cols-1 lg:grid-cols-3 gap-8"
+              @submit="$el.querySelector('button[name=submit_property]')?.setAttribute('disabled','disabled')"
               x-data="propertyForm(
                   <?php echo htmlspecialchars(json_encode($property_data)); ?>,
                   <?php echo htmlspecialchars(json_encode($type_specific_fields ?? [])); ?>,
@@ -884,10 +898,17 @@ if (isset($_GET['action']) && $_GET['action'] === 'delete' && isset($_GET['prope
                 <?php endif; ?>
 
                 <!-- Submit Buttons -->
-                <div class="bg-white rounded-lg shadow-sm border border-slate-200 p-6 space-y-3">
+                <div class="bg-white rounded-lg shadow-sm border border-slate-200 p-6 space-y-3"
+                     x-data="{ saving: false }"
+                     x-on:submit.window="saving = true">
                     <button type="submit" name="submit_property"
-                        class="w-full px-4 py-3 bg-[var(--primary-color)] text-white rounded-lg hover:bg-blue-700 font-bold">
-                        <?php echo $is_edit ? 'Update Property' : 'Create Property'; ?>
+                        :disabled="saving"
+                        class="w-full px-4 py-3 bg-[var(--primary-color)] text-white rounded-lg hover:bg-blue-700 font-bold disabled:opacity-70 disabled:cursor-wait flex items-center justify-center gap-2">
+                        <svg x-show="saving" class="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
+                            <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" class="opacity-25"></circle>
+                            <path fill="currentColor" class="opacity-75" d="M4 12a8 8 0 018-8V0C5.4 0 0 5.4 0 12h4zm2 5.3A8 8 0 014 12H0c0 3 1.1 5.8 3 8l3-2.7z"></path>
+                        </svg>
+                        <span x-text="saving ? '<?php echo $is_edit ? 'Saving…' : 'Creating…'; ?>' : '<?php echo $is_edit ? 'Update Property' : 'Create Property'; ?>'"></span>
                     </button>
                     <a href="<?php echo home_url('/dashboard'); ?>"
                         class="block text-center px-4 py-3 bg-slate-200 text-slate-900 rounded-lg hover:bg-slate-300 font-semibold">Back to Dashboard</a>

@@ -338,9 +338,9 @@ while (have_posts()):
                     <p class="text-gray-500 text-[3.765vw] md:text-[0.833vw]"><?= get_the_content(); ?></p>
                 </div>
 
-                <?php if (property_author_has_paid_plan($author_id)): ?>
+                <?php if (property_author_is_free_plan($author_id)): ?>
                 <div class="md:mt-[1.25vw] mt-[5.647vw]">
-                    <?php get_template_part('template-parts/component', 'ad-space', ['slot' => 'banner', 'label' => 'Advertisement']); ?>
+                    <?php get_template_part('template-parts/component', 'ad-space', ['slot' => 'banner', 'label' => 'Sponsored']); ?>
                 </div>
                 <?php endif; ?>
 
@@ -640,9 +640,11 @@ while (have_posts()):
                     ></div>
                 </div>
 
-                <?php if (property_author_has_paid_plan($author_id)): ?>
-                <div class="mt-[3.765vw] md:mt-[0.833vw]">
-                    <?php get_template_part('template-parts/component', 'ad-space', ['slot' => 'sidebar', 'label' => 'Advertisement']); ?>
+                <?php if (property_author_is_free_plan($author_id)): ?>
+                <!-- Sticky sidebar ads — only on free-plan listings (paid plans get an ad-free page) -->
+                <div class="mt-[3.765vw] md:mt-[0.833vw] flex flex-col gap-[3.765vw] md:gap-[0.833vw] md:sticky md:top-[1.25vw]">
+                    <?php get_template_part('template-parts/component', 'ad-space', ['slot' => 'sidebar', 'label' => 'Sponsored']); ?>
+                    <?php get_template_part('template-parts/component', 'ad-space', ['slot' => 'sidebar', 'label' => 'Sponsored']); ?>
                 </div>
                 <?php endif; ?>
             </div>

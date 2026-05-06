@@ -53,84 +53,56 @@ add_action('init', function () {
 
 add_action('check_user_subscription_status', 'handle_subscription_property_status');
 
-// Run the limit-enforcement cron alongside the subscription-status cron so
-// downgrades are reflected even if no plan-change event fired.
-add_action('check_user_subscription_status', 'property_theme_enforce_limits_cron_handler');
-
+/**
+ * Cron: handle subscription state → property visibility.
+ *
+ *   - User has NO active subscription (paused/expired/canceled and nothing else active):
+ *       Draft every published property and tag it with _property_auto_deactivated=1
+ *       so it can be restored automatically when the user re-subscribes.
+ *
+ *   - Active subscription: do NOT touch anything here. The single source of
+ *     truth for "active user" cap enforcement and restore is
+ *     `property_theme_enforce_limits_cron_handler` (in property-cron.php), which
+ *     runs hourly on its own event and is cap-aware. This avoids the previous
+ *     bug where this cron republished EVERY auto-deactivated draft on each tick
+ *     (over the cap) and then the other cron drafted the overflow again — a
+ *     visible flicker on every refresh.
+ */
 function handle_subscription_property_status()
 {
     global $wpdb;
 
     $table = $wpdb->prefix . 'user_subscriptions';
 
-    // 🔴 Inactive subscriptions → draft (only if no other active sub exists)
     $inactive_users = $wpdb->get_col(
         "SELECT DISTINCT user_id
          FROM $table
          WHERE status IN ('paused', 'expired', 'canceled')"
     );
 
-    if (!empty($inactive_users)) {
-        foreach ($inactive_users as $user_id) {
-            // Skip if user has another active subscription
-            $has_active = $wpdb->get_var($wpdb->prepare(
-                "SELECT COUNT(*) FROM $table WHERE user_id = %d AND status = 'active'",
-                $user_id
+    if (empty($inactive_users)) return;
+
+    foreach ($inactive_users as $user_id) {
+        $has_active = $wpdb->get_var($wpdb->prepare(
+            "SELECT COUNT(*) FROM $table WHERE user_id = %d AND status = 'active'",
+            $user_id
+        ));
+        if ($has_active > 0) continue;
+
+        $properties = get_posts(array(
+            'post_type'      => 'property',
+            'post_status'    => 'publish',
+            'author'         => $user_id,
+            'posts_per_page' => -1,
+            'fields'         => 'ids',
+        ));
+
+        foreach ($properties as $property_id) {
+            wp_update_post(array(
+                'ID'          => $property_id,
+                'post_status' => 'draft',
             ));
-            if ($has_active > 0) continue;
-
-            $properties = get_posts(array(
-                'post_type'      => 'property',
-                'post_status'    => 'publish',
-                'author'         => $user_id,
-                'posts_per_page' => -1,
-                'fields'         => 'ids',
-            ));
-
-            foreach ($properties as $property_id) {
-                wp_update_post(array(
-                    'ID'          => $property_id,
-                    'post_status' => 'draft',
-                ));
-                // Mark as auto-deactivated so cron can restore it later
-                update_post_meta($property_id, '_property_auto_deactivated', 1);
-            }
-        }
-    }
-
-    // 🟢 Active subscriptions → re-publish ONLY auto-deactivated properties
-    // (never re-publish admin-rejected properties or pending-review properties)
-    $active_users = $wpdb->get_col(
-        "SELECT DISTINCT user_id
-         FROM $table
-         WHERE status = 'active'"
-    );
-
-    if (!empty($active_users)) {
-        foreach ($active_users as $user_id) {
-
-            $properties = get_posts(array(
-                'post_type'      => 'property',
-                'post_status'    => 'draft',
-                'author'         => $user_id,
-                'posts_per_page' => -1,
-                'fields'         => 'ids',
-                'meta_query'     => array(
-                    array(
-                        'key'     => '_property_auto_deactivated',
-                        'value'   => '1',
-                        'compare' => '=',
-                    ),
-                ),
-            ));
-
-            foreach ($properties as $property_id) {
-                wp_update_post(array(
-                    'ID'          => $property_id,
-                    'post_status' => 'publish',
-                ));
-                delete_post_meta($property_id, '_property_auto_deactivated');
-            }
+            update_post_meta($property_id, '_property_auto_deactivated', 1);
         }
     }
 }
