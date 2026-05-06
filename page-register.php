@@ -18,16 +18,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['register_submit'])) {
         wp_die('Security check failed');
     }
 
-    $first_name = sanitize_text_field($_POST['first_name'] ?? '');
-    $last_name = sanitize_text_field($_POST['last_name'] ?? '');
-    $email = sanitize_email($_POST['email'] ?? '');
-    $password = sanitize_text_field($_POST['password'] ?? '');
-    $password_confirm = sanitize_text_field($_POST['password_confirm'] ?? '');
-    $agree_terms = isset($_POST['agree_terms']) ? true : false;
+    $first_name       = sanitize_text_field(wp_unslash($_POST['first_name'] ?? ''));
+    $last_name        = sanitize_text_field(wp_unslash($_POST['last_name'] ?? ''));
+    $email            = sanitize_email(wp_unslash($_POST['email'] ?? ''));
+    // Passwords are passed through verbatim — no sanitize_text_field which would strip valid chars.
+    $password         = isset($_POST['password']) ? (string) $_POST['password'] : '';
+    $password_confirm = isset($_POST['password_confirm']) ? (string) $_POST['password_confirm'] : '';
+    $agree_terms      = !empty($_POST['agree_terms']);
 
     // Validation
     if (!$first_name || !$last_name || !$email || !$password) {
         $registration_error = 'All fields are required.';
+    } elseif (!is_email($email)) {
+        $registration_error = 'Please enter a valid email address.';
     } elseif ($password !== $password_confirm) {
         $registration_error = 'Passwords do not match.';
     } elseif (strlen($password) < 8) {
@@ -66,6 +69,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['register_submit'])) {
             $user = new WP_User($user_id);
             $user->set_role('subscriber');
 
+            // Mark unverified and send verification email
+            update_user_meta($user_id, PROPERTY_THEME_EMAIL_VERIFY_META, '0');
+            property_theme_send_verification_email($user_id);
+
             $registration_success = true;
         }
     }
@@ -91,11 +98,10 @@ get_header();
 
             <?php if ($registration_success): ?>
                 <div class="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg text-center">
-                    <p class="text-green-800 font-semibold">Account created successfully!</p>
-                    <p class="text-green-700 text-sm mt-1">Redirecting to login...</p>
-                    <script>
-                        setTimeout(() => window.location.href = '<?php echo esc_js(home_url('/login')); ?>', 2000);
-                    </script>
+                    <p class="text-green-800 font-semibold">Account created — check your inbox!</p>
+                    <p class="text-green-700 text-sm mt-2">We've sent a verification link to your email. Click it to activate your account before signing in.</p>
+                    <p class="text-green-700 text-xs mt-3">Didn't get it? Check spam, or use the "Resend verification email" link on the login page.</p>
+                    <a href="<?php echo esc_url(home_url('/login')); ?>" class="inline-block mt-4 px-4 py-2 bg-[var(--primary-color)] text-white rounded-lg font-semibold">Go to Login</a>
                 </div>
             <?php else: ?>
                 <!-- Error Message -->

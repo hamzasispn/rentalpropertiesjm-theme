@@ -121,8 +121,20 @@ foreach ($property_data['gallery'] as $item) {
 
 // ── Form submission ───────────────────────────────────────────────────────
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_property'])) {
-    if (!wp_verify_nonce($_POST['property_form_nonce'], 'add_property_nonce')) {
+    if (!wp_verify_nonce($_POST['property_form_nonce'] ?? '', 'add_property_nonce')) {
         wp_die('Security check failed: Invalid nonce.');
+    }
+
+    // Server-side cap enforcement on NEW submissions.
+    // (Edits to existing listings are exempt — they're updates, not new slots.)
+    if (!$is_edit && function_exists('property_theme_can_publish_property')) {
+        $under_cap = property_theme_can_publish_property($current_user->ID);
+        if (!$under_cap && !current_user_can('manage_options')) {
+            set_transient('property_form_errors_' . $current_user->ID,
+                array('You have reached the property limit for your current plan. Please upgrade or delete an existing listing.'), 30);
+            wp_safe_redirect(add_query_arg(['error' => 1]));
+            exit;
+        }
     }
 
     $errors = array();
@@ -296,8 +308,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_property'])) {
         if (!is_wp_error($attachment_id)) set_post_thumbnail($post_id, $attachment_id);
     }
 
-    $redirect_url = add_query_arg(array('property_id' => $post_id, 'saved' => 1));
-    wp_redirect($redirect_url);
+    $saved_status = get_post_status($post_id);
+    $redirect_url = add_query_arg(array(
+        'property_id' => $post_id,
+        'saved'       => 1,
+        'review'      => $saved_status === 'pending' ? 1 : 0,
+    ));
+    wp_safe_redirect($redirect_url);
     exit;
 }
 
@@ -359,9 +376,16 @@ if (isset($_GET['action']) && $_GET['action'] === 'delete' && isset($_GET['prope
 
         <!-- Success Message -->
         <?php if (isset($_GET['saved'])): ?>
-        <div class="mb-8 p-4 bg-green-50 border border-green-200 rounded-lg">
-            <p class="text-green-800 font-semibold">✓ Property saved successfully!</p>
-        </div>
+            <?php if (!empty($_GET['review'])): ?>
+                <div class="mb-8 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                    <p class="text-amber-900 font-semibold">✓ Property submitted for review</p>
+                    <p class="text-amber-800 text-sm mt-1">Your listing was saved and is now <strong>pending admin approval</strong>. We'll email you once it's approved and live on the site.</p>
+                </div>
+            <?php else: ?>
+                <div class="mb-8 p-4 bg-green-50 border border-green-200 rounded-lg">
+                    <p class="text-green-800 font-semibold">✓ Property saved successfully!</p>
+                </div>
+            <?php endif; ?>
         <?php endif; ?>
 
         <!-- Error Messages -->

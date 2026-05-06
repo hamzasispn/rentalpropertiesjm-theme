@@ -9,8 +9,34 @@ if (is_user_logged_in()) {
     exit;
 }
 
-$redirect_to = isset($_GET['redirect_to']) ? esc_url($_GET['redirect_to']) : home_url('/dashboard');
+// Only honor a redirect_to that lives on this site to prevent open-redirect abuse.
+$redirect_to = home_url('/dashboard');
+if (!empty($_GET['redirect_to'])) {
+    $candidate = esc_url_raw(wp_unslash($_GET['redirect_to']));
+    $safe      = wp_validate_redirect($candidate, $redirect_to);
+    if ($safe) $redirect_to = $safe;
+}
 $login_error = '';
+$login_notice = '';
+
+if (isset($_GET['verified'])) {
+    $login_notice = 'Email verified successfully. You can now sign in.';
+}
+if (isset($_GET['verify_error'])) {
+    $code = sanitize_key($_GET['verify_error']);
+    $map = array(
+        'expired'         => 'Your verification link has expired. Please request a new one.',
+        'mismatch'        => 'Invalid verification link.',
+        'used_or_missing' => 'This verification link has already been used or is no longer valid.',
+        'invalid'         => 'Invalid verification request.',
+    );
+    $login_error = $map[$code] ?? 'Email verification failed.';
+}
+if (isset($_GET['resend_status'])) {
+    $login_notice = ($_GET['resend_status'] === 'wait')
+        ? 'Please wait a minute before requesting another email.'
+        : 'Verification email sent — check your inbox.';
+}
 
 // Handle login form submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['login_submit'])) {
@@ -18,23 +44,42 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['login_submit'])) {
         wp_die('Security check failed');
     }
 
-    $username = sanitize_text_field($_POST['username'] ?? '');
-    $password = sanitize_text_field($_POST['password'] ?? '');
-    $remember = isset($_POST['remember']) ? true : false;
+    // Simple IP-based throttle: 8 failed attempts per 15 minutes.
+    $ip            = $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
+    $throttle_key  = 'rpjm_login_fail_' . md5($ip);
+    $fail_count    = (int) get_transient($throttle_key);
+    $is_throttled  = $fail_count >= 8;
 
-    if (!$username || !$password) {
+    $username = sanitize_text_field(wp_unslash($_POST['username'] ?? ''));
+    // NEVER sanitize_text_field a password — it can strip valid characters.
+    $password = isset($_POST['password']) ? (string) $_POST['password'] : '';
+    $remember = !empty($_POST['remember']);
+
+    if ($is_throttled) {
+        $login_error = 'Too many failed attempts. Please wait 15 minutes and try again.';
+    } elseif (!$username || !$password) {
         $login_error = 'Please enter both username/email and password.';
     } else {
         $user = wp_signon(array(
-            'user_login' => $username,
+            'user_login'    => $username,
             'user_password' => $password,
-            'remember' => $remember,
+            'remember'      => $remember,
         ), false);
 
         if (is_wp_error($user)) {
-            $login_error = 'Invalid username/email or password.';
+            // Bump the failure counter (15 min TTL).
+            set_transient($throttle_key, $fail_count + 1, 15 * MINUTE_IN_SECONDS);
+
+            $code = $user->get_error_code();
+            if ($code === 'email_not_verified') {
+                $login_error = $user->get_error_message();
+            } else {
+                $login_error = 'Invalid username/email or password.';
+            }
         } else {
-            wp_redirect($redirect_to);
+            // Reset on success.
+            delete_transient($throttle_key);
+            wp_safe_redirect($redirect_to);
             exit;
         }
     }
@@ -56,10 +101,17 @@ get_header();
                 <p class="text-slate-600 mt-2">Sign in to your Rental Properties JM account</p>
             </div>
 
+            <!-- Notice Message -->
+            <?php if ($login_notice) : ?>
+                <div class="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
+                    <p class="text-green-800 font-semibold"><?php echo esc_html($login_notice); ?></p>
+                </div>
+            <?php endif; ?>
+
             <!-- Error Message -->
             <?php if ($login_error) : ?>
                 <div class="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
-                    <p class="text-red-800 font-semibold"><?php echo esc_html($login_error); ?></p>
+                    <p class="text-red-800 font-semibold"><?php echo wp_kses($login_error, array('a' => array('href' => array()))); ?></p>
                 </div>
             <?php endif; ?>
 

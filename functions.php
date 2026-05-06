@@ -220,6 +220,8 @@ require_once get_template_directory() . '/inc/subscription/stripe-products-setup
 require_once get_template_directory() . '/inc/subscription/property-deactivation.php';
 require_once get_template_directory() . '/inc/resources-post-type.php';
 require_once get_template_directory() . '/inc/admin-panel.php';
+require_once get_template_directory() . '/inc/email-verification.php';
+require_once get_template_directory() . '/inc/property-cron.php';
 
 require_once get_template_directory() . '/admin/migration-page.php';
 
@@ -276,6 +278,18 @@ add_action('rest_api_init', function () {
             if (!$post_id || !in_array($event_type, $allowed, true)) {
                 return new WP_Error('invalid', 'Invalid params', ['status' => 400]);
             }
+            // Validate the property is real and published.
+            if (get_post_status($post_id) !== 'publish' || get_post_type($post_id) !== 'property') {
+                return new WP_Error('invalid', 'Invalid property', ['status' => 400]);
+            }
+            // Per-IP rate limit: 60 events / minute / IP.
+            $ip  = $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
+            $key = 'rpjm_track_' . md5($ip);
+            $hits = (int) get_transient($key);
+            if ($hits >= 60) {
+                return new WP_Error('rate_limited', 'Too many events', ['status' => 429]);
+            }
+            set_transient($key, $hits + 1, MINUTE_IN_SECONDS);
             global $wpdb;
             $wpdb->insert(
                 $wpdb->prefix . 'property_analytics',

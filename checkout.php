@@ -64,39 +64,24 @@ if (!$plan) {
                             </div>
                         </div>
 
-                        <!-- Billing Address -->
+                        <!-- Billing Address (Jamaica) -->
                         <div>
                             <h3 class="text-lg font-semibold text-slate-900 mb-4">Billing Address</h3>
                             <div class="space-y-4">
                                 <div>
                                     <label class="block text-sm font-medium text-slate-700 mb-1">Address</label>
-                                    <input type="text" x-model="form.address" placeholder="123 Main St" required
+                                    <input type="text" x-model="form.address" placeholder="Street address" required
                                         class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-slate-900">
                                 </div>
-                                <div class="grid grid-cols-2 gap-4">
-                                    <div>
-                                        <label class="block text-sm font-medium text-slate-700 mb-1">City</label>
-                                        <input type="text" x-model="form.city" placeholder="New York" required
-                                            class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-slate-900">
-                                    </div>
-                                    <div>
-                                        <label
-                                            class="block text-sm font-medium text-slate-700 mb-1">State/Province</label>
-                                        <input type="text" x-model="form.state" placeholder="NY" required
-                                            class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-slate-900">
-                                    </div>
-                                </div>
-                                <div class="grid grid-cols-2 gap-4">
-                                    <div>
-                                        <label class="block text-sm font-medium text-slate-700 mb-1">Postal Code</label>
-                                        <input type="text" x-model="form.zip" placeholder="10001" required
-                                            class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-slate-900">
-                                    </div>
-                                    <div>
-                                        <label class="block text-sm font-medium text-slate-700 mb-1">Country</label>
-                                        <input type="text" x-model="form.country" placeholder="United States" required
-                                            class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-slate-900">
-                                    </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-slate-700 mb-1">Parish</label>
+                                    <select x-model="form.city" required
+                                        class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-slate-900 bg-white">
+                                        <option value="">Select a parish…</option>
+                                        <?php foreach (array_keys(get_jamaica_cities()) as $parish): ?>
+                                            <option value="<?php echo esc_attr($parish); ?>"><?php echo esc_html($parish); ?></option>
+                                        <?php endforeach; ?>
+                                    </select>
                                 </div>
                             </div>
                         </div>
@@ -224,9 +209,7 @@ if (!$plan) {
                 email: '<?php echo esc_js($user->user_email); ?>',
                 address: '',
                 city: '',
-                state: '',
-                zip: '',
-                country: '',
+                country: 'JM',
                 terms: false,
             },
             loading: false,
@@ -247,7 +230,8 @@ if (!$plan) {
 
                 this.stripe = Stripe(publishableKey);
                 const elements = this.stripe.elements();
-                this.cardElement = elements.create('card');
+                // Jamaica doesn't use US-style postal codes — hide the postal field.
+                this.cardElement = elements.create('card', { hidePostalCode: true });
                 this.cardElement.mount('#card-element');
 
                 // Handle real-time validation errors
@@ -275,9 +259,7 @@ if (!$plan) {
                             address: {
                                 line1: this.form.address,
                                 city: this.form.city,
-                                state: this.form.state,
-                                postal_code: this.form.zip,
-                                country: this.form.country,
+                                country: this.form.country || 'JM',
                             }
                         }
                     });

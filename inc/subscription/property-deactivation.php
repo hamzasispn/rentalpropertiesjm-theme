@@ -53,6 +53,10 @@ add_action('init', function () {
 
 add_action('check_user_subscription_status', 'handle_subscription_property_status');
 
+// Run the limit-enforcement cron alongside the subscription-status cron so
+// downgrades are reflected even if no plan-change event fired.
+add_action('check_user_subscription_status', 'property_theme_enforce_limits_cron_handler');
+
 function handle_subscription_property_status()
 {
     global $wpdb;
