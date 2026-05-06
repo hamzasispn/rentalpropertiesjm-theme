@@ -444,7 +444,14 @@ if (isset($_GET['action']) && $_GET['action'] === 'delete' && isset($_GET['prope
 
         <form method="POST" enctype="multipart/form-data"
               class="grid grid-cols-1 lg:grid-cols-3 gap-8"
-              @submit="if (!validate()) { $event.preventDefault(); $event.stopImmediatePropagation(); return; } $el.querySelector('button[name=submit_property]')?.setAttribute('disabled','disabled')"
+              @submit="
+                  if (!validate()) { $event.preventDefault(); $event.stopImmediatePropagation(); return; }
+                  /* setTimeout(0) defers the disable until AFTER the browser has
+                     serialized form data — disabling earlier excludes the submit
+                     button's name=value from POST (W3C: disabled controls aren't
+                     'successful controls'). That bug ate every submission. */
+                  setTimeout(() => { $el.querySelector('button[name=submit_property]')?.setAttribute('disabled','disabled'); }, 0);
+              "
               x-data="propertyForm(
                   <?php echo htmlspecialchars(json_encode($property_data)); ?>,
                   <?php echo htmlspecialchars(json_encode($type_specific_fields ?? [])); ?>,
@@ -458,6 +465,10 @@ if (isset($_GET['action']) && $_GET['action'] === 'delete' && isset($_GET['prope
             <?php if ($is_edit && $property_id): ?>
                 <input type="hidden" name="property_id_edit" value="<?php echo (int) $property_id; ?>">
             <?php endif; ?>
+            <!-- Belt-and-suspenders: keeps `submit_property` in POST even if the
+                 submit <button name="submit_property"> is disabled by JS at the
+                 wrong moment (browsers exclude disabled controls from POST). -->
+            <input type="hidden" name="submit_property" value="1">
 
             <!-- Live client-side validation summary -->
             <div x-show="Object.keys(formErrors).length > 0"
