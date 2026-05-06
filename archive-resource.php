@@ -27,7 +27,21 @@ if ($category) {
 
 $query = new WP_Query($args);
 $cats  = get_terms(['taxonomy' => 'resource_category', 'hide_empty' => true]);
-$file_icons = ['pdf' => '📄', 'doc' => '📝', 'docx' => '📝', 'ppt' => '📊', 'pptx' => '📊', 'xls' => '📈', 'xlsx' => '📈', 'zip' => '🗜️'];
+// Inline SVG icons keyed by file type
+$file_icon_doc = '<svg class="w-12 h-12 text-blue-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6z"/><path stroke-linecap="round" stroke-linejoin="round" d="M14 2v6h6M9 13h6M9 17h6M9 9h2"/></svg>';
+$file_icon_chart = '<svg class="w-12 h-12 text-emerald-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6z"/><path stroke-linecap="round" stroke-linejoin="round" d="M14 2v6h6M8 17v-3M12 17v-6M16 17v-2"/></svg>';
+$file_icon_zip = '<svg class="w-12 h-12 text-amber-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6z"/><path stroke-linecap="round" stroke-linejoin="round" d="M14 2v6h6M12 11v2M12 15v2M12 19v1"/></svg>';
+$file_icon_default = '<svg class="w-12 h-12 text-slate-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6z"/><path stroke-linecap="round" stroke-linejoin="round" d="M14 2v6h6"/></svg>';
+$file_icons = [
+    'pdf'  => $file_icon_doc,
+    'doc'  => $file_icon_doc,
+    'docx' => $file_icon_doc,
+    'ppt'  => $file_icon_chart,
+    'pptx' => $file_icon_chart,
+    'xls'  => $file_icon_chart,
+    'xlsx' => $file_icon_chart,
+    'zip'  => $file_icon_zip,
+];
 ?>
 
 <main class="min-h-screen bg-slate-50">
@@ -85,7 +99,7 @@ $file_icons = ['pdf' => '📄', 'doc' => '📝', 'docx' => '📝', 'ppt' => '�
                     $file_type = get_post_meta($pid, '_resource_file_type', true);
                     $is_free   = get_post_meta($pid, '_resource_is_free', true) !== '0';
                     $dl_count  = (int) get_post_meta($pid, '_resource_download_count', true);
-                    $icon      = $file_icons[$file_type] ?? '📋';
+                    $icon      = $file_icons[$file_type] ?? $file_icon_default;
                     $res_cats  = get_the_terms($pid, 'resource_category');
                     $count++;
                 ?>
@@ -98,7 +112,7 @@ $file_icons = ['pdf' => '📄', 'doc' => '📝', 'docx' => '📝', 'ppt' => '�
                         </div>
                         <?php else: ?>
                         <div class="h-36 flex items-center justify-center" style="background:linear-gradient(135deg,#eff6ff 0%,#dbeafe 100%)">
-                            <span class="text-5xl"><?php echo $icon; ?></span>
+                            <?php echo $icon; ?>
                         </div>
                         <?php endif; ?>
 
@@ -166,7 +180,11 @@ $file_icons = ['pdf' => '📄', 'doc' => '📝', 'docx' => '📝', 'ppt' => '�
 
                 <?php else: ?>
                 <div class="text-center py-20">
-                    <span class="text-5xl block mb-4">📂</span>
+                    <div class="flex justify-center mb-4">
+                        <svg class="w-14 h-14 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V7z"/>
+                        </svg>
+                    </div>
                     <h3 class="text-xl font-bold text-slate-700 mb-2">No resources found</h3>
                     <p class="text-slate-500 mb-6">Try a different search or category.</p>
                     <a href="<?php echo get_post_type_archive_link('resource'); ?>"
@@ -204,7 +222,11 @@ $file_icons = ['pdf' => '📄', 'doc' => '📝', 'docx' => '📝', 'ppt' => '�
 
                     <div class="rounded-2xl p-5 text-white relative overflow-hidden" style="background:linear-gradient(135deg,#1e3a8a 0%,#1d4ed8 100%)">
                         <div class="absolute -top-6 -right-6 w-24 h-24 rounded-full opacity-10 bg-white"></div>
-                        <div class="text-3xl mb-3">📚</div>
+                        <div class="mb-3">
+                            <svg class="w-8 h-8 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
+                            </svg>
+                        </div>
                         <h4 class="font-bold text-base mb-1">Members Get More</h4>
                         <p class="text-blue-200 text-sm mb-4">Subscribe to unlock premium PDF guides and resources.</p>
                         <a href="<?php echo esc_url(home_url('/pricing')); ?>"

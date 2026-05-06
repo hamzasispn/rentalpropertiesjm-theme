@@ -39,38 +39,61 @@ $subscription = property_theme_get_user_subscription($user_id) ?? array();
         <nav class="flex-1 px-4 py-8 space-y-2">
             <a href="#overview" @click="activateTab('overview', true)"
                 :class="{ 'bg-slate-800 font-semibold': activeTab === 'overview' }"
-                class="nav-link px-4 py-3 rounded-lg hover:bg-slate-800 transition block">
-                📊 Overview
+                class="nav-link px-4 py-3 rounded-lg hover:bg-slate-800 transition flex items-center gap-3">
+                <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+                </svg>
+                Overview
             </a>
             <a href="#properties" @click="activateTab('properties', true)"
                 :class="{ 'bg-slate-800 font-semibold': activeTab === 'properties' }"
-                class="nav-link px-4 py-3 rounded-lg hover:bg-slate-800 transition block">
-                🏠 My Properties
+                class="nav-link px-4 py-3 rounded-lg hover:bg-slate-800 transition flex items-center gap-3">
+                <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h14a1 1 0 001-1V10"/>
+                </svg>
+                My Properties
             </a>
             <a href="#add-property" @click="activateTab('add-property', true)"
                 :class="{ 'bg-slate-800 font-semibold': activeTab === 'add-property' }"
-                class="nav-link px-4 py-3 rounded-lg hover:bg-slate-800 transition block">
-                ➕ Add Property
+                class="nav-link px-4 py-3 rounded-lg hover:bg-slate-800 transition flex items-center gap-3">
+                <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
+                </svg>
+                Add Property
             </a>
             <a href="#analytics" @click="activateTab('analytics', true)"
                 :class="{ 'bg-slate-800 font-semibold': activeTab === 'analytics' }"
-                class="nav-link px-4 py-3 rounded-lg hover:bg-slate-800 transition block">
-                📈 Analytics
+                class="nav-link px-4 py-3 rounded-lg hover:bg-slate-800 transition flex items-center gap-3">
+                <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M3 3v18h18M7 14l4-4 4 4 6-6"/>
+                </svg>
+                Analytics
             </a>
             <a href="#billing" @click="activateTab('billing', true)"
                 :class="{ 'bg-slate-800 font-semibold': activeTab === 'billing' }"
-                class="nav-link px-4 py-3 rounded-lg hover:bg-slate-800 transition block">
-                💳 Billing
+                class="nav-link px-4 py-3 rounded-lg hover:bg-slate-800 transition flex items-center gap-3">
+                <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="6" width="18" height="13" rx="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M3 10h18"/>
+                </svg>
+                Billing
             </a>
             <a href="#invoices" @click="activateTab('invoices', true)"
                 :class="{ 'bg-slate-800 font-semibold': activeTab === 'invoices' }"
-                class="nav-link px-4 py-3 rounded-lg hover:bg-slate-800 transition block">
-                🧾 Invoices
+                class="nav-link px-4 py-3 rounded-lg hover:bg-slate-800 transition flex items-center gap-3">
+                <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6M9 8h6M5 21V5a2 2 0 012-2h10a2 2 0 012 2v16l-3-2-2 2-2-2-2 2-2-2-3 2z"/>
+                </svg>
+                Invoices
             </a>
             <a href="#settings" @click="activateTab('settings', true)"
                 :class="{ 'bg-slate-800 font-semibold': activeTab === 'settings' }"
-                class="nav-link px-4 py-3 rounded-lg hover:bg-slate-800 transition block">
-                ⚙️ Settings
+                class="nav-link px-4 py-3 rounded-lg hover:bg-slate-800 transition flex items-center gap-3">
+                <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+                    <circle cx="12" cy="12" r="3" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                Settings
             </a>
         </nav>
 
@@ -287,11 +310,19 @@ $subscription = property_theme_get_user_subscription($user_id) ?? array();
                                 </div>
                                 <div class="flex gap-2">
                                     <a href="tel:+1234567890"
-                                        class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition text-sm">📞
-                                        Call</a>
+                                        class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition text-sm inline-flex items-center gap-1.5">
+                                        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                                            <path d="M6.6 10.8a15.1 15.1 0 006.6 6.6l2.2-2.2a1 1 0 011-.25c1.1.36 2.3.55 3.6.55a1 1 0 011 1V20a1 1 0 01-1 1A17 17 0 013 4a1 1 0 011-1h3.5a1 1 0 011 1c0 1.3.2 2.5.55 3.6a1 1 0 01-.25 1l-2.2 2.2z"/>
+                                        </svg>
+                                        Call
+                                    </a>
                                     <a href="https://wa.me/1234567890" target="_blank"
-                                        class="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition text-sm">💬
-                                        WhatsApp</a>
+                                        class="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition text-sm inline-flex items-center gap-1.5">
+                                        <svg class="w-4 h-4" viewBox="0 0 640 640" fill="currentColor">
+                                            <path d="M476.9 161.1C435 119.1 379.2 96 319.9 96 197.5 96 97.9 195.6 97.9 318c0 39.1 10.2 77.3 29.6 111L96 544l117.7-30.9c32.4 17.7 68.9 27 106.1 27h.1c122.3 0 224.1-99.6 224.1-222s-25.2-108.1-67.1-150zM319.9 502.7c-33.2 0-65.7-8.9-94-25.7L168 491.3l18.6-68.1C167.1 385.6 135.4 352.9 135.4 318c0-101.7 82.8-184.5 184.6-184.5 49.3 0 95.6 19.2 130.4 54.1 34.8 34.9 56.2 81.2 56.1 130.5 0 101.8-84.9 184.6-186.6 184.6z"/>
+                                        </svg>
+                                        WhatsApp
+                                    </a>
                                 </div>
                             </div>
                         <?php endforeach; ?>
@@ -381,7 +412,7 @@ $subscription = property_theme_get_user_subscription($user_id) ?? array();
                                 :disabled="loading"
                                 :class="autoRenew ? 'bg-green-600 hover:bg-green-700' : 'bg-slate-500 hover:bg-slate-600'"
                                 class="px-6 py-2 text-white rounded-lg transition disabled:opacity-50">
-                                <span x-text="loading ? 'Saving...' : (autoRenew ? '✓ Auto-Renew On' : 'Auto-Renew Off')"></span>
+                                <span x-text="loading ? 'Saving...' : (autoRenew ? 'Auto-Renew On' : 'Auto-Renew Off')"></span>
                             </button>
                         </div>
                     </div>

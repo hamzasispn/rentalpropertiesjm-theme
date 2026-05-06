@@ -231,7 +231,9 @@ foreach ($plans_data as $plan) {
                 <div class="flex flex-col gap-1.5">
                     <?php foreach ($plan['features'] as $feature): ?>
                         <div class="flex items-start gap-2 md:text-[0.633vw] text-[13px] <?= $text_secondary; ?>">
-                            <span class="text-sm mt-0.5 shrink-0 <?= $is_dark_card ? 'text-white' : ''; ?>" <?= !$is_dark_card ? 'style="color: var(--primary-color);"' : ''; ?>>✓</span>
+                            <svg class="w-3.5 h-3.5 mt-0.5 shrink-0 <?= $is_dark_card ? 'text-white' : 'text-[var(--primary-color)]'; ?>" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+                            </svg>
                             <span class="font-inter"><?= esc_html($feature); ?></span>
                         </div>
                     <?php endforeach; ?>

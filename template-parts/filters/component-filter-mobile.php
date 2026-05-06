@@ -82,7 +82,7 @@ if (empty($properties_page_url)) {
         Browse Properties
     </button>
 
-    <!-- ✅ Verified Badge -->
+    <!-- Verified Badge -->
     <div class="flex items-center justify-center gap-1.5 mt-2">
         <div class="flex items-center gap-1.5 px-3 py-1 bg-white border border-green-200 rounded-full shadow-sm">
             <svg class="w-3.5 h-3.5 text-green-600 flex-shrink-0" viewBox="0 0 24 24" fill="currentColor">
@@ -103,7 +103,11 @@ if (empty($properties_page_url)) {
             <!-- Header -->
             <div class="flex items-center justify-between p-4 border-b border-slate-200 sticky top-0 bg-white z-10">
                 <h2 class="text-lg font-bold text-slate-900">Filters</h2>
-                <button @click="showMobileSidebar = false" class="text-slate-600 hover:text-slate-900 text-2xl">✕</button>
+                <button @click="showMobileSidebar = false" class="text-slate-600 hover:text-slate-900 p-1" aria-label="Close">
+                    <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                </button>
             </div>
 
             <!-- Filter Content -->

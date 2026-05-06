@@ -750,7 +750,7 @@ add_action('admin_notices', function () {
             })
             .then(r => r.json())
             .then(data => {
-                document.getElementById('processing-status').innerHTML = '<strong style="color:green;">✓ Processing completed!</strong>';
+                document.getElementById('processing-status').innerHTML = '<strong style="color:green;">Processing completed!</strong>';
                 btn.disabled = false;
                 btn.textContent = 'Trigger Processing Now';
                 if (data.data) {
@@ -760,7 +760,7 @@ add_action('admin_notices', function () {
                 }
             })
             .catch(error => {
-                document.getElementById('processing-status').innerHTML = '<strong style="color:red;">✗ Error occurred!</strong>';
+                document.getElementById('processing-status').innerHTML = '<strong style="color:red;">Error occurred!</strong>';
                 btn.disabled = false;
                 btn.textContent = 'Trigger Processing Now';
             });

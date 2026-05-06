@@ -1,7 +1,9 @@
 {
   "permissions": {
     "allow": [
-      "Bash(xargs grep *)"
+      "Bash(xargs grep *)",
+      "Bash(grep -rln \"register_taxonomy.*bedroom\\\\|register_taxonomy.*bathroom\" \"c:/laragon/www/rentalpropertiesjm/wp-content/\" 2>/dev/null | head -20)",
+      "Read(//c/laragon/www/rentalpropertiesjm/wp-content/**)"
     ]
   }
 }

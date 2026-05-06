@@ -170,7 +170,7 @@ $launch_date = get_option('mytheme_launch_date', '2025-09-01T00:00:00');
                     class="flex-1 px-4 py-3 rounded-xl border border-white/10 bg-white/5 text-sm text-white placeholder-white/30 outline-none focus:border-white/40 focus:bg-white/10 transition-colors">
                 <button type="submit" :disabled="submitted"
                     :class="submitted ? 'opacity-60 cursor-not-allowed' : 'hover:bg-white/90 active:scale-95'"
-                    x-text="submitted ? '✓ Subscribed!' : 'Notify Me'"
+                    x-text="submitted ? 'Subscribed!' : 'Notify Me'"
                     class="px-5 py-3 bg-white text-navy font-bold text-sm rounded-xl transition-all whitespace-nowrap"></button>
             </form>
 

@@ -55,22 +55,22 @@ function subscription_theme_subscription_details_callback($post)
                 <strong>Stripe Sync Status:</strong><br>
                 Product ID:
                 <?php echo $stripe_product_id
-                    ? '<span style="color:green;">✓ ' . esc_html($stripe_product_id) . '</span>'
+                    ? '<span class="text-green-600 inline-flex items-center gap-1"><svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>' . esc_html($stripe_product_id) . '</span>'
                     : '<span style="color:orange;">Pending sync…</span>'; ?><br>
                 Monthly Price ID:
                 <?php echo $stripe_price_id
-                    ? '<span style="color:green;">✓ ' . esc_html($stripe_price_id) . '</span>'
+                    ? '<span class="text-green-600 inline-flex items-center gap-1"><svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>' . esc_html($stripe_price_id) . '</span>'
                     : '<span style="color:orange;">Pending sync…</span>'; ?><br>
                 Yearly Price ID:
                 <?php echo $stripe_yearly_price_id
-                    ? '<span style="color:green;">✓ ' . esc_html($stripe_yearly_price_id) . '</span>'
+                    ? '<span class="text-green-600 inline-flex items-center gap-1"><svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>' . esc_html($stripe_yearly_price_id) . '</span>'
                     : '<span style="color:orange;">Pending sync…</span>'; ?><br>
                 Custom Days Price ID:
                 <?php
                 $current_cycle = get_post_meta($post->ID, '_plan_billing_cycle', true);
                 if ($current_cycle === 'days') {
                     echo $stripe_days_price_id
-                        ? '<span style="color:green;">✓ ' . esc_html($stripe_days_price_id) . '</span>'
+                        ? '<span class="text-green-600 inline-flex items-center gap-1"><svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>' . esc_html($stripe_days_price_id) . '</span>'
                         : '<span style="color:orange;">Pending sync…</span>';
                 } else {
                     echo '<span style="color:#aaa;">N/A (not a days plan)</span>';
@@ -106,8 +106,9 @@ function subscription_theme_subscription_details_callback($post)
         <div id="billing_days_field"
              style="margin-bottom:15px; <?php echo ($billing_cycle !== 'days') ? 'display:none;' : ''; ?>
                     padding:15px; background:#fff8e1; border:1px solid #ffc107; border-radius:6px;">
-            <label for="plan_billing_days" style="display:block; margin-bottom:5px; font-weight:bold; color:#856404;">
-                📅 Number of Days
+            <label for="plan_billing_days" class="flex items-center gap-1.5 mb-1 font-bold text-amber-700">
+                <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path stroke-linecap="round" stroke-linejoin="round" d="M16 2v4M8 2v4M3 10h18"/></svg>
+                Number of Days
             </label>
             <input type="number" id="plan_billing_days" name="plan_billing_days"
                    value="<?php echo esc_attr($billing_days ?: 14); ?>"
@@ -152,8 +153,9 @@ function subscription_theme_subscription_details_callback($post)
 
         <!-- ─── NEW: Media Upload Limits ────────────────────────────────── -->
         <div style="margin-bottom:20px; padding:15px; background:#f0fdf4; border:1px solid #86efac; border-radius:6px;">
-            <h4 style="margin:0 0 12px; color:#166534; font-size:14px; font-weight:700; text-transform:uppercase; letter-spacing:.05em;">
-                📸 Media Upload Limits
+            <h4 class="m-0 mb-3 text-green-800 text-sm font-bold uppercase tracking-wider flex items-center gap-1.5">
+                <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.66-.9l.82-1.2A2 2 0 0110.07 4h3.86a2 2 0 011.66.9l.82 1.2a2 2 0 001.66.9H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><circle cx="12" cy="13" r="4"/></svg>
+                Media Upload Limits
             </h4>
             <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
                 <div>
@@ -179,8 +181,9 @@ function subscription_theme_subscription_details_callback($post)
 
         <!-- ─── NEW: Feature Toggles ────────────────────────────────────── -->
         <div style="margin-bottom:20px; padding:15px; background:#eff6ff; border:1px solid #93c5fd; border-radius:6px;">
-            <h4 style="margin:0 0 12px; color:#1e40af; font-size:14px; font-weight:700; text-transform:uppercase; letter-spacing:.05em;">
-                ⚙️ Feature Toggles
+            <h4 class="m-0 mb-3 text-blue-800 text-sm font-bold uppercase tracking-wider flex items-center gap-1.5">
+                <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><circle cx="12" cy="12" r="3"/></svg>
+                Feature Toggles
             </h4>
 
             <label style="display:flex; align-items:center; gap:10px; margin-bottom:12px; cursor:pointer; padding:10px; background:white; border-radius:6px; border:1px solid #bfdbfe;">
@@ -188,7 +191,10 @@ function subscription_theme_subscription_details_callback($post)
                        <?php checked($enable_whatsapp, 1); ?>
                        style="width:18px; height:18px; cursor:pointer;">
                 <div>
-                    <span style="font-weight:600; font-size:14px; color:#1e40af;">💬 Enable WhatsApp Contact Button</span>
+                    <span class="font-semibold text-sm text-blue-800 inline-flex items-center gap-1.5">
+                        <svg class="w-3.5 h-3.5" viewBox="0 0 640 640" fill="currentColor"><path d="M476.9 161.1C435 119.1 379.2 96 319.9 96 197.5 96 97.9 195.6 97.9 318c0 39.1 10.2 77.3 29.6 111L96 544l117.7-30.9c32.4 17.7 68.9 27 106.1 27h.1c122.3 0 224.1-99.6 224.1-222s-25.2-108.1-67.1-150zM319.9 502.7c-33.2 0-65.7-8.9-94-25.7L168 491.3l18.6-68.1C167.1 385.6 135.4 352.9 135.4 318c0-101.7 82.8-184.5 184.6-184.5 49.3 0 95.6 19.2 130.4 54.1 34.8 34.9 56.2 81.2 56.1 130.5 0 101.8-84.9 184.6-186.6 184.6z"/></svg>
+                        Enable WhatsApp Contact Button
+                    </span>
                     <p style="margin:2px 0 0; font-size:12px; color:#64748b;">Allow users on this plan to show WhatsApp contact on their listings</p>
                 </div>
             </label>
@@ -198,7 +204,10 @@ function subscription_theme_subscription_details_callback($post)
                        <?php checked($enable_google_map, 1); ?>
                        style="width:18px; height:18px; cursor:pointer;">
                 <div>
-                    <span style="font-weight:600; font-size:14px; color:#1e40af;">📍 Enable Google Map / Location Pin</span>
+                    <span class="font-semibold text-sm text-blue-800 inline-flex items-center gap-1.5">
+                        <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a2 2 0 01-2.828 0l-4.243-4.243a8 8 0 1111.314 0z"/><circle cx="12" cy="11" r="3"/></svg>
+                        Enable Google Map / Location Pin
+                    </span>
                     <p style="margin:2px 0 0; font-size:12px; color:#64748b;">Allow users on this plan to add a Google Maps address and display a map on their listing</p>
                 </div>
             </label>

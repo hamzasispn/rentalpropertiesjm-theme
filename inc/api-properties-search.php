@@ -286,6 +286,12 @@ function property_search_api(WP_REST_Request $request)
             $property_type = (!is_wp_error($property_type_terms) && !empty($property_type_terms))
                 ? $property_type_terms[0]->name
                 : '';
+            $property_type_slug = (!is_wp_error($property_type_terms) && !empty($property_type_terms))
+                ? $property_type_terms[0]->slug
+                : '';
+            $property_type_icon = (!is_wp_error($property_type_terms) && !empty($property_type_terms) && function_exists('get_field'))
+                ? get_field('icons', 'property_type_' . $property_type_terms[0]->term_id)
+                : '';
 
             // Gallery – ensure it is always an array of strings
             $gallery_raw = get_post_meta($post_id, '_property_gallery', true);
@@ -300,9 +306,22 @@ function property_search_api(WP_REST_Request $request)
                 ? $listing_status_terms[0]
                 : '';
 
-            // Beds / baths – prefer meta (source of truth), fall back to taxonomy
+            // Beds / baths – prefer meta, fall back to taxonomy term name (e.g. "3" → 3)
             $bedrooms  = (int) get_post_meta($post_id, '_property_bedrooms',  true);
-            $bathrooms = (int) get_post_meta($post_id, '_property_bathrooms', true);
+            $bathrooms = (float) get_post_meta($post_id, '_property_bathrooms', true);
+
+            if (!$bedrooms) {
+                $bed_terms = wp_get_post_terms($post_id, 'bedroom');
+                if (!is_wp_error($bed_terms) && !empty($bed_terms)) {
+                    $bedrooms = (int) $bed_terms[0]->name;
+                }
+            }
+            if (!$bathrooms) {
+                $bath_terms = wp_get_post_terms($post_id, 'bathroom');
+                if (!is_wp_error($bath_terms) && !empty($bath_terms)) {
+                    $bathrooms = (float) $bath_terms[0]->name;
+                }
+            }
 
             // Thumbnail – return false as null so JSON stays clean
             $thumbnail = get_the_post_thumbnail_url($post_id, 'medium');
@@ -313,6 +332,8 @@ function property_search_api(WP_REST_Request $request)
                 'price'              => (int) get_post_meta($post_id, '_property_price', true),
                 'area'               => (int) get_post_meta($post_id, '_property_area',  true),
                 'property_type'      => $property_type,
+                'property_type_slug' => $property_type_slug,
+                'property_type_icon' => $property_type_icon,
                 'bedrooms'           => $bedrooms,
                 'bathrooms'          => $bathrooms,
                 'address'            => (string) (get_post_meta($post_id, '_property_address', true) ?: ''),

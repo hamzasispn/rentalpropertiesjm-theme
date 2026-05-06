@@ -1058,7 +1058,9 @@ $res_cats     = get_terms(['taxonomy' => 'resource_category', 'hide_empty' => fa
                             <button type="button" class="editor-btn" title="H2" onclick="execFormat('formatBlock','h2')" style="font-size:10px;width:auto;padding:0 6px">H2</button>
                             <button type="button" class="editor-btn" title="H3" onclick="execFormat('formatBlock','h3')" style="font-size:10px;width:auto;padding:0 6px">H3</button>
                             <button type="button" class="editor-btn" title="Unordered List" onclick="execFormat('insertUnorderedList')">• –</button>
-                            <button type="button" class="editor-btn" title="Link" onclick="insertLink()">🔗</button>
+                            <button type="button" class="editor-btn" title="Link" onclick="insertLink()">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path stroke-linecap="round" stroke-linejoin="round" d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>
+                            </button>
                         </div>
                         <div id="blogEditor" class="form-textarea editor-content" contenteditable="true" style="min-height:240px;border-radius:0 0 8px 8px;border-top:none"
                              placeholder="Write your article here…"

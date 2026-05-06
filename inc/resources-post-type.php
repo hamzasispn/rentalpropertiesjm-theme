@@ -79,12 +79,20 @@ function resource_document_meta_box_callback($post) {
 
         <div id="resource-file-preview" style="margin-bottom:12px; <?php echo $file_url ? '' : 'display:none;'; ?>">
             <div style="display:flex; align-items:center; gap:10px; padding:10px; background:#f0f6fc; border:1px solid #c3d9ef; border-radius:6px;">
-                <span style="font-size:28px;"><?php echo ($file_type === 'pdf') ? '📄' : '📋'; ?></span>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="<?php echo ($file_type === 'pdf') ? '#dc2626' : '#475569'; ?>" stroke-width="1.5">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6z"/>
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M14 2v6h6"/>
+                </svg>
                 <div>
                     <strong id="resource-file-name"><?php echo esc_html($file_name); ?></strong><br>
                     <a href="<?php echo esc_url($file_url); ?>" target="_blank" style="color:#0073aa; font-size:12px;">View File</a>
                 </div>
-                <button type="button" id="resource-remove-file" style="margin-left:auto; color:#cc0000; background:none; border:none; cursor:pointer; font-size:12px;">✕ Remove</button>
+                <button type="button" id="resource-remove-file" class="ml-auto text-red-700 bg-transparent border-0 cursor-pointer text-xs inline-flex items-center gap-1">
+                    <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                    Remove
+                </button>
             </div>
         </div>
 

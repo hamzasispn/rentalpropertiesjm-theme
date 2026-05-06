@@ -14,7 +14,7 @@ function zt_enqueue_assets()
 
     $mapbox_key = defined('MAPBOX_PUBLIC_KEY') ? MAPBOX_PUBLIC_KEY : get_option('mapbox_public_key');
 
-    // ✅ Global data for JS
+    // Global data for JS
     wp_localize_script('theme-js', 'propertyTheme', [
         'ajax_url' => admin_url('admin-ajax.php'),
         'nonce' => wp_create_nonce('wp_rest'),
@@ -35,7 +35,7 @@ add_action('wp_enqueue_scripts', 'zt_enqueue_assets');
 
 
 /**
- * 🚀 Performance Optimization: Remove Unnecessary WordPress Header Code 🧹
+ * Performance Optimization: Remove Unnecessary WordPress Header Code
  */
 function optimize_wp_head_cleanup()
 {
@@ -77,7 +77,7 @@ function disable_emojis_dns_prefetch($urls, $relation_type)
 
 
 /**
- * 🧱 Remove the core WordPress Block Library CSS
+ * Remove the core WordPress Block Library CSS
  */
 function remove_wp_block_library_css()
 {

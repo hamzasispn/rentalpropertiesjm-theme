@@ -90,6 +90,14 @@
 
         <!-- Details -->
         <div class="flex gap-3 flex-wrap">
+            <div x-show="property.property_type" class="w-full">
+                <span class="inline-flex items-center gap-1.5 px-[2.824vw] py-[1.412vw] md:px-[0.625vw] md:py-[5px] bg-blue-50 text-[var(--primary-color)] rounded-full text-[3.059vw] md:text-[0.625vw] font-inter font-semibold">
+                    <template x-if="property.property_type_icon">
+                        <span x-html="property.property_type_icon" class="w-3 h-3 fill-current block"></span>
+                    </template>
+                    <span x-text="property.property_type"></span>
+                </span>
+            </div>
             <div class="w-full flex gap-2 items-center" x-show="property.address">
                 <svg class="md:w-[0.833vw] md:h-[0.833vw] w-[3.765vw] h-[3.765vw]" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path

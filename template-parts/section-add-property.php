@@ -190,10 +190,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_property'])) {
     }
 
     $property_bedroom = sanitize_text_field($_POST['property_bedroom'] ?? '');
-    if ($property_bedroom) wp_set_post_terms($post_id, array($property_bedroom), 'bedroom');
+    if ($property_bedroom) {
+        $bed_term = get_term_by('slug', $property_bedroom, 'bedroom');
+        if ($bed_term) {
+            wp_set_post_terms($post_id, array((int) $bed_term->term_id), 'bedroom');
+            update_post_meta($post_id, '_property_bedrooms', (int) $bed_term->name);
+        }
+    } else {
+        wp_set_object_terms($post_id, array(), 'bedroom');
+        delete_post_meta($post_id, '_property_bedrooms');
+    }
 
     $property_bathroom = sanitize_text_field($_POST['property_bathroom'] ?? '');
-    if ($property_bathroom) wp_set_post_terms($post_id, array($property_bathroom), 'bathroom');
+    if ($property_bathroom) {
+        $bath_term = get_term_by('slug', $property_bathroom, 'bathroom');
+        if ($bath_term) {
+            wp_set_post_terms($post_id, array((int) $bath_term->term_id), 'bathroom');
+            update_post_meta($post_id, '_property_bathrooms', (float) $bath_term->name);
+        }
+    } else {
+        wp_set_object_terms($post_id, array(), 'bathroom');
+        delete_post_meta($post_id, '_property_bathrooms');
+    }
 
     // Listing Status (Buy / Rent)
     $property_listing_status = sanitize_text_field($_POST['property_listing_status'] ?? '');
@@ -349,27 +367,38 @@ if (isset($_GET['action']) && $_GET['action'] === 'delete' && isset($_GET['prope
                 Your <strong><?php echo esc_html($plan['name'] ?? 'Current'); ?></strong> plan allows:
             </div>
             <div class="flex flex-wrap gap-3">
-                <span class="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium">
-                    📸 <?php echo $plan_photo_limit; ?> photos per listing
+                <span class="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium inline-flex items-center gap-1.5">
+                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.66-.9l.82-1.2A2 2 0 0110.07 4h3.86a2 2 0 011.66.9l.82 1.2a2 2 0 001.66.9H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><circle cx="12" cy="13" r="4"/></svg>
+                    <?php echo $plan_photo_limit; ?> photos per listing
                     <?php if ($is_edit): ?>
                         <span class="text-blue-600">(<?php echo $existing_photos; ?> used)</span>
                     <?php endif; ?>
                 </span>
                 <?php if ($plan_video_limit > 0): ?>
-                    <span class="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium">
-                        🎬 <?php echo $plan_video_limit; ?> videos per listing
+                    <span class="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium inline-flex items-center gap-1.5">
+                        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+                        <?php echo $plan_video_limit; ?> videos per listing
                         <?php if ($is_edit): ?>
                             <span class="text-blue-600">(<?php echo $existing_videos; ?> used)</span>
                         <?php endif; ?>
                     </span>
                 <?php else: ?>
-                    <span class="px-3 py-1 bg-gray-100 text-gray-500 rounded-full text-sm font-medium line-through">🎬 No videos</span>
+                    <span class="px-3 py-1 bg-gray-100 text-gray-500 rounded-full text-sm font-medium line-through inline-flex items-center gap-1.5">
+                        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+                        No videos
+                    </span>
                 <?php endif; ?>
                 <?php if ($plan_whatsapp): ?>
-                    <span class="px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-medium">💬 WhatsApp</span>
+                    <span class="px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-medium inline-flex items-center gap-1.5">
+                        <svg class="w-4 h-4" viewBox="0 0 640 640" fill="currentColor"><path d="M476.9 161.1C435 119.1 379.2 96 319.9 96 197.5 96 97.9 195.6 97.9 318c0 39.1 10.2 77.3 29.6 111L96 544l117.7-30.9c32.4 17.7 68.9 27 106.1 27h.1c122.3 0 224.1-99.6 224.1-222s-25.2-108.1-67.1-150zM319.9 502.7c-33.2 0-65.7-8.9-94-25.7L168 491.3l18.6-68.1C167.1 385.6 135.4 352.9 135.4 318c0-101.7 82.8-184.5 184.6-184.5 49.3 0 95.6 19.2 130.4 54.1 34.8 34.9 56.2 81.2 56.1 130.5 0 101.8-84.9 184.6-186.6 184.6z"/></svg>
+                        WhatsApp
+                    </span>
                 <?php endif; ?>
                 <?php if ($plan_google_map): ?>
-                    <span class="px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-medium">📍 Map Location</span>
+                    <span class="px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-medium inline-flex items-center gap-1.5">
+                        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a2 2 0 01-2.828 0l-4.243-4.243a8 8 0 1111.314 0z"/><circle cx="12" cy="11" r="3"/></svg>
+                        Map Location
+                    </span>
                 <?php endif; ?>
             </div>
         </div>
@@ -378,12 +407,18 @@ if (isset($_GET['action']) && $_GET['action'] === 'delete' && isset($_GET['prope
         <?php if (isset($_GET['saved'])): ?>
             <?php if (!empty($_GET['review'])): ?>
                 <div class="mb-8 p-4 bg-amber-50 border border-amber-200 rounded-lg">
-                    <p class="text-amber-900 font-semibold">✓ Property submitted for review</p>
+                    <p class="text-amber-900 font-semibold inline-flex items-center gap-1.5">
+                        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+                        Property submitted for review
+                    </p>
                     <p class="text-amber-800 text-sm mt-1">Your listing was saved and is now <strong>pending admin approval</strong>. We'll email you once it's approved and live on the site.</p>
                 </div>
             <?php else: ?>
                 <div class="mb-8 p-4 bg-green-50 border border-green-200 rounded-lg">
-                    <p class="text-green-800 font-semibold">✓ Property saved successfully!</p>
+                    <p class="text-green-800 font-semibold inline-flex items-center gap-1.5">
+                        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+                        Property saved successfully!
+                    </p>
                 </div>
             <?php endif; ?>
         <?php endif; ?>
@@ -630,7 +665,10 @@ if (isset($_GET['action']) && $_GET['action'] === 'delete' && isset($_GET['prope
                             </p>
                         </div>
                         <?php if ($plan_whatsapp): ?>
-                        <span class="px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-semibold">💬 WhatsApp enabled</span>
+                        <span class="px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-semibold inline-flex items-center gap-1.5">
+                            <svg class="w-3.5 h-3.5" viewBox="0 0 640 640" fill="currentColor"><path d="M476.9 161.1C435 119.1 379.2 96 319.9 96 197.5 96 97.9 195.6 97.9 318c0 39.1 10.2 77.3 29.6 111L96 544l117.7-30.9c32.4 17.7 68.9 27 106.1 27h.1c122.3 0 224.1-99.6 224.1-222s-25.2-108.1-67.1-150zM319.9 502.7c-33.2 0-65.7-8.9-94-25.7L168 491.3l18.6-68.1C167.1 385.6 135.4 352.9 135.4 318c0-101.7 82.8-184.5 184.6-184.5 49.3 0 95.6 19.2 130.4 54.1 34.8 34.9 56.2 81.2 56.1 130.5 0 101.8-84.9 184.6-186.6 184.6z"/></svg>
+                            WhatsApp enabled
+                        </span>
                         <?php endif; ?>
                     </div>
 
@@ -646,9 +684,9 @@ if (isset($_GET['action']) && $_GET['action'] === 'delete' && isset($_GET['prope
                                         <label class="block text-xs font-semibold text-slate-700 mb-2">Type</label>
                                         <select x-model="number.type" :name="`property_numbers[${index}][type]`"
                                             class="px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-slate-900 bg-white">
-                                            <option value="num">📱 Phone</option>
+                                            <option value="num">Phone</option>
                                             <option value="whats" x-bind:disabled="!planWhatsapp">
-                                                💬 WhatsApp<span x-show="!planWhatsapp"> (upgrade required)</span>
+                                                WhatsApp<span x-show="!planWhatsapp"> (upgrade required)</span>
                                             </option>
                                         </select>
                                     </div>
@@ -773,7 +811,11 @@ if (isset($_GET['action']) && $_GET['action'] === 'delete' && isset($_GET['prope
                                                             <div class="flex items-center gap-3 p-4 border rounded-lg bg-white">
                                                                 <div class="w-10 h-10 bg-slate-100 rounded flex items-center justify-center relative">
                                                                     <template x-if="amenity.icon"><img :src="amenity.icon" class="w-8 h-8 object-contain"></template>
-                                                                    <template x-if="!amenity.icon">📎</template>
+                                                                    <template x-if="!amenity.icon">
+                                                                        <svg class="w-5 h-5 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                                            <path stroke-linecap="round" stroke-linejoin="round" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/>
+                                                                        </svg>
+                                                                    </template>
                                                                     <input type="file" accept="image/*" class="absolute inset-0 opacity-0 cursor-pointer"
                                                                         :name="`amenities_groups[${activeTab}][amenities][${aIndex}][icon_file]`"
                                                                         @change="uploadIcon(activeTab,aIndex,$event)">
@@ -807,27 +849,35 @@ if (isset($_GET['action']) && $_GET['action'] === 'delete' && isset($_GET['prope
                         <h2 class="text-xl font-bold text-slate-900">Gallery</h2>
                         <!-- Live counter badges -->
                         <div class="flex gap-2 text-xs font-semibold">
-                            <span class="px-2 py-1 rounded-full"
-                                :class="photoCount >= planPhotoLimit ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'"
-                                x-text="`📸 ${photoCount}/${planPhotoLimit} photos`">
+                            <span class="px-2 py-1 rounded-full inline-flex items-center gap-1"
+                                :class="photoCount >= planPhotoLimit ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'">
+                                <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.66-.9l.82-1.2A2 2 0 0110.07 4h3.86a2 2 0 011.66.9l.82 1.2a2 2 0 001.66.9H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><circle cx="12" cy="13" r="4"/></svg>
+                                <span x-text="`${photoCount}/${planPhotoLimit} photos`"></span>
                             </span>
                             <template x-if="planVideoLimit > 0">
-                                <span class="px-2 py-1 rounded-full"
-                                    :class="videoCount >= planVideoLimit ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'"
-                                    x-text="`🎬 ${videoCount}/${planVideoLimit} videos`">
+                                <span class="px-2 py-1 rounded-full inline-flex items-center gap-1"
+                                    :class="videoCount >= planVideoLimit ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'">
+                                    <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+                                    <span x-text="`${videoCount}/${planVideoLimit} videos`"></span>
                                 </span>
                             </template>
                             <template x-if="planVideoLimit === 0">
-                                <span class="px-2 py-1 rounded-full bg-gray-100 text-gray-500">🎬 No videos on your plan</span>
+                                <span class="px-2 py-1 rounded-full bg-gray-100 text-gray-500 inline-flex items-center gap-1">
+                                    <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+                                    No videos on your plan
+                                </span>
                             </template>
                         </div>
                     </div>
 
                     <!-- Limit warning -->
                     <div x-show="photoCount >= planPhotoLimit"
-                        class="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg text-amber-800 text-sm font-medium">
-                        ⚠️ You've reached the photo limit for your plan. Remove a photo to add another, or
-                        <a href="<?php echo home_url('/dashboard/#billing'); ?>" class="underline">upgrade your plan</a>.
+                        class="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg text-amber-800 text-sm font-medium flex items-center gap-2">
+                        <svg class="w-4 h-4 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01M5.07 19h13.86c1.54 0 2.5-1.67 1.73-3L13.73 4a2 2 0 00-3.46 0L3.34 16c-.77 1.33.19 3 1.73 3z"/>
+                        </svg>
+                        <span>You've reached the photo limit for your plan. Remove a photo to add another, or
+                        <a href="<?php echo home_url('/dashboard/#billing'); ?>" class="underline">upgrade your plan</a>.</span>
                     </div>
 
                     <div id="gallery-list" class="grid grid-cols-2 gap-4 mb-4">

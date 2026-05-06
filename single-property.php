@@ -31,13 +31,23 @@ while (have_posts()):
 
     // Get property type
     $property_types = wp_get_post_terms($property_id, 'property_type');
-    $property_type = !empty($property_types) ? $property_types[0]->name : '';
+    $property_type = (!is_wp_error($property_types) && !empty($property_types)) ? $property_types[0]->name : '';
+
+    // Bedrooms / Bathrooms — prefer taxonomy term name, fall back to meta
     $bedrooms = wp_get_post_terms($property_id, 'bedroom');
     $bathrooms = wp_get_post_terms($property_id, 'bathroom');
-    $bedroom = !empty($bedrooms) ? $bedrooms[0]->name : '';
-    $bathroom = !empty($bathrooms) ? $bathrooms[0]->name : '';
+    $bedroom = (!is_wp_error($bedrooms) && !empty($bedrooms)) ? $bedrooms[0]->name : '';
+    $bathroom = (!is_wp_error($bathrooms) && !empty($bathrooms)) ? $bathrooms[0]->name : '';
+    if ($bedroom === '') {
+        $bedroom = (string) get_post_meta($property_id, '_property_bedrooms', true);
+    }
+    if ($bathroom === '') {
+        $bathroom = (string) get_post_meta($property_id, '_property_bathrooms', true);
+    }
 
-    $icons = get_field('icons', 'property_type_' . $property_types[0]->term_id);
+    $icons = (!is_wp_error($property_types) && !empty($property_types) && function_exists('get_field'))
+        ? get_field('icons', 'property_type_' . $property_types[0]->term_id)
+        : '';
     $publish_time = get_the_time('U');
     $current_time = current_time('timestamp');
     $days_diff = floor(($current_time - $publish_time) / (60 * 60 * 24));
@@ -87,8 +97,19 @@ while (have_posts()):
                             </svg>
                             <?= esc_html($full_address['address']); ?>
                         </p>
-                        <div class="text-gray-800 font-inter md:text-[0.729vw] text-[3.294vw] font-medium capitalize">See on
-                            the map</div>
+                        <?php
+                        $maps_query = (!empty($coords['lat']) && !empty($coords['lng']))
+                            ? $coords['lat'] . ',' . $coords['lng']
+                            : $full_address['address'];
+                        $maps_url = 'https://www.google.com/maps/search/?api=1&query=' . rawurlencode($maps_query);
+                        ?>
+                        <a href="<?= esc_url($maps_url); ?>" target="_blank" rel="noopener"
+                            class="text-[var(--primary-color)] hover:underline font-inter md:text-[0.729vw] text-[3.294vw] font-medium capitalize inline-flex items-center gap-1">
+                            See on the map
+                            <svg class="md:w-[0.729vw] md:h-[0.729vw] w-[3vw] h-[3vw]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M14 3h7v7M10 14L21 3M21 14v7H3V3h7"/>
+                            </svg>
+                        </a>
                     </div>
                 </div>
                 <div
@@ -508,60 +529,45 @@ while (have_posts()):
                                 if (is_string($numbers)) {
                                     $numbers = maybe_unserialize($numbers);
                                 }
-                                
-                                if (is_array($numbers) && 
-                                    isset($numbers['whats']) && 
-                                    is_array($numbers['whats']) && 
-                                    !empty($numbers['whats'])):
-                                ?>
-                                
-                                    <?php foreach ($numbers['whats'] as $index => $whatsNumber): ?>
-                                        <?php
-                                            $wa   = '1' . ltrim($whatsNumber, '0');
-                                            $call = $numbers['num'][$index] ?? '';
-                                        ?>
-                                
-                                    <!-- WhatsApp -->
-                                    <a href="https://wa.me/<?php echo $wa; ?>" target="_blank"
-                                        class="flex-1 flex items-center justify-center gap-[2.353vw] md:gap-[0.521vw] h-[12.706vw] md:h-[3.125vw] w-full block rounded-[3.765vw] md:rounded-[0.833vw] bg-[#25D366] text-white font-medium text-[3.294vw] md:text-[0.833vw]">
-                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" fill="white" class="w-[5.706vw] h-[5.706vw] md:w-[2.042vw] md:h-[2.042vw]">
-                                            <path d="M476.9 161.1C435 119.1 379.2 96 319.9 96C197.5 96 97.9 195.6 97.9 318C97.9 357.1 108.1 395.3 127.5 429L96 544L213.7 513.1C246.1 530.8 282.6 540.1 319.8 540.1L319.9 540.1C442.2 540.1 544 440.5 544 318.1C544 258.8 518.8 203.1 476.9 161.1zM319.9 502.7C286.7 502.7 254.2 493.8 225.9 477L219.2 473L149.4 491.3L168 423.2L163.6 416.2C145.1 386.8 135.4 352.9 135.4 318C135.4 216.3 218.2 133.5 320 133.5C369.3 133.5 415.6 152.7 450.4 187.6C485.2 222.5 506.6 268.8 506.5 318.1C506.5 419.9 421.6 502.7 319.9 502.7zM421.1 364.5C415.6 361.7 388.3 348.3 383.2 346.5C378.1 344.6 374.4 343.7 370.7 349.3C367 354.9 356.4 367.3 353.1 371.1C349.9 374.8 346.6 375.3 341.1 372.5C308.5 356.2 287.1 343.4 265.6 306.5C259.9 296.7 271.3 297.4 281.9 276.2C283.7 272.5 282.8 269.3 281.4 266.5C280 263.7 268.9 236.4 264.3 225.3C259.8 214.5 255.2 216 251.8 215.8C248.6 215.6 244.9 215.6 241.2 215.6C237.5 215.6 231.5 217 226.4 222.5C221.3 228.1 207 241.5 207 268.8C207 296.1 226.9 322.5 229.6 326.2C232.4 329.9 268.7 385.9 324.4 410C359.6 425.2 373.4 426.5 391 423.9C401.7 422.3 423.8 410.5 428.4 397.5C433 384.5 433 373.4 431.6 371.1C430.3 368.6 426.6 367.2 421.1 364.5z"/>
-                                        </svg>
-                                        WhatsApp
-                                    </a>
 
-                                    <!-- Call -->
-                                    <a href="tel:<?php echo $call; ?>"
-                                        class="flex-1 flex items-center justify-center gap-[2.353vw] md:gap-[0.521vw] h-[12.706vw] md:h-[3.125vw] w-full block rounded-[3.765vw] md:rounded-[0.833vw] bg-[#132364] text-white font-medium text-[3.294vw] md:text-[0.833vw]">
-                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" fill="white" class="w-[5.406vw] h-[5.406vw] md:w-[1.742vw] md:h-[1.742vw]">
-                                            <path d="M224.2 89C216.3 70.1 195.7 60.1 176.1 65.4L170.6 66.9C106 84.5 50.8 147.1 66.9 223.3C104 398.3 241.7 536 416.7 573.1C493 589.3 555.5 534 573.1 469.4L574.6 463.9C580 444.2 569.9 423.6 551.1 415.8L453.8 375.3C437.3 368.4 418.2 373.2 406.8 387.1L368.2 434.3C297.9 399.4 241.3 341 208.8 269.3L253 233.3C266.9 222 271.6 202.9 264.8 186.3L224.2 89z"/>
-                                        </svg>
-                                        Call
-                                    </a>
-                                
-                                    <?php endforeach; ?>
-                                
-                                <?php else: ?>
-                                
-                                    <!-- WhatsApp -->
-                                    <a href="#" target="_blank"
-                                        class="flex-1 flex items-center justify-center gap-[2.353vw] md:gap-[0.521vw] h-[12.706vw] md:h-[3.125vw] w-full block rounded-[3.765vw] md:rounded-[0.833vw] bg-[#25D366] text-white font-medium text-[3.294vw] md:text-[0.833vw]">
-                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" fill="white" class="w-[5.706vw] h-[5.706vw] md:w-[2.042vw] md:h-[2.042vw]">
-                                            <path d="M476.9 161.1C435 119.1 379.2 96 319.9 96C197.5 96 97.9 195.6 97.9 318C97.9 357.1 108.1 395.3 127.5 429L96 544L213.7 513.1C246.1 530.8 282.6 540.1 319.8 540.1L319.9 540.1C442.2 540.1 544 440.5 544 318.1C544 258.8 518.8 203.1 476.9 161.1zM319.9 502.7C286.7 502.7 254.2 493.8 225.9 477L219.2 473L149.4 491.3L168 423.2L163.6 416.2C145.1 386.8 135.4 352.9 135.4 318C135.4 216.3 218.2 133.5 320 133.5C369.3 133.5 415.6 152.7 450.4 187.6C485.2 222.5 506.6 268.8 506.5 318.1C506.5 419.9 421.6 502.7 319.9 502.7zM421.1 364.5C415.6 361.7 388.3 348.3 383.2 346.5C378.1 344.6 374.4 343.7 370.7 349.3C367 354.9 356.4 367.3 353.1 371.1C349.9 374.8 346.6 375.3 341.1 372.5C308.5 356.2 287.1 343.4 265.6 306.5C259.9 296.7 271.3 297.4 281.9 276.2C283.7 272.5 282.8 269.3 281.4 266.5C280 263.7 268.9 236.4 264.3 225.3C259.8 214.5 255.2 216 251.8 215.8C248.6 215.6 244.9 215.6 241.2 215.6C237.5 215.6 231.5 217 226.4 222.5C221.3 228.1 207 241.5 207 268.8C207 296.1 226.9 322.5 229.6 326.2C232.4 329.9 268.7 385.9 324.4 410C359.6 425.2 373.4 426.5 391 423.9C401.7 422.3 423.8 410.5 428.4 397.5C433 384.5 433 373.4 431.6 371.1C430.3 368.6 426.6 367.2 421.1 364.5z"/>
-                                        </svg>
-                                        WhatsApp
-                                    </a>
+                                $whats_numbers = (is_array($numbers) && !empty($numbers['whats']) && is_array($numbers['whats']))
+                                    ? array_filter(array_map('trim', $numbers['whats']))
+                                    : array();
+                                $call_numbers = (is_array($numbers) && !empty($numbers['num']) && is_array($numbers['num']))
+                                    ? array_filter(array_map('trim', $numbers['num']))
+                                    : array();
 
-                                    <!-- Call -->
-                                    <a href="#"
-                                        class="flex-1 flex items-center justify-center gap-[2.353vw] md:gap-[0.521vw] h-[12.706vw] md:h-[3.125vw] w-full block rounded-[3.765vw] md:rounded-[0.833vw] bg-[#132364] text-white font-medium text-[3.294vw] md:text-[0.833vw]">
-                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" fill="white" class="w-[5.406vw] h-[5.406vw] md:w-[1.742vw] md:h-[1.742vw]">
-                                            <path d="M224.2 89C216.3 70.1 195.7 60.1 176.1 65.4L170.6 66.9C106 84.5 50.8 147.1 66.9 223.3C104 398.3 241.7 536 416.7 573.1C493 589.3 555.5 534 573.1 469.4L574.6 463.9C580 444.2 569.9 423.6 551.1 415.8L453.8 375.3C437.3 368.4 418.2 373.2 406.8 387.1L368.2 434.3C297.9 399.4 241.3 341 208.8 269.3L253 233.3C266.9 222 271.6 202.9 264.8 186.3L224.2 89z"/>
-                                        </svg>
-                                        Call
-                                    </a>
-                                
+                                $max_pairs = max(count($whats_numbers), count($call_numbers));
+                                $whats_keys = array_values($whats_numbers);
+                                $call_keys = array_values($call_numbers);
+
+                                for ($i = 0; $i < $max_pairs; $i++):
+                                    $whatsNumber = $whats_keys[$i] ?? '';
+                                    $call = $call_keys[$i] ?? '';
+                                    $wa = $whatsNumber ? '1' . ltrim($whatsNumber, '0') : '';
+                            ?>
+                                <?php if ($whatsNumber): ?>
+                                <!-- WhatsApp -->
+                                <a href="https://wa.me/<?php echo esc_attr($wa); ?>" target="_blank"
+                                    class="flex-1 flex items-center justify-center gap-[2.353vw] md:gap-[0.521vw] h-[12.706vw] md:h-[3.125vw] w-full block rounded-[3.765vw] md:rounded-[0.833vw] bg-[#25D366] text-white font-medium text-[3.294vw] md:text-[0.833vw]">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" fill="white" class="w-[5.706vw] h-[5.706vw] md:w-[2.042vw] md:h-[2.042vw]">
+                                        <path d="M476.9 161.1C435 119.1 379.2 96 319.9 96C197.5 96 97.9 195.6 97.9 318C97.9 357.1 108.1 395.3 127.5 429L96 544L213.7 513.1C246.1 530.8 282.6 540.1 319.8 540.1L319.9 540.1C442.2 540.1 544 440.5 544 318.1C544 258.8 518.8 203.1 476.9 161.1zM319.9 502.7C286.7 502.7 254.2 493.8 225.9 477L219.2 473L149.4 491.3L168 423.2L163.6 416.2C145.1 386.8 135.4 352.9 135.4 318C135.4 216.3 218.2 133.5 320 133.5C369.3 133.5 415.6 152.7 450.4 187.6C485.2 222.5 506.6 268.8 506.5 318.1C506.5 419.9 421.6 502.7 319.9 502.7zM421.1 364.5C415.6 361.7 388.3 348.3 383.2 346.5C378.1 344.6 374.4 343.7 370.7 349.3C367 354.9 356.4 367.3 353.1 371.1C349.9 374.8 346.6 375.3 341.1 372.5C308.5 356.2 287.1 343.4 265.6 306.5C259.9 296.7 271.3 297.4 281.9 276.2C283.7 272.5 282.8 269.3 281.4 266.5C280 263.7 268.9 236.4 264.3 225.3C259.8 214.5 255.2 216 251.8 215.8C248.6 215.6 244.9 215.6 241.2 215.6C237.5 215.6 231.5 217 226.4 222.5C221.3 228.1 207 241.5 207 268.8C207 296.1 226.9 322.5 229.6 326.2C232.4 329.9 268.7 385.9 324.4 410C359.6 425.2 373.4 426.5 391 423.9C401.7 422.3 423.8 410.5 428.4 397.5C433 384.5 433 373.4 431.6 371.1C430.3 368.6 426.6 367.2 421.1 364.5z"/>
+                                    </svg>
+                                    WhatsApp
+                                </a>
                                 <?php endif; ?>
+
+                                <?php if ($call): ?>
+                                <!-- Call -->
+                                <a href="tel:<?php echo esc_attr($call); ?>"
+                                    class="flex-1 flex items-center justify-center gap-[2.353vw] md:gap-[0.521vw] h-[12.706vw] md:h-[3.125vw] w-full block rounded-[3.765vw] md:rounded-[0.833vw] bg-[#132364] text-white font-medium text-[3.294vw] md:text-[0.833vw]">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" fill="white" class="w-[5.406vw] h-[5.406vw] md:w-[1.742vw] md:h-[1.742vw]">
+                                        <path d="M224.2 89C216.3 70.1 195.7 60.1 176.1 65.4L170.6 66.9C106 84.5 50.8 147.1 66.9 223.3C104 398.3 241.7 536 416.7 573.1C493 589.3 555.5 534 573.1 469.4L574.6 463.9C580 444.2 569.9 423.6 551.1 415.8L453.8 375.3C437.3 368.4 418.2 373.2 406.8 387.1L368.2 434.3C297.9 399.4 241.3 341 208.8 269.3L253 233.3C266.9 222 271.6 202.9 264.8 186.3L224.2 89z"/>
+                                    </svg>
+                                    Call
+                                </a>
+                                <?php endif; ?>
+                            <?php endfor; ?>
                         
 
                             </div>

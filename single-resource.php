@@ -104,7 +104,11 @@ $related_query = new WP_Query($related_args);
                 <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
                     <div class="flex items-center justify-between px-6 py-4 border-b border-slate-200">
                         <h2 class="font-semibold text-slate-900 font-inter flex items-center gap-2">
-                            <span class="text-red-500">📄</span> Document Preview
+                            <svg class="w-5 h-5 text-red-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6z"/>
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M14 2v6h6"/>
+                            </svg>
+                            Document Preview
                         </h2>
                         <a href="<?php echo esc_url($file_url); ?>" target="_blank"
                             class="text-sm text-[var(--primary-color)] font-semibold hover:underline font-inter">
@@ -147,12 +151,14 @@ $related_query = new WP_Query($related_args);
                     <!-- File Info -->
                     <?php if ($file_url): ?>
                     <div class="flex items-center gap-3 p-4 bg-slate-50 rounded-lg border border-slate-200 mb-5">
-                        <span class="text-3xl">
-                            <?php
-                            $icons = array('pdf'=>'📄','doc'=>'📝','docx'=>'📝','ppt'=>'📊','pptx'=>'📊','xls'=>'📈','xlsx'=>'📈','zip'=>'🗜️');
-                            echo $icons[$file_type] ?? '📋';
-                            ?>
-                        </span>
+                        <?php
+                        $doc_icon = '<svg class="w-9 h-9 text-blue-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6z"/><path stroke-linecap="round" stroke-linejoin="round" d="M14 2v6h6M9 13h6M9 17h6"/></svg>';
+                        $chart_icon = '<svg class="w-9 h-9 text-emerald-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6z"/><path stroke-linecap="round" stroke-linejoin="round" d="M14 2v6h6M8 17v-3M12 17v-6M16 17v-2"/></svg>';
+                        $zip_icon = '<svg class="w-9 h-9 text-amber-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6z"/><path stroke-linecap="round" stroke-linejoin="round" d="M14 2v6h6M12 11v2M12 15v2M12 19v1"/></svg>';
+                        $default_icon = '<svg class="w-9 h-9 text-slate-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6z"/><path stroke-linecap="round" stroke-linejoin="round" d="M14 2v6h6"/></svg>';
+                        $icons = array('pdf'=>$doc_icon,'doc'=>$doc_icon,'docx'=>$doc_icon,'ppt'=>$chart_icon,'pptx'=>$chart_icon,'xls'=>$chart_icon,'xlsx'=>$chart_icon,'zip'=>$zip_icon);
+                        echo $icons[$file_type] ?? $default_icon;
+                        ?>
                         <div class="min-w-0 flex-1">
                             <p class="text-sm font-semibold text-slate-900 font-inter truncate">
                                 <?php echo esc_html($file_name ?: get_the_title()); ?>
@@ -177,14 +183,16 @@ $related_query = new WP_Query($related_args);
                     </button>
 
                     <!-- Success message -->
-                    <p x-show="downloaded" class="text-center text-sm text-green-600 font-semibold mt-2 font-inter" x-cloak>
-                        ✓ Download started!
+                    <p x-show="downloaded" class="text-center text-sm text-green-600 font-semibold mt-2 font-inter inline-flex items-center justify-center gap-1.5 w-full" x-cloak>
+                        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+                        Download started!
                     </p>
                     <?php else: ?>
                     <!-- Login required -->
                     <div class="text-center">
-                        <p class="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg p-3 mb-4 font-inter">
-                            🔒 Login required to download this resource.
+                        <p class="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg p-3 mb-4 font-inter inline-flex items-center gap-2">
+                            <svg class="w-4 h-4 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 11c0-1.657-1.343-3-3-3s-3 1.343-3 3v4M5 11h14a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2z"/></svg>
+                            Login required to download this resource.
                         </p>
                         <a href="<?php echo wp_login_url(get_permalink()); ?>"
                             class="block w-full py-3 bg-[var(--primary-color)] text-white font-semibold rounded-lg hover:opacity-90 transition text-center font-inter">
@@ -217,12 +225,15 @@ $related_query = new WP_Query($related_args);
                     <div class="space-y-4">
                         <?php while ($related_query->have_posts()): $related_query->the_post();
                             $r_file_type = get_post_meta(get_the_ID(), '_resource_file_type', true);
-                            $r_icons = array('pdf'=>'📄','doc'=>'📝','docx'=>'📝','ppt'=>'📊','pptx'=>'📊');
-                            $r_icon  = $r_icons[$r_file_type] ?? '📋';
+                            $r_doc = '<svg class="w-7 h-7 text-blue-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6z"/><path stroke-linecap="round" stroke-linejoin="round" d="M14 2v6h6"/></svg>';
+                            $r_chart = '<svg class="w-7 h-7 text-emerald-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6z"/><path stroke-linecap="round" stroke-linejoin="round" d="M14 2v6h6M8 17v-3M12 17v-6M16 17v-2"/></svg>';
+                            $r_default = '<svg class="w-7 h-7 text-slate-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6z"/><path stroke-linecap="round" stroke-linejoin="round" d="M14 2v6h6"/></svg>';
+                            $r_icons = array('pdf'=>$r_doc,'doc'=>$r_doc,'docx'=>$r_doc,'ppt'=>$r_chart,'pptx'=>$r_chart);
+                            $r_icon  = $r_icons[$r_file_type] ?? $r_default;
                         ?>
                         <a href="<?php the_permalink(); ?>"
                             class="flex items-start gap-3 p-3 rounded-lg hover:bg-slate-50 transition group">
-                            <span class="text-2xl flex-shrink-0"><?php echo $r_icon; ?></span>
+                            <span class="flex-shrink-0"><?php echo $r_icon; ?></span>
                             <div>
                                 <h4 class="text-sm font-semibold text-slate-900 group-hover:text-[var(--primary-color)] transition font-inter line-clamp-2"><?php the_title(); ?></h4>
                                 <p class="text-xs text-slate-500 font-inter mt-0.5"><?php the_date('M j, Y'); ?></p>

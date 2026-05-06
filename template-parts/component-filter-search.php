@@ -241,7 +241,7 @@ if (empty($properties_page_url)) {
         </div>
     </div>
 
-    <!-- ✅ Verified Badge -->
+    <!-- Verified Badge -->
     <div class="hidden md:flex absolute -top-5 left-5 items-center gap-1.5 px-3 py-1 bg-white border border-green-200 rounded-full shadow-sm"
         style="white-space: nowrap;">
         <svg class="w-3.5 h-3.5 text-green-600 flex-shrink-0" viewBox="0 0 24 24" fill="currentColor">

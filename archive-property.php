@@ -95,14 +95,6 @@ $bathrooms = sort_terms_numerically($bathrooms);
 $listing_statuses_archive = get_terms(array('taxonomy' => 'property_listing_status', 'hide_empty' => false));
 ?>
             x-data="propertyArchiveFiltering(<?php echo htmlspecialchars(json_encode($filter_params)); ?>, <?php echo htmlspecialchars(json_encode($cities_data)); ?>, <?php echo htmlspecialchars(json_encode($property_type_hierarchy)); ?>, <?php echo htmlspecialchars(json_encode($bedrooms)); ?>, <?php echo htmlspecialchars(json_encode($bathrooms)); ?>, <?php echo htmlspecialchars(json_encode($listing_statuses_archive)); ?>)">
-
-            <!-- ─────────────────────────────────────────────────────────────────
-                 REAL-ESTATE FILTER BAR (Zillow / Realtor.com style)
-                 - Big city/location search
-                 - Inline pill toggles for Buy/Rent/All
-                 - Inline dropdown chips for Price, Beds, Baths, Type
-                 - "More filters" expander for everything else
-                 ───────────────────────────────────────────────────────────────── -->
             <div class="mb-6 sticky top-0 z-50 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/80 rounded-2xl shadow-md border border-slate-200">
 
                 <!-- Row 1: Search + Buy/Rent toggle + Sort/View -->
@@ -389,7 +381,11 @@ $listing_statuses_archive = get_terms(array('taxonomy' => 'property_listing_stat
                     <!-- No Results State -->
                     <div x-show="!loading && allProperties.length === 0"
                         class="bg-white rounded-xl shadow-sm border border-slate-200 p-12 text-center">
-                        <div class="mb-4 text-5xl">🔍</div>
+                        <div class="mb-4 flex justify-center">
+                            <svg class="w-14 h-14 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                            </svg>
+                        </div>
                         <p class="text-slate-600 text-lg mb-6 font-medium">No properties found matching your criteria.</p>
                         <button @click="clearFilters()"
                             class="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-bold py-3 px-8 rounded-lg transition-all shadow-sm hover:shadow-md">Reset
