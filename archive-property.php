@@ -350,7 +350,7 @@ $listing_statuses_archive = get_terms(array('taxonomy' => 'property_listing_stat
                     </div>
 
                     <!-- Skeleton Cards Loading State -->
-                    <div x-show="loading" :class="viewType === 'list' ? 'space-y-4' : 'grid grid-cols-1 md:grid-cols-2 gap-6'">
+                    <div x-show="loading" :class="viewType === 'list' ? 'space-y-4' : 'grid grid-cols-1 md:grid-cols-3 gap-6'">
                         <template x-for="i in [1,2,3,4,5,6]" :key="i">
                             <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden animate-pulse"
                                  :class="viewType === 'list' && 'flex items-center'">
@@ -369,7 +369,7 @@ $listing_statuses_archive = get_terms(array('taxonomy' => 'property_listing_stat
                     </div>
 
                     <!-- Grid View -->
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6" x-show="!loading && viewType === 'grid'">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6" x-show="!loading && viewType === 'grid'">
                         <template x-for="property in properties" :key="property.id">
                             <template x-if="property">
                                 <?php get_template_part('template-parts/component', 'property-card'); ?>

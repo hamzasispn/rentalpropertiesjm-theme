@@ -75,14 +75,28 @@ function property_theme_add_every_minute_interval( $schedules ) {
 add_theme_support( 'post-thumbnails' );
 
 function property_author_has_paid_plan(int $user_id): bool {
-    global $wpdb;
-    $table = $wpdb->prefix . 'user_subscriptions';
-    $plan_id = $wpdb->get_var($wpdb->prepare(
-        "SELECT plan_id FROM $table WHERE user_id = %d AND status = 'active' ORDER BY id DESC LIMIT 1",
-        $user_id
-    ));
+    if ($user_id <= 0) return false;
+
+    // Use the canonical helper if available — it reads the active subscription
+    // row using the same column name (`package_id`) used everywhere else in
+    // the subscription code. The earlier version of this function read
+    // `plan_id` directly, which doesn't exist in this schema, so it always
+    // returned false → ads displayed for paid users too.
+    if (!function_exists('property_theme_get_user_subscription')) return false;
+
+    $subscription = property_theme_get_user_subscription($user_id);
+    if (!$subscription) return false;
+
+    // Resilient: handle whichever column the row actually carries.
+    $plan_id = 0;
+    if (isset($subscription->package_id) && $subscription->package_id) {
+        $plan_id = intval($subscription->package_id);
+    } elseif (isset($subscription->plan_id) && $subscription->plan_id) {
+        $plan_id = intval($subscription->plan_id);
+    }
     if (!$plan_id) return false;
-    $price = (float) get_post_meta((int) $plan_id, '_plan_price', true);
+
+    $price = (float) get_post_meta($plan_id, '_plan_price', true);
     return $price > 0;
 }
 
