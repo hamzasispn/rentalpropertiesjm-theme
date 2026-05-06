@@ -452,7 +452,7 @@ if (isset($_GET['action']) && $_GET['action'] === 'delete' && isset($_GET['prope
 
         <form method="POST" enctype="multipart/form-data"
               class="grid grid-cols-1 lg:grid-cols-3 gap-8"
-              @submit="$el.querySelector('button[name=submit_property]')?.setAttribute('disabled','disabled')"
+              @submit="if (!validate()) { $event.preventDefault(); $event.stopImmediatePropagation(); return; } $el.querySelector('button[name=submit_property]')?.setAttribute('disabled','disabled')"
               x-data="propertyForm(
                   <?php echo htmlspecialchars(json_encode($property_data)); ?>,
                   <?php echo htmlspecialchars(json_encode($type_specific_fields ?? [])); ?>,
@@ -463,6 +463,19 @@ if (isset($_GET['action']) && $_GET['action'] === 'delete' && isset($_GET['prope
                   <?php echo $plan_google_map ? 'true' : 'false'; ?>
               )">
             <?php wp_nonce_field('add_property_nonce', 'property_form_nonce'); ?>
+
+            <!-- Live client-side validation summary -->
+            <div x-show="Object.keys(formErrors).length > 0"
+                 x-cloak
+                 data-error-anchor
+                 class="lg:col-span-3 p-4 bg-red-50 border border-red-200 rounded-lg">
+                <p class="text-red-900 font-semibold mb-2">Please fix the following before submitting:</p>
+                <ul class="text-red-800 list-disc pl-5 space-y-1 text-sm">
+                    <template x-for="(msg, key) in formErrors" :key="key">
+                        <li x-text="msg"></li>
+                    </template>
+                </ul>
+            </div>
 
             <!-- ════════════════════════════════ MAIN CONTENT ════════════════════════════════ -->
             <div class="lg:col-span-2 space-y-6">
@@ -503,6 +516,7 @@ if (isset($_GET['action']) && $_GET['action'] === 'delete' && isset($_GET['prope
                         </div>
                         <?php endforeach; ?>
                     </div>
+                    <p x-show="formErrors.type" x-text="formErrors.type" x-cloak class="text-red-600 text-sm mt-2"></p>
                 </div>
 
                 <!-- Property Purpose Card (Buy / Rent) -->
@@ -542,6 +556,7 @@ if (isset($_GET['action']) && $_GET['action'] === 'delete' && isset($_GET['prope
                     <p class="mt-3 text-xs text-slate-400 font-inter"
                         x-text="selectedListingStatus === 'buy' ? 'This property will appear in Buy / For Sale listings.' : selectedListingStatus === 'rent' ? 'This property will appear in Rent / For Rent listings.' : 'Please select a purpose above.'">
                     </p>
+                    <p x-show="formErrors.listing" x-text="formErrors.listing" x-cloak class="text-red-600 text-sm mt-2"></p>
                 </div>
 
                 <!-- Basic Info Card -->
@@ -551,7 +566,9 @@ if (isset($_GET['action']) && $_GET['action'] === 'delete' && isset($_GET['prope
                         <div>
                             <label class="block text-sm font-semibold text-slate-900 mb-2">Property Title *</label>
                             <input type="text" name="property_title" x-model="propertyData.title" required
-                                class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-slate-900">
+                                :class="formErrors.title ? 'border-red-500 ring-1 ring-red-300' : 'border-slate-300'"
+                                class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 text-slate-900">
+                            <p x-show="formErrors.title" x-text="formErrors.title" x-cloak class="text-red-600 text-sm mt-1"></p>
                         </div>
                         <div>
                             <label class="block text-sm font-semibold text-slate-900 mb-2">Description</label>
@@ -561,8 +578,10 @@ if (isset($_GET['action']) && $_GET['action'] === 'delete' && isset($_GET['prope
                         <div class="grid grid-cols-2 gap-4">
                             <div>
                                 <label class="block text-sm font-semibold text-slate-900 mb-2">Price ($) *</label>
-                                <input type="number" name="property_price" x-model="propertyData.price" step="0.01" required
-                                    class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-slate-900">
+                                <input type="number" name="property_price" x-model="propertyData.price" step="0.01" min="0" required
+                                    :class="formErrors.price ? 'border-red-500 ring-1 ring-red-300' : 'border-slate-300'"
+                                    class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 text-slate-900">
+                                <p x-show="formErrors.price" x-text="formErrors.price" x-cloak class="text-red-600 text-sm mt-1"></p>
                             </div>
                             <div>
                                 <label class="block text-sm font-semibold text-slate-900 mb-2">Area (sq ft)</label>
@@ -598,12 +617,14 @@ if (isset($_GET['action']) && $_GET['action'] === 'delete' && isset($_GET['prope
                             <label class="block text-sm font-semibold text-slate-900 mb-2">Parish *</label>
                             <select name="property_city" x-model="selectedCity"
                                 @change="planGoogleMap && updateCityLocation()"
-                                class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-slate-900" required>
+                                :class="formErrors.city ? 'border-red-500 ring-1 ring-red-300' : 'border-slate-300'"
+                                class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 text-slate-900" required>
                                 <option value="">Select a parish…</option>
                                 <template x-for="(coords, city) in citiesData" :key="city">
                                     <option :value="city" x-text="city"></option>
                                 </template>
                             </select>
+                            <p x-show="formErrors.city" x-text="formErrors.city" x-cloak class="text-red-600 text-sm mt-1"></p>
                         </div>
 
                         <!-- Address input — always visible -->
@@ -613,7 +634,9 @@ if (isset($_GET['action']) && $_GET['action'] === 'delete' && isset($_GET['prope
                                 x-model="propertyData.address"
                                 :placeholder="planGoogleMap ? 'Search address in selected city' : 'Enter your property address'"
                                 :disabled="planGoogleMap && !selectedCity" required
-                                class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-slate-900 disabled:bg-gray-100">
+                                :class="formErrors.address ? 'border-red-500 ring-1 ring-red-300' : 'border-slate-300'"
+                                class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 text-slate-900 disabled:bg-gray-100">
+                            <p x-show="formErrors.address" x-text="formErrors.address" x-cloak class="text-red-600 text-sm mt-1"></p>
                             <!-- Autocomplete dropdown (Google Maps plans only) -->
                             <div x-show="planGoogleMap"
                                 id="autocomplete-dropdown"
@@ -1006,6 +1029,33 @@ function propertyForm(initialData, typeSpecificFieldsData, citiesData, planPhoto
         selectedBathroom:     initialData.bathrooms || '',
         selectedListingStatus: initialData.listing_status || 'buy',
         selectedCity:         initialData.city      || '',
+
+        // Inline client-side validation — surfaces errors before the form ever hits PHP.
+        formErrors: {},
+        validate() {
+            const errs = {};
+            const title = (this.propertyData.title || '').toString().trim();
+            const address = (this.propertyData.address || '').toString().trim();
+            const priceNum = parseFloat(this.propertyData.price);
+
+            if (!this.selectedPropertyType)        errs.type    = 'Please select a property type.';
+            if (!this.selectedListingStatus)       errs.listing = 'Please choose Buy or Rent.';
+            if (!title)                            errs.title   = 'Property title is required.';
+            if (this.propertyData.price === '' || this.propertyData.price === null || isNaN(priceNum) || priceNum <= 0) {
+                errs.price = 'Enter a valid price greater than 0.';
+            }
+            if (!this.selectedCity)                errs.city    = 'Please select a parish.';
+            if (!address)                          errs.address = 'Address is required.';
+
+            this.formErrors = errs;
+            if (Object.keys(errs).length === 0) return true;
+
+            this.$nextTick(() => {
+                const anchor = document.querySelector('[data-error-anchor]');
+                if (anchor) anchor.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            });
+            return false;
+        },
 
         // Plan feature flags
         planPhotoLimit,

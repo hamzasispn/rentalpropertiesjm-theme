@@ -497,12 +497,16 @@ function admin_get_members($request) {
     $members = [];
 
     foreach ($users as $user) {
+        // NOTE: schema is `package_id` + `expiry_date` (see property_theme_create_subscription).
+        // Earlier this query used `plan_id` / `expires_at` and silently returned NULLs,
+        // so the admin Members list showed "No plan" even for paying users.
         $sub = $wpdb->get_row($wpdb->prepare(
             "SELECT s.*, p.post_title as plan_name
              FROM $table s
-             LEFT JOIN {$wpdb->posts} p ON p.ID = s.plan_id
+             LEFT JOIN {$wpdb->posts} p ON p.ID = s.package_id
              WHERE s.user_id = %d
-             ORDER BY s.id DESC LIMIT 1",
+             ORDER BY (s.status = 'active') DESC, s.id DESC
+             LIMIT 1",
             $user->ID
         ));
 
@@ -520,7 +524,7 @@ function admin_get_members($request) {
             'email'          => $user->user_email,
             'sub_status'     => $sub ? $sub->status : null,
             'plan_name'      => $sub ? $sub->plan_name : null,
-            'expires_at'     => ($sub && $sub->expires_at) ? date('M j, Y', strtotime($sub->expires_at)) : null,
+            'expires_at'     => ($sub && !empty($sub->expiry_date)) ? date('M j, Y', strtotime($sub->expiry_date)) : null,
             'property_count' => $prop_count,
         ];
     }
@@ -594,10 +598,11 @@ function admin_get_member_detail($request) {
     if (!$user) return new WP_Error('not_found', 'User not found', ['status' => 404]);
 
     $table = $wpdb->prefix . 'user_subscriptions';
+    // Real schema: package_id + expiry_date + created_at (no plan_id / expires_at / started_at)
     $sub   = $wpdb->get_row($wpdb->prepare(
         "SELECT s.*, p.post_title as plan_name
          FROM $table s
-         LEFT JOIN {$wpdb->posts} p ON p.ID = s.plan_id
+         LEFT JOIN {$wpdb->posts} p ON p.ID = s.package_id
          WHERE s.user_id = %d AND s.status = 'active'
          ORDER BY s.id DESC LIMIT 1",
         $user_id
@@ -605,10 +610,11 @@ function admin_get_member_detail($request) {
 
     $subscription = null;
     if ($sub) {
-        $price         = (float) get_post_meta($sub->plan_id, '_plan_price', true);
-        $billing_cycle = get_post_meta($sub->plan_id, '_plan_billing_cycle', true) ?: 'monthly';
-        $started       = strtotime($sub->started_at);
-        $expires       = $sub->expires_at ? strtotime($sub->expires_at) : null;
+        $price         = (float) get_post_meta($sub->package_id, '_plan_price', true);
+        $billing_cycle = get_post_meta($sub->package_id, '_plan_billing_cycle', true) ?: 'monthly';
+        $started_raw   = !empty($sub->created_at) ? $sub->created_at : ($sub->updated_at ?? null);
+        $started       = $started_raw ? strtotime($started_raw) : time();
+        $expires       = !empty($sub->expiry_date) ? strtotime($sub->expiry_date) : null;
         $now           = time();
         $days_left     = 0;
         $progress_pct  = 0;
@@ -665,3 +671,30 @@ function admin_get_member_detail($request) {
         ],
     ]);
 }
+
+/**
+ * Notify the site admin when a new property lands in 'pending' status.
+ * Fires once per property the first time it transitions into pending.
+ */
+add_action('transition_post_status', function ($new_status, $old_status, $post) {
+    if ($post->post_type !== 'property') return;
+    if ($new_status !== 'pending' || $old_status === 'pending') return;
+    if (get_post_meta($post->ID, '_admin_pending_notified', true)) return;
+
+    $author = get_userdata($post->post_author);
+    $admin_email = get_option('admin_email');
+
+    $subject = '[' . get_bloginfo('name') . '] New property awaiting approval';
+    $message = sprintf(
+        "A new property listing has been submitted and is waiting for approval.\n\n" .
+        "Title: %s\nSubmitted by: %s (%s)\nReview it: %s\n\nApprove from the admin panel: %s",
+        $post->post_title,
+        $author ? $author->display_name : 'Unknown',
+        $author ? $author->user_email : '',
+        get_edit_post_link($post->ID, ''),
+        home_url('/admin-panel/')
+    );
+
+    wp_mail($admin_email, $subject, $message, ['Content-Type: text/plain; charset=UTF-8']);
+    update_post_meta($post->ID, '_admin_pending_notified', 1);
+}, 10, 3);

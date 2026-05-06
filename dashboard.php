@@ -12,6 +12,13 @@ if (!is_user_logged_in()) {
     exit;
 }
 
+// Personalised page — never let a browser, proxy, or page-cache plugin serve a stale copy.
+// This was causing plan upgrades/downgrades to look "stuck" until the user cleared cookies/cache.
+nocache_headers();
+if (!defined('DONOTCACHEPAGE')) define('DONOTCACHEPAGE', true);
+if (!defined('DONOTCACHEDB'))   define('DONOTCACHEDB', true);
+if (!defined('DONOTCACHEOBJECT')) define('DONOTCACHEOBJECT', true);
+
 get_header();
 
 $logo = get_option('mytheme_logo');
@@ -212,37 +219,65 @@ $subscription = property_theme_get_user_subscription($user_id) ?? array();
                 <div class="bg-white rounded-lg shadow p-8">
                     <?php
                     $user_properties = get_posts(array(
-                        'post_type' => 'property',
-                        'author' => $user_id,
+                        'post_type'   => 'property',
+                        'author'      => $user_id,
                         'numberposts' => -1,
+                        'post_status' => array('publish', 'pending', 'draft'),
                     ));
 
-                    if (!empty($user_properties)): ?>
+                    $pending_count = 0;
+                    foreach ($user_properties as $p) {
+                        if ($p->post_status === 'pending') $pending_count++;
+                    }
+
+                    if ($pending_count > 0): ?>
+                        <div class="mb-4 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                            <p class="text-amber-900 font-semibold">
+                                You have <?php echo (int) $pending_count; ?> listing<?php echo $pending_count > 1 ? 's' : ''; ?> waiting for admin approval.
+                            </p>
+                            <p class="text-amber-800 text-sm mt-1">
+                                Pending listings are not live on the site yet. Once an admin approves them, you'll receive an email and they will appear publicly.
+                            </p>
+                        </div>
+                    <?php endif; ?>
+
+                    <?php if (!empty($user_properties)): ?>
                         <div class="space-y-4">
                             <?php foreach ($user_properties as $property):
-                                $price = get_post_meta($property->ID, '_property_price', true);
-                                $featured = get_post_meta($property->ID, '_property_featured', true);
-                                $leads_count = get_posts(array(
-                                    'post_type' => 'property',
-                                    'post__in' => array($property->ID),
-                                    'numberposts' => -1,
-                                ));
+                                $price       = get_post_meta($property->ID, '_property_price', true);
+                                $featured    = get_post_meta($property->ID, '_property_featured', true);
+                                $rejection   = get_post_meta($property->ID, '_property_rejection_reason', true);
+                                $status_slug = $property->post_status;
+                                $status_map  = array(
+                                    'publish' => array('label' => 'Live',                'class' => 'bg-green-100 text-green-800'),
+                                    'pending' => array('label' => 'Pending Approval',    'class' => 'bg-amber-100 text-amber-800'),
+                                    'draft'   => array('label' => $rejection ? 'Rejected' : 'Draft', 'class' => 'bg-red-100 text-red-800'),
+                                );
+                                $badge = $status_map[$status_slug] ?? array('label' => ucfirst($status_slug), 'class' => 'bg-slate-100 text-slate-700');
                                 ?>
-                                <div class="flex items-center justify-between border-b pb-4">
-                                    <div>
-                                        <h4 class="font-semibold text-slate-900"><?php echo esc_html($property->post_title); ?>
-                                        </h4>
-                                        <p class="text-slate-600 text-sm">Price:
-                                            $<?php echo esc_html(number_format(intval($price))); ?></p>
-                                    </div>
-                                    <div class="flex gap-2">
-                                        <?php if ($featured): ?>
-                                            <span class="px-3 py-1 bg-amber-100 text-amber-800 text-sm rounded">⭐ Featured</span>
+                                <div class="flex items-start justify-between border-b pb-4 gap-4">
+                                    <div class="flex-1">
+                                        <div class="flex items-center gap-2 flex-wrap">
+                                            <h4 class="font-semibold text-slate-900"><?php echo esc_html($property->post_title); ?></h4>
+                                            <span class="px-2 py-0.5 text-xs rounded-full font-medium <?php echo esc_attr($badge['class']); ?>">
+                                                <?php echo esc_html($badge['label']); ?>
+                                            </span>
+                                            <?php if ($featured): ?>
+                                                <span class="px-2 py-0.5 bg-amber-100 text-amber-800 text-xs rounded-full">⭐ Featured</span>
+                                            <?php endif; ?>
+                                        </div>
+                                        <p class="text-slate-600 text-sm mt-1">Price: $<?php echo esc_html(number_format(intval($price))); ?></p>
+                                        <?php if ($status_slug === 'draft' && $rejection): ?>
+                                            <p class="text-red-700 text-sm mt-1"><strong>Admin note:</strong> <?php echo esc_html($rejection); ?></p>
                                         <?php endif; ?>
+                                    </div>
+                                    <div class="flex gap-2 shrink-0">
                                         <a href="<?php echo esc_url(home_url('/dashboard/?property_id=' . $property->ID . '#add-property')); ?>"
                                             class="px-3 py-1 text-blue-600 hover:underline">Edit</a>
-                                        <a href="<?php echo esc_url(get_permalink($property->ID)); ?>"
-                                            class="px-3 py-1 text-blue-600 hover:underline">View</a>
+                                        <?php if ($status_slug === 'publish'): ?>
+                                            <a href="<?php echo esc_url(get_permalink($property->ID)); ?>"
+                                                class="px-3 py-1 text-blue-600 hover:underline">View</a>
+                                        <?php endif; ?>
                                     </div>
                                 </div>
                             <?php endforeach; ?>
@@ -1001,7 +1036,13 @@ function unmountUpdateCard() {
                 }
 
                 window.toast && window.toast('Plan updated successfully', 'success');
-                setTimeout(() => window.location.reload(), 800);
+                setTimeout(() => {
+                    // Cache-bust so any HTTP/proxy/page-cache layer can't serve a stale dashboard.
+                    const u = new URL(window.location.href);
+                    u.searchParams.set('_t', Date.now());
+                    u.hash = '#billing';
+                    window.location.replace(u.toString());
+                }, 800);
 
             } catch (err) {
                 console.error(err);
