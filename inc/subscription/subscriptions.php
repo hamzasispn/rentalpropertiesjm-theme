@@ -146,7 +146,12 @@ function property_theme_calculate_expiry_date($billing_cycle, $billing_days = 14
     }
 }
 
-// Check if user can publish a property
+// Check if user can publish a property.
+// max_properties = 0 (or unset) is treated as UNLIMITED — consistent with the
+// cron in inc/property-cron.php which skips enforcement when cap <= 0.
+// Previously this returned `$count < 0` → false, silently blocking every
+// submission for plans that didn't set the meta. That's why pending listings
+// "weren't appearing" — the form bounced before wp_insert_post ran.
 function property_theme_can_publish_property($user_id) {
     global $wpdb;
 
@@ -156,13 +161,16 @@ function property_theme_can_publish_property($user_id) {
     $plan = property_theme_get_plan($subscription->package_id);
     if (!$plan) return false;
 
-    $property_count = $wpdb->get_var($wpdb->prepare(
+    $cap = intval($plan['max_properties'] ?? 0);
+    if ($cap <= 0) return true; // unlimited
+
+    $property_count = (int) $wpdb->get_var($wpdb->prepare(
         "SELECT COUNT(*) FROM {$wpdb->posts}
          WHERE post_author = %d AND post_type = 'property' AND post_status = 'publish'",
         $user_id
     ));
 
-    return $property_count < $plan['max_properties'];
+    return $property_count < $cap;
 }
 
 // Check if user can feature a property

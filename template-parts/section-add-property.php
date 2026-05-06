@@ -125,17 +125,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_property'])) {
         wp_die('Security check failed: Invalid nonce.');
     }
 
-    // Server-side cap enforcement on NEW submissions.
-    // (Edits to existing listings are exempt — they're updates, not new slots.)
-    if (!$is_edit && function_exists('property_theme_can_publish_property')) {
-        $under_cap = property_theme_can_publish_property($current_user->ID);
-        if (!$under_cap && !current_user_can('manage_options')) {
-            set_transient('property_form_errors_' . $current_user->ID,
-                array('You have reached the property limit for your current plan. Please upgrade or delete an existing listing.'), 30);
-            wp_safe_redirect(add_query_arg(['error' => 1]));
-            exit;
-        }
-    }
+    // NOTE: We intentionally do NOT block submission here based on the publish cap.
+    // New listings always go through as `pending` for admin review; the cap is enforced
+    // at approval time (admin_approve_property) and by the hourly cron that drafts the
+    // oldest published listings if a user is over their plan. This way:
+    //   - max_properties = 0 (unlimited) plans never get falsely blocked
+    //   - users at their cap can still queue more listings for review (admins decide)
+    //   - "property didn't add" never happens silently — it always lands in pending
 
     $errors = array();
     if (empty(sanitize_text_field($_POST['property_title'] ?? '')))   $errors[] = 'Property title is required.';
