@@ -21,14 +21,26 @@ add_action('template_redirect', 'property_theme_handle_property_form_submission'
 function property_theme_handle_property_form_submission() {
     if ($_SERVER['REQUEST_METHOD'] !== 'POST')      return;
     if (!isset($_POST['submit_property']))          return;
-    if (!is_user_logged_in())                       return;
+
+    // Diagnostic tracing — remove once submission is confirmed working.
+    error_log('[property_listing][handler] reached. user_logged_in=' . (is_user_logged_in() ? 'yes' : 'NO') .
+              ' uri=' . ($_SERVER['REQUEST_URI'] ?? '?') .
+              ' has_nonce=' . (!empty($_POST['property_form_nonce']) ? 'yes' : 'NO'));
+
+    if (!is_user_logged_in()) {
+        error_log('[property_listing][handler] aborted: user not logged in');
+        return;
+    }
 
     $current_user = wp_get_current_user();
     $user_id      = (int) $current_user->ID;
 
     if (!wp_verify_nonce($_POST['property_form_nonce'] ?? '', 'add_property_nonce')) {
+        error_log('[property_listing][handler] nonce verification FAILED for user ' . $user_id);
         wp_die('Security check failed: Invalid nonce.');
     }
+
+    error_log('[property_listing][handler] nonce ok, processing for user ' . $user_id);
 
     $is_edit     = isset($_POST['property_id_edit']) && intval($_POST['property_id_edit']) > 0;
     $property_id = $is_edit ? intval($_POST['property_id_edit']) : 0;

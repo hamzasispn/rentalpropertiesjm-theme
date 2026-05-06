@@ -806,7 +806,7 @@ if (isset($_GET['action']) && $_GET['action'] === 'delete' && isset($_GET['prope
                                 <div class="bg-white w-[70%] h-[85vh] rounded-xl shadow-xl flex flex-col overflow-hidden">
                                     <div class="flex items-center justify-between px-6 py-4 border-b">
                                         <h2 class="text-lg font-semibold">Feature and Amenities</h2>
-                                        <button @click="openModal=false" class="text-slate-500 hover:text-slate-800 text-2xl leading-none">×</button>
+                                        <button type="button" @click="openModal=false" class="text-slate-500 hover:text-slate-800 text-2xl leading-none">×</button>
                                     </div>
                                     <div class="flex flex-1 overflow-hidden">
                                         <div class="w-64 border-r bg-slate-50 overflow-y-auto">
