@@ -6,10 +6,14 @@
  *   - Plans with max_properties <= 1 render in the 4-up Individual Listings grid.
  *   - Plans with max_properties >  1 render in the Realtor / Portfolio Hub block.
  *
- * Markup: Tailwind utility classes only — no <style> block, no inline CSS files.
+ * Palette: uses ONLY the theme CSS variables defined in header.php
+ *   --primary-color, --secondary-color, --text-primary-color, --text-secondary-color
+ * No standalone hex values. Whatever the admin sets in Theme Options drives
+ * the entire pricing aesthetic.
  *
- * Logged-in users get Upgrade / Current Plan buttons; visitors get a Choose Plan
- * link to /checkout?plan=ID (or /login if no checkout is desired before signup).
+ * Markup: Tailwind utility classes for layout/spacing, inline `style=` only
+ * where Tailwind can't reference a CSS variable cleanly (e.g. arbitrary
+ * radial gradients, color-mix tints).
  */
 
 $all_plans = get_posts(array(
@@ -34,8 +38,6 @@ usort($plans_data, function ($a, $b) {
     return $a['price'] <=> $b['price'];
 });
 
-// Pick the highest-subscriber plan as Most Popular (fallback only — designer's
-// recommended plan still wins below if a specific ID is hard-coded).
 $best_seller_plan_id = null;
 $max_subscriptions   = 0;
 foreach ($plans_data as $plan) {
@@ -45,7 +47,7 @@ foreach ($plans_data as $plan) {
     }
 }
 
-// Split plans: individuals vs realtor/portfolio (anything that allows >1 listing)
+// Split plans: individuals vs realtor/portfolio
 $individual_plans = array();
 $realtor_plans    = array();
 foreach ($plans_data as $p) {
@@ -55,23 +57,28 @@ foreach ($plans_data as $p) {
 
 /**
  * Render the CTA button for a plan, respecting login + current-subscription state.
- * Variants control color/contrast so the same logic renders on both light and dark cards.
+ * Variant controls color/contrast so the same logic renders on both light and
+ * primary-coloured cards.
  */
-$render_cta = function ($plan, $stats, $variant = 'outline-dark') {
+$render_cta = function ($plan, $stats, $variant = 'outline-primary') {
     $is_current = $stats['subscription'] && $stats['subscription']->package_id == $plan['id'];
 
-    // Map variant → tailwind classes for the CTA
-    $variants = array(
-        'outline-dark' => 'border border-[#0b1a3a] text-[#0b1a3a] bg-transparent hover:bg-[#0b1a3a] hover:text-white',
-        'solid-white'  => 'bg-white text-[#0b1a3a] hover:bg-[#d4a93a]',
-        'solid-gold'   => 'bg-[#d4a93a] text-[#0b1a3a] border border-[#d4a93a] hover:-translate-y-0.5 hover:shadow-[0_14px_30px_-12px_rgba(212,169,58,0.6)]',
-    );
     $base = 'block w-full text-center py-3 px-4 rounded-full text-sm font-semibold transition';
-    $cls  = $base . ' ' . ($variants[$variant] ?? $variants['outline-dark']);
+
+    // Inline styles per variant since these need CSS variable colors.
+    $variant_attrs = array(
+        'outline-primary' => 'style="border:1px solid var(--primary-color); color: var(--primary-color); background: transparent;"
+                              onmouseover="this.style.background=\'var(--primary-color)\'; this.style.color=\'#fff\';"
+                              onmouseout="this.style.background=\'transparent\'; this.style.color=\'var(--primary-color)\';"',
+        'solid-on-primary' => 'style="background: #fff; color: var(--primary-color);"
+                                onmouseover="this.style.background=\'color-mix(in srgb, var(--primary-color) 12%, #fff)\';"
+                                onmouseout="this.style.background=\'#fff\';"',
+    );
 
     if (!is_user_logged_in()) {
         $href = esc_url(home_url('/login'));
-        return '<a href="' . $href . '" class="' . esc_attr($cls) . '">Get Started</a>';
+        $attr = $variant_attrs[$variant] ?? $variant_attrs['outline-primary'];
+        return '<a href="' . $href . '" class="' . esc_attr($base) . '" ' . $attr . '>Get Started</a>';
     }
 
     if ($is_current) {
@@ -79,7 +86,8 @@ $render_cta = function ($plan, $stats, $variant = 'outline-dark') {
     }
 
     if ($stats['subscription']) {
-        return '<button class="upgrade-plan-btn ' . esc_attr($cls) . '"'
+        $attr = $variant_attrs[$variant] ?? $variant_attrs['outline-primary'];
+        return '<button class="upgrade-plan-btn ' . esc_attr($base) . '" ' . $attr
             . ' data-subscription-id="' . esc_attr($stats['subscription']->id) . '"'
             . ' data-plan-id="' . esc_attr($plan['id']) . '">'
             . 'Upgrade to ' . esc_html($plan['name'])
@@ -87,12 +95,10 @@ $render_cta = function ($plan, $stats, $variant = 'outline-dark') {
     }
 
     $href = esc_url(home_url('/checkout?plan=' . $plan['id']));
-    return '<a href="' . $href . '" class="' . esc_attr($cls) . '">Choose Plan</a>';
+    $attr = $variant_attrs[$variant] ?? $variant_attrs['outline-primary'];
+    return '<a href="' . $href . '" class="' . esc_attr($base) . '" ' . $attr . '>Choose Plan</a>';
 };
 
-/**
- * Format duration label from billing_cycle + billing_days.
- */
 $duration_label = function ($plan) {
     if (!empty($plan['billing_cycle']) && $plan['billing_cycle'] === 'days') {
         $days = intval($plan['billing_days']);
@@ -101,18 +107,12 @@ $duration_label = function ($plan) {
     return ucfirst($plan['billing_cycle'] ?? 'listing');
 };
 
-/**
- * Format featured-listing label.
- */
 $featured_label = function ($plan) {
     if (empty($plan['featured_limit'])) return array('Not available', false);
     if ($plan['featured_limit'] == 1)   return array('1 property', true);
     return array('Up to ' . $plan['featured_limit'] . ' properties', true);
 };
 
-/**
- * Format listings (max properties) label.
- */
 $listings_label = function ($plan) {
     if (empty($plan['max_properties'])) return 'Unlimited';
     if ($plan['max_properties'] == 1)   return '1 property';
@@ -120,7 +120,7 @@ $listings_label = function ($plan) {
 };
 ?>
 
-<div class="font-inter text-[#0b1a3a]">
+<div class="font-inter">
 
     <!-- ═════════════ Individual Listing Plans ═════════════ -->
     <?php if (!empty($individual_plans)): ?>
@@ -133,28 +133,33 @@ $listings_label = function ($plan) {
             list($featured_text, $featured_available) = $featured_label($plan);
             $listings_text = $listings_label($plan);
 
-            // Card variants
             if ($is_featured) {
-                $card_cls    = 'relative bg-[#0b1a3a] text-white border border-[#0b1a3a] shadow-[0_20px_50px_-18px_rgba(11,26,58,0.45)]';
-                $muted_cls   = 'text-white/65';
-                $primary_cls = 'text-white';
-                $divider_cls = 'border-white/15';
-                $check_cls   = 'text-[#f4e6b8]';
-                $cta_variant = 'solid-white';
+                // Primary-coloured card
+                $card_style    = 'background: var(--primary-color); color: #fff; border: 1px solid var(--primary-color); box-shadow: 0 20px 50px -18px color-mix(in srgb, var(--primary-color) 50%, transparent);';
+                $muted_style   = 'color: rgba(255,255,255,0.65);';
+                $primary_style = 'color: #fff;';
+                $divider_style = 'border-color: rgba(255,255,255,0.18);';
+                $check_style   = 'color: #fff;';
+                $cta_variant   = 'solid-on-primary';
+                $badge_style   = 'background:#fff; color: var(--primary-color); border:1px solid var(--primary-color);';
             } else {
-                $card_cls    = 'bg-white text-[#0b1a3a] border border-[#e5e9f2] hover:-translate-y-1 hover:shadow-[0_18px_40px_-20px_rgba(11,26,58,0.25)] hover:border-[#d8deea]';
-                $muted_cls   = 'text-gray-500';
-                $primary_cls = 'text-[#0b1a3a]';
-                $divider_cls = 'border-[#e5e9f2]';
-                $check_cls   = 'text-[#d4a93a]';
-                $cta_variant = 'outline-dark';
+                // Light card
+                $card_style    = 'background:#fff; color: var(--primary-color); border:1px solid color-mix(in srgb, var(--primary-color) 12%, transparent);';
+                $muted_style   = 'color: color-mix(in srgb, var(--primary-color) 55%, #fff);';
+                $primary_style = 'color: var(--primary-color);';
+                $divider_style = 'border-color: color-mix(in srgb, var(--primary-color) 12%, transparent);';
+                $check_style   = 'color: var(--primary-color);';
+                $cta_variant   = 'outline-primary';
+                $badge_style   = '';
             }
         ?>
-        <article class="<?= $card_cls; ?> rounded-2xl p-6 sm:p-7 flex flex-col transition duration-200">
+        <article class="relative rounded-2xl p-6 sm:p-7 flex flex-col transition duration-200 hover:-translate-y-1"
+                 style="<?= $card_style; ?>">
 
             <?php if ($is_featured): ?>
-                <span class="absolute -top-3 left-1/2 -translate-x-1/2 bg-white text-[#0b1a3a] text-[10px] font-bold tracking-[0.18em] uppercase px-3 py-1.5 rounded-full border border-[#0b1a3a] whitespace-nowrap">
-                    <span class="text-[#d4a93a]">★</span> Most Popular <span class="text-[#d4a93a]">★</span>
+                <span class="absolute -top-3 left-1/2 -translate-x-1/2 text-[10px] font-bold tracking-[0.18em] uppercase px-3 py-1.5 rounded-full whitespace-nowrap"
+                      style="<?= $badge_style; ?>">
+                    ★ Most Popular ★
                 </span>
             <?php elseif ($is_current): ?>
                 <span class="absolute -top-3 right-4 bg-blue-500 text-white text-[10px] font-bold tracking-widest uppercase px-3 py-1 rounded-full">
@@ -162,47 +167,43 @@ $listings_label = function ($plan) {
                 </span>
             <?php endif; ?>
 
-            <!-- Duration -->
-            <p class="text-sm font-medium <?= $muted_cls; ?> mb-1.5">
+            <p class="text-sm font-medium mb-1.5" style="<?= $muted_style; ?>">
                 <?= esc_html($duration); ?> listings
             </p>
 
-            <!-- Price -->
-            <h3 class="text-3xl font-extrabold tracking-tight <?= $primary_cls; ?> mb-6">
+            <h3 class="text-3xl font-extrabold tracking-tight mb-6" style="<?= $primary_style; ?>">
                 <?= empty($plan['price']) ? 'Free' : '$' . number_format($plan['price']); ?>
-                <span class="text-sm font-medium <?= $muted_cls; ?> ml-1">/ <?= esc_html($duration); ?></span>
+                <span class="text-sm font-medium ml-1" style="<?= $muted_style; ?>">/ <?= esc_html($duration); ?></span>
             </h3>
 
-            <!-- Specs -->
-            <ul class="border-y <?= $divider_cls; ?> py-3.5 mb-5 space-y-1.5">
+            <ul class="border-y py-3.5 mb-5 space-y-1.5" style="<?= $divider_style; ?>">
                 <li class="flex justify-between text-[13px]">
-                    <span class="<?= $muted_cls; ?>">Duration</span>
-                    <span class="font-semibold <?= $primary_cls; ?>"><?= esc_html($duration); ?></span>
+                    <span style="<?= $muted_style; ?>">Duration</span>
+                    <span class="font-semibold" style="<?= $primary_style; ?>"><?= esc_html($duration); ?></span>
                 </li>
                 <li class="flex justify-between text-[13px]">
-                    <span class="<?= $muted_cls; ?>">Listings</span>
-                    <span class="font-semibold <?= $primary_cls; ?>"><?= esc_html($listings_text); ?></span>
+                    <span style="<?= $muted_style; ?>">Listings</span>
+                    <span class="font-semibold" style="<?= $primary_style; ?>"><?= esc_html($listings_text); ?></span>
                 </li>
                 <li class="flex justify-between text-[13px]">
-                    <span class="<?= $muted_cls; ?>">Featured listing</span>
-                    <span class="font-semibold <?= $featured_available ? $primary_cls : $muted_cls; ?>">
+                    <span style="<?= $muted_style; ?>">Featured listing</span>
+                    <span class="font-semibold" style="<?= $featured_available ? $primary_style : $muted_style; ?>">
                         <?= esc_html($featured_text); ?>
                     </span>
                 </li>
                 <li class="flex justify-between text-[13px]">
-                    <span class="<?= $muted_cls; ?>">Advanced analytics</span>
-                    <span class="font-semibold <?= !empty($plan['analytics']) ? $primary_cls : $muted_cls; ?>">
+                    <span style="<?= $muted_style; ?>">Advanced analytics</span>
+                    <span class="font-semibold" style="<?= !empty($plan['analytics']) ? $primary_style : $muted_style; ?>">
                         <?= !empty($plan['analytics']) ? 'Available' : 'Not available'; ?>
                     </span>
                 </li>
             </ul>
 
-            <!-- Feature bullets -->
             <?php if (!empty($plan['features'])): ?>
             <ul class="space-y-2 mb-6 flex-grow">
                 <?php foreach ($plan['features'] as $feature): ?>
-                <li class="flex items-start gap-2 text-sm <?= $primary_cls; ?>">
-                    <svg class="w-4 h-4 mt-0.5 shrink-0 <?= $check_cls; ?>" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                <li class="flex items-start gap-2 text-sm" style="<?= $primary_style; ?>">
+                    <svg class="w-4 h-4 mt-0.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="<?= $check_style; ?>">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
                     </svg>
                     <span><?= esc_html($feature); ?></span>
@@ -213,7 +214,6 @@ $listings_label = function ($plan) {
             <div class="flex-grow"></div>
             <?php endif; ?>
 
-            <!-- CTA -->
             <div class="mt-auto"><?= $render_cta($plan, $stats, $cta_variant); ?></div>
         </article>
         <?php endforeach; ?>
@@ -228,14 +228,14 @@ $listings_label = function ($plan) {
         list($featured_text) = $featured_label($rplan);
         $listings_text = $listings_label($rplan);
     ?>
-    <aside class="relative max-w-[1280px] mx-auto mt-16 md:mt-20 rounded-3xl overflow-hidden p-8 md:p-14 text-white shadow-[0_30px_80px_-30px_rgba(11,26,58,0.5)]"
+    <aside class="relative max-w-[1280px] mx-auto mt-16 md:mt-20 rounded-3xl overflow-hidden p-8 md:p-14 text-white"
            style="background:
-                radial-gradient(1200px 400px at 90% -10%, rgba(212,169,58,0.18), transparent 60%),
-                radial-gradient(900px 500px at -10% 110%, rgba(26,47,107,0.6), transparent 60%),
-                linear-gradient(135deg, #0b1a3a 0%, #122452 100%);">
+                radial-gradient(900px 500px at -10% 110%, color-mix(in srgb, var(--primary-color) 65%, #000), transparent 60%),
+                linear-gradient(135deg, var(--primary-color) 0%, color-mix(in srgb, var(--primary-color) 75%, #000) 100%);
+                box-shadow: 0 30px 80px -30px color-mix(in srgb, var(--primary-color) 50%, transparent);">
 
         <!-- Decorative grid overlay -->
-        <div class="pointer-events-none absolute inset-0 opacity-[0.04]"
+        <div class="pointer-events-none absolute inset-0 opacity-[0.05]"
              style="background-image:
                 linear-gradient(rgba(255,255,255,1) 1px, transparent 1px),
                 linear-gradient(90deg, rgba(255,255,255,1) 1px, transparent 1px);
@@ -245,13 +245,13 @@ $listings_label = function ($plan) {
 
             <!-- LEFT: pitch -->
             <div>
-                <p class="inline-flex items-center gap-2.5 text-[11px] tracking-[0.22em] font-bold uppercase text-[#d4a93a] mb-4">
-                    <span class="inline-block w-7 h-px bg-[#d4a93a]"></span>
+                <p class="inline-flex items-center gap-2.5 text-[11px] tracking-[0.22em] font-bold uppercase text-white/85 mb-4">
+                    <span class="inline-block w-7 h-px bg-white/85"></span>
                     For Realtors &amp; Portfolio Owners
                 </p>
 
                 <h3 class="text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight leading-[1.15] mb-4">
-                    Your Portfolio, <span class="text-[#d4a93a]">One Powerful Hub.</span>
+                    Your Portfolio, <span class="italic font-serif text-white">One Powerful Hub.</span>
                 </h3>
 
                 <p class="text-base md:text-lg leading-relaxed text-white/75 mb-7 max-w-[520px]">
@@ -272,20 +272,21 @@ $listings_label = function ($plan) {
                     );
                     foreach ($benefits as $benefit): ?>
                     <li class="relative pl-7 text-sm text-white/90">
-                        <span class="absolute left-0 top-1.5 w-3.5 h-3.5 rounded-full bg-[#d4a93a] shadow-[0_0_0_4px_rgba(212,169,58,0.18)]"></span>
+                        <span class="absolute left-0 top-1.5 w-3.5 h-3.5 rounded-full bg-white"
+                              style="box-shadow: 0 0 0 4px rgba(255,255,255,0.18);"></span>
                         <?= esc_html($benefit); ?>
                     </li>
                     <?php endforeach; ?>
                 </ul>
 
                 <div class="flex flex-wrap gap-3">
-                    <?= $render_cta($rplan, $stats, 'solid-gold'); ?>
+                    <?= $render_cta($rplan, $stats, 'solid-on-primary'); ?>
                 </div>
             </div>
 
             <!-- RIGHT: glass card -->
             <div class="bg-white/[0.06] backdrop-blur-md border border-white/[0.14] rounded-2xl p-7 sm:p-9">
-                <p class="text-xs font-bold tracking-[0.18em] uppercase text-[#f4e6b8] mb-2.5">Realtor Plan</p>
+                <p class="text-xs font-bold tracking-[0.18em] uppercase text-white/75 mb-2.5">Realtor Plan</p>
                 <h4 class="text-xl sm:text-2xl font-bold mb-4"><?= esc_html($rplan['name']); ?></h4>
 
                 <div class="flex items-baseline gap-1.5 pb-6 mb-6 border-b border-white/15">
@@ -322,7 +323,7 @@ $listings_label = function ($plan) {
                     </div>
                 </div>
 
-                <?= $render_cta($rplan, $stats, 'solid-white'); ?>
+                <?= $render_cta($rplan, $stats, 'solid-on-primary'); ?>
             </div>
         </div>
     </aside>
