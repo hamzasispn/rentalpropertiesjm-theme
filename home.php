@@ -35,8 +35,7 @@ get_header();
             }
         }" x-init="loadProperties()">
             <div x-show="properties.length > 0">
-                <h2 class="text-[#1A1A1A] md:text-[2.5vw] text-[5.5vw] font-bold mb-[3.604vw] md:mb-[2.604vw]">Featured
-                    Listed Properties</h2>
+                <h2 class="text-[#1A1A1A] md:text-[2.5vw] text-[5.5vw] font-bold mb-[3.604vw] md:mb-[2.604vw]">Featured Properties</h2>
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-[16px]"
                     x-show="!loading">
                     <template x-for="property in properties" :key="property.id">
@@ -192,14 +191,15 @@ get_header();
 
     </div>
 
-    <!-- Why Choose Us Section -->
-    <?php get_template_part('template-parts/sections/section', 'why-choose-us'); ?>
-
     <!-- Plans Section -->
     <?php get_template_part('template-parts/sections/section', 'plans'); ?>
 
-    <!-- About Us Section -->
-    <?php get_template_part('template-parts/sections/section', 'about-us'); ?>
+    <!--
+        Removed per client (May 22 brief):
+          - "Why Property Owners and Buyers Trust Us?" (kept on /about)
+          - "Find the Right Property for You" (was section-about-us; content was
+            repetitive across home + about)
+    -->
 
     <div class="!hidden flex flex-col gap-8 w-[90%] md:pt-[3.125vw] pt-[13.882vw] mx-auto">
         <div class="flex items-end justify-between mb-[2.608vw]">

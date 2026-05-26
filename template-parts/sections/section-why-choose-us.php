@@ -57,73 +57,13 @@
         </a>
     </div>
 
-    <!-- Right: Image with Stats Overlay -->
-    <div
-        class="lg:w-1/2 w-full relative"
-        x-data="{
-            animated: false,
-            counts: { listings: 0, sellers: 0, satisfaction: 0 },
-            targets: { listings: 12000, sellers: 5000, satisfaction: 98 },
-            durations: { listings: 1800, sellers: 1600, satisfaction: 1200 },
-            animate() {
-                if (this.animated) return;
-                this.animated = true;
-                const animate = (key) => {
-                    const target = this.targets[key];
-                    const duration = this.durations[key];
-                    const start = performance.now();
-                    const step = (now) => {
-                        const elapsed = now - start;
-                        const progress = Math.min(elapsed / duration, 1);
-                        const eased = 1 - Math.pow(1 - progress, 3);
-                        this.counts[key] = Math.floor(eased * target);
-                        if (progress < 1) requestAnimationFrame(step);
-                        else this.counts[key] = target;
-                    };
-                    requestAnimationFrame(step);
-                };
-                animate('listings');
-                animate('sellers');
-                animate('satisfaction');
-            }
-        }"
-        x-intersect.once="animate()"
-    >
-        <!-- Photo -->
+    <!-- Right: Image (stat overlay removed per client brief — kept the photo only) -->
+    <div class="lg:w-1/2 w-full relative">
         <img
             src="<?php echo get_template_directory_uri(); ?>/assets/why-choose-img.png"
             alt="Why Choose Us Illustration"
             class="rounded-2xl w-full object-cover md:max-h-[32vw] max-h-[80vw]"
         />
-
-        <!-- Stats bar overlaid at bottom of image -->
-        <div class="absolute bottom-0 left-0 right-0 mx-[3%] mb-[3%]">
-            <div class="bg-white rounded-2xl shadow-xl flex divide-x divide-slate-100 md:px-[1.5vw] md:py-[1.2vw] px-[4vw] py-[4vw]">
-
-                <!-- Stat 1 -->
-                <div class="flex-1 flex flex-col items-center justify-center md:gap-[0.3vw] gap-[1vw] md:pr-[1.5vw] pr-[3vw]">
-                    <span class="md:text-[2vw] text-[6.5vw] font-bold text-[#1A1A1A] leading-none" x-text="counts.listings.toLocaleString()">0</span>
-                    <span class="md:text-[0.75vw] text-[2.8vw] text-slate-500 font-medium text-center leading-tight">Active listings</span>
-                </div>
-
-                <!-- Stat 2 -->
-                <div class="flex-1 flex flex-col items-center justify-center md:gap-[0.3vw] gap-[1vw] md:px-[1.5vw] px-[3vw]">
-                    <span class="md:text-[2vw] text-[6.5vw] font-bold text-[#1A1A1A] leading-none">
-                        <span x-text="counts.sellers.toLocaleString()">0</span>+
-                    </span>
-                    <span class="md:text-[0.75vw] text-[2.8vw] text-slate-500 font-medium text-center leading-tight">Verified sellers</span>
-                </div>
-
-                <!-- Stat 3 -->
-                <div class="flex-1 flex flex-col items-center justify-center md:gap-[0.3vw] gap-[1vw] md:pl-[1.5vw] pl-[3vw]">
-                    <span class="md:text-[2vw] text-[6.5vw] font-bold text-[#1A1A1A] leading-none">
-                        <span x-text="counts.satisfaction">0</span>%
-                    </span>
-                    <span class="md:text-[0.75vw] text-[2.8vw] text-slate-500 font-medium text-center leading-tight">Satisfaction rate</span>
-                </div>
-
-            </div>
-        </div>
     </div>
 
 </div>
