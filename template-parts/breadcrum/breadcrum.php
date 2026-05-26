@@ -1,6 +1,16 @@
+<?php
+/**
+ * Breadcrumb / page hero.
+ * Image: real-estate stock photo from Unsplash (modern home exterior — free,
+ * commercial-use OK). Replace with a self-hosted file in /assets/ when convenient
+ * and swap the URL below.
+ */
+$breadcrumb_image = 'https://images.unsplash.com/photo-1568605114967-8130f3a36994?auto=format&fit=crop&w=2400&q=80';
+?>
 <!-- Header -->
 <section
-    style="background: url('<?php echo get_template_directory_uri(); ?>/assets/archive-image.jpg') top/cover no-repeat;">
+    class="relative bg-cover bg-center bg-no-repeat"
+    style="background-image: linear-gradient(rgba(11,26,58,0.35), rgba(11,26,58,0.55)), url('<?php echo esc_url($breadcrumb_image); ?>');">
     <div
         class="flex pb-[7.229vw] md:pt-[16.229vw] items-start flex-col h-[40vh] justify-end md:h-[28.281vw] max-w-[90%] mx-auto">
         <?php if (is_archive()): ?>
