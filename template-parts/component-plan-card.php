@@ -57,7 +57,7 @@ foreach ($plans_data as $p) {
  * Render the CTA button for a plan, respecting login + current-subscription state.
  * Variants control color/contrast so the same logic renders on both light and dark cards.
  */
-$render_cta = function ($plan, $stats, $variant = 'outline-dark') use () {
+$render_cta = function ($plan, $stats, $variant = 'outline-dark') {
     $is_current = $stats['subscription'] && $stats['subscription']->package_id == $plan['id'];
 
     // Map variant → tailwind classes for the CTA
