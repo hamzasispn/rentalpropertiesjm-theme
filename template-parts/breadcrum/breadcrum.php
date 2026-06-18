@@ -10,7 +10,7 @@
  * to self-host (drop a JPG in /assets/ and update path).
  */
 
-$hero_image = get_the_template_directory_uri() . '/assets/details-section-img.jpg ';
+$hero_image = get_the_template_directory_uri() . '/assets/details-section-img.jpg';
 
 if (is_archive()) {
     $page_title  = 'Find Homes &amp; Spaces';
