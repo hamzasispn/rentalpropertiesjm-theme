@@ -4,9 +4,13 @@
  */
 
 /**
- * Enforce a user's property cap by drafting the oldest published listings
- * that exceed the limit. Marks them as auto-deactivated so they're auto
- * re-published if the user later upgrades back.
+ * Enforce a user's property cap by drafting OLDER published listings
+ * once the user is over the limit. Keeps the user's NEWEST listings live
+ * (matches client expectation: a downgrade drafts the older listings,
+ * the latest ones stay published).
+ *
+ * Marks drafted ones with _property_auto_deactivated=1 so an upgrade later
+ * can auto re-publish them via property_theme_restore_within_cap().
  *
  * @param int $user_id
  * @param int $max_properties Cap from the new plan; 0 means unlimited
@@ -16,14 +20,18 @@ function property_theme_enforce_property_limit($user_id, $max_properties) {
     $user_id = intval($user_id);
     $max_properties = intval($max_properties);
     if ($user_id <= 0 || $max_properties <= 0) {
-        return 0;
+        return 0; // unlimited / nothing to do
     }
 
     global $wpdb;
+
+    // Sort NEWEST first. array_slice($arr, $max) drops the first $max items
+    // and returns the rest — i.e. the older ones beyond the cap. Those get
+    // drafted; the newest $max stay live.
     $published = $wpdb->get_col($wpdb->prepare(
         "SELECT ID FROM {$wpdb->posts}
          WHERE post_author = %d AND post_type = 'property' AND post_status = 'publish'
-         ORDER BY post_date ASC",
+         ORDER BY post_date DESC",
         $user_id
     ));
 
@@ -35,12 +43,18 @@ function property_theme_enforce_property_limit($user_id, $max_properties) {
     $count = 0;
     foreach ($to_draft as $pid) {
         $pid = intval($pid);
-        // Use direct DB update to bypass any save_post filters that may re-publish
         $ok = wp_update_post(array('ID' => $pid, 'post_status' => 'draft'), true);
         if (!is_wp_error($ok)) {
             update_post_meta($pid, '_property_auto_deactivated', 1);
             $count++;
         }
+    }
+
+    if ($count > 0) {
+        error_log(sprintf(
+            '[property_listing] downgrade enforced: drafted %d older listings for user %d (kept newest %d live)',
+            $count, $user_id, $max_properties
+        ));
     }
     return $count;
 }

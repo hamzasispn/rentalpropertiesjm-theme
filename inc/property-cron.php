@@ -63,7 +63,14 @@ function property_theme_enforce_limits_cron_handler() {
 }
 
 /**
- * Re-publish auto-deactivated drafts up to the user's remaining cap. Oldest first.
+ * Re-publish auto-deactivated drafts up to the user's remaining cap.
+ *
+ * Sorts NEWEST first to mirror enforce_property_limit's keep-newest rule:
+ * if a user upgrades from cap=1 to cap=5 and has 9 auto-drafts on disk,
+ * we re-publish the 4 most recent ones (matching what the user last saw live).
+ *
+ * Idempotent — safely re-runnable from the hourly cron without conflicting
+ * with the immediate post-upgrade call.
  */
 function property_theme_restore_within_cap($user_id, $cap) {
     global $wpdb;
@@ -86,7 +93,7 @@ function property_theme_restore_within_cap($user_id, $cap) {
         'author'         => $user_id,
         'posts_per_page' => $remaining,
         'orderby'        => 'date',
-        'order'          => 'ASC',
+        'order'          => 'DESC', // newest first — matches enforce_property_limit
         'fields'         => 'ids',
         'meta_query'     => array(array(
             'key'     => '_property_auto_deactivated',
@@ -102,6 +109,13 @@ function property_theme_restore_within_cap($user_id, $cap) {
             delete_post_meta($pid, '_property_auto_deactivated');
             $count++;
         }
+    }
+
+    if ($count > 0) {
+        error_log(sprintf(
+            '[property_listing] upgrade restored: re-published %d newest auto-drafts for user %d',
+            $count, $user_id
+        ));
     }
     return $count;
 }

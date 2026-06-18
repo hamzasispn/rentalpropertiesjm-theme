@@ -269,12 +269,39 @@ function property_theme_get_stripe_price_id($plan_id, $billing_cycle = 'monthly'
 
 /**
  * Get Stripe Product ID for a plan
- * 
+ *
  * @param int $plan_id Plan post ID
  * @return string|false Product ID or false if not found
  */
 function property_theme_get_stripe_product_id($plan_id) {
     return get_post_meta($plan_id, '_stripe_product_id', true) ?: false;
+}
+
+/**
+ * Reverse lookup: Stripe Price ID → plan post ID.
+ *
+ * Needed by the `customer.subscription.updated` webhook so that when a user
+ * changes plan in the Stripe Customer Portal, we can re-sync our local
+ * `package_id` instead of leaving it stuck on the previous plan (which would
+ * make every cron enforce the wrong cap).
+ *
+ * @param string $stripe_price_id e.g. "price_1Q..."
+ * @return int|false Plan post ID, or false if no plan owns that price.
+ */
+function property_theme_get_plan_id_by_stripe_price($stripe_price_id) {
+    if (empty($stripe_price_id)) return false;
+    global $wpdb;
+
+    // Any of the three billing-cycle price meta keys could match.
+    $row = $wpdb->get_var($wpdb->prepare(
+        "SELECT post_id FROM {$wpdb->postmeta}
+         WHERE meta_key IN ('stripe_price_id', 'stripe_yearly_price_id', 'stripe_days_price_id')
+           AND meta_value = %s
+         LIMIT 1",
+        $stripe_price_id
+    ));
+
+    return $row ? intval($row) : false;
 }
 
 /**

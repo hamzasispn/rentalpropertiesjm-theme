@@ -288,6 +288,12 @@ function property_theme_update_subscription_from_stripe($stripe_subscription_id,
     $cancel_at_period_end = !empty($stripe_subscription['cancel_at_period_end']);
     list($period_start, $period_end) = property_theme_resolve_subscription_period($stripe_subscription);
 
+    // Read current local row first — we need the old package_id to detect plan changes.
+    $local = $wpdb->get_row($wpdb->prepare(
+        "SELECT id, user_id, package_id FROM {$wpdb->prefix}user_subscriptions WHERE stripe_subscription_id = %s",
+        $stripe_subscription_id
+    ));
+
     $update_data = array(
         'status' => $stripe_subscription['status'],
         'current_period_start' => date('Y-m-d H:i:s', $period_start),
@@ -296,6 +302,23 @@ function property_theme_update_subscription_from_stripe($stripe_subscription_id,
         'auto_renew' => $cancel_at_period_end ? 0 : 1,
         'last_webhook_event_at' => current_time('mysql'),
     );
+
+    // Plan-change sync: if Stripe is now charging a different price, map it back to
+    // our local plan and update package_id. Without this, a Customer Portal plan
+    // change would leave our DB stuck on the old plan and every cron would
+    // enforce the wrong cap.
+    $new_plan_id = null;
+    $stripe_price_id = $stripe_subscription['items']['data'][0]['price']['id']
+        ?? $stripe_subscription['items']['data'][0]['plan']['id']
+        ?? null;
+    if ($stripe_price_id && function_exists('property_theme_get_plan_id_by_stripe_price')) {
+        $mapped = property_theme_get_plan_id_by_stripe_price($stripe_price_id);
+        if ($mapped) {
+            $update_data['package_id']       = $mapped;
+            $update_data['stripe_price_id']  = $stripe_price_id;
+            $new_plan_id                     = $mapped;
+        }
+    }
 
     // Handle cancellation
     if ($stripe_subscription['status'] === 'canceled') {
@@ -316,6 +339,17 @@ function property_theme_update_subscription_from_stripe($stripe_subscription_id,
         $update_data,
         array('stripe_subscription_id' => $stripe_subscription_id)
     );
+
+    // If the plan actually changed via Stripe Portal, fire the same hook the
+    // dashboard REST endpoint fires so enforce + restore run immediately rather
+    // than waiting up to an hour for the cron tick.
+    if ($local && $new_plan_id && intval($local->package_id) !== intval($new_plan_id)) {
+        error_log(sprintf(
+            '[property_listing] Stripe-portal plan change detected: user %d, %d → %d',
+            $local->user_id, intval($local->package_id), $new_plan_id
+        ));
+        do_action('property_theme_subscription_plan_updated', $local->user_id, $local->id, $new_plan_id);
+    }
 
     return $result !== false;
 }
