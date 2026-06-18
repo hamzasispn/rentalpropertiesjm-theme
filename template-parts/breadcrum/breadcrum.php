@@ -10,7 +10,7 @@
  * to self-host (drop a JPG in /assets/ and update path).
  */
 
-$hero_image = 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=2400&q=80';
+$hero_image = get_the_template_directory_uri() . '/assets/details-section-img.jpg ';
 
 if (is_archive()) {
     $page_title  = 'Find Homes &amp; Spaces';
