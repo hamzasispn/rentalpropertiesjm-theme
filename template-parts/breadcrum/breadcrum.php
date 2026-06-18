@@ -10,7 +10,8 @@
  * to self-host (drop a JPG in /assets/ and update path).
  */
 
-$hero_image = get_template_directory_uri() . '/assets/details-section-img.jpg';
+$dynamic_image_url = get_field('breadcrumimg');
+$hero_image = $dynamic_image_url ? $dynamic_image_url : 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=2400&q=80';
 
 if (is_archive()) {
     $page_title  = 'Find Homes &amp; Spaces';
