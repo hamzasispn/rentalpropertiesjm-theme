@@ -29,6 +29,20 @@ $plan_video_limit = $plan['video_limit']        ?? 2;
 $plan_whatsapp    = $plan['enable_whatsapp']    ?? false;
 $plan_google_map  = $plan['enable_google_map']  ?? false;
 
+// ── Auto-deactivated draft detection ─────────────────────────────────────
+// True when the listing being edited was drafted by the plan-cap enforcement
+// (e.g. user downgraded from 10 → 1). The form stays editable so the user can
+// keep details current, but saving CANNOT promote it back to publish — they
+// need to upgrade their plan first. Handler enforces this server-side; banner
+// below explains why.
+$is_auto_deactivated = false;
+$rejection_reason    = '';
+if ($is_edit && $property) {
+    $is_auto_deactivated = $property->post_status === 'draft'
+        && (bool) get_post_meta($property_id, '_property_auto_deactivated', true);
+    $rejection_reason    = (string) get_post_meta($property_id, '_property_rejection_reason', true);
+}
+
 // ── Existing property data ────────────────────────────────────────────────
 $property_data = array(
     'title'            => '',
@@ -397,7 +411,20 @@ if (isset($_GET['action']) && $_GET['action'] === 'delete' && isset($_GET['prope
 
         <!-- Success Message -->
         <?php if (isset($_GET['saved'])): ?>
-            <?php if (!empty($_GET['review'])): ?>
+            <?php if (!empty($_GET['paused'])): ?>
+                <!-- Auto-deactivated draft was edited — changes saved but still not live. -->
+                <div class="mb-8 p-4 rounded-lg border"
+                     style="background-color: color-mix(in srgb, var(--primary-color) 6%, #fff);
+                            border-color: color-mix(in srgb, var(--primary-color) 25%, transparent);">
+                    <p class="font-semibold inline-flex items-center gap-1.5" style="color: var(--primary-color);">
+                        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+                        Changes saved — listing still paused
+                    </p>
+                    <p class="text-sm mt-1" style="color: color-mix(in srgb, var(--primary-color) 78%, #fff);">
+                        Your edits are stored. This listing remains a <strong>draft</strong> until you upgrade your plan.
+                    </p>
+                </div>
+            <?php elseif (!empty($_GET['review'])): ?>
                 <div class="mb-8 p-4 bg-amber-50 border border-amber-200 rounded-lg">
                     <p class="text-amber-900 font-semibold inline-flex items-center gap-1.5">
                         <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
@@ -426,6 +453,69 @@ if (isset($_GET['action']) && $_GET['action'] === 'delete' && isset($_GET['prope
                     <li><?php echo esc_html($error); ?></li>
                 <?php endforeach; ?>
             </ul>
+        </div>
+        <?php endif; ?>
+
+        <!-- ── Auto-deactivated draft banner ────────────────────────────────────
+             Shown when this listing was drafted by the plan-cap enforcement
+             (downgrade). The form is editable, but saving will NOT publish it. -->
+        <?php if ($is_auto_deactivated): ?>
+        <div class="mb-8 p-5 rounded-xl border flex flex-col sm:flex-row gap-4 items-start"
+             style="background-color: color-mix(in srgb, var(--primary-color) 6%, #fff);
+                    border-color: color-mix(in srgb, var(--primary-color) 25%, transparent);">
+            <div class="shrink-0 w-10 h-10 rounded-full flex items-center justify-center"
+                 style="background-color: var(--primary-color);">
+                <svg class="w-5 h-5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m0 3.5h.01M12 3l9 16H3l9-16z"/>
+                </svg>
+            </div>
+            <div class="flex-1">
+                <p class="font-semibold mb-1" style="color: var(--primary-color);">
+                    This listing is paused because you're over your current plan's limit.
+                </p>
+                <p class="text-sm leading-relaxed mb-3"
+                   style="color: color-mix(in srgb, var(--primary-color) 78%, #fff);">
+                    You can keep editing the details and save them — but the listing will
+                    <strong>stay as a draft and won't go live</strong> until you upgrade your plan.
+                    Once you upgrade, this listing (and any other auto-paused ones) will be
+                    re-published automatically up to your new plan's limit.
+                </p>
+                <a href="<?php echo esc_url(home_url('/dashboard/#billing')); ?>"
+                   class="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold text-white transition hover:opacity-90"
+                   style="background-color: var(--primary-color);">
+                    Upgrade plan to publish
+                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
+                    </svg>
+                </a>
+            </div>
+        </div>
+        <?php elseif ($is_edit && $property && $property->post_status === 'draft' && $rejection_reason): ?>
+        <!-- Admin-rejected draft (different from auto-deactivated): saving re-submits for review. -->
+        <div class="mb-8 p-5 rounded-xl border bg-red-50 border-red-200 flex gap-4 items-start">
+            <div class="shrink-0 w-10 h-10 rounded-full bg-red-500 flex items-center justify-center">
+                <svg class="w-5 h-5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+            </div>
+            <div class="flex-1">
+                <p class="font-semibold text-red-900 mb-1">Listing rejected — please address the admin's note</p>
+                <p class="text-sm text-red-800 leading-relaxed mb-2"><strong>Admin note:</strong> <?php echo esc_html($rejection_reason); ?></p>
+                <p class="text-xs text-red-700">After you save your changes, the listing will be re-submitted for review.</p>
+            </div>
+        </div>
+        <?php elseif ($is_edit && $property && $property->post_status === 'pending'): ?>
+        <!-- Pending edit — already in admin queue. -->
+        <div class="mb-8 p-5 rounded-xl border bg-amber-50 border-amber-200 flex gap-4 items-start">
+            <div class="shrink-0 w-10 h-10 rounded-full bg-amber-500 flex items-center justify-center">
+                <svg class="w-5 h-5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <circle cx="12" cy="12" r="10"/><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6l4 2"/>
+                </svg>
+            </div>
+            <div class="flex-1">
+                <p class="font-semibold text-amber-900 mb-1">Awaiting admin approval</p>
+                <p class="text-sm text-amber-800 leading-relaxed">This listing is in the review queue. Any changes you save now will replace the version the admin sees.</p>
+            </div>
         </div>
         <?php endif; ?>
 
@@ -965,14 +1055,23 @@ if (isset($_GET['action']) && $_GET['action'] === 'delete' && isset($_GET['prope
                 </div>
 
                 <?php if (($plan['featured_limit'] ?? 0) > 0): ?>
-                <!-- Featured Listing -->
-                <div class="bg-white rounded-lg shadow-sm border border-slate-200 p-6 mb-6">
-                    <label class="flex items-center gap-3 cursor-pointer">
+                <!-- Featured Listing — disabled when listing is paused, since
+                     featured has no meaning on a draft that isn't being displayed. -->
+                <div class="bg-white rounded-lg shadow-sm border border-slate-200 p-6 mb-6 <?php echo $is_auto_deactivated ? 'opacity-60' : ''; ?>">
+                    <label class="flex items-center gap-3 <?php echo $is_auto_deactivated ? 'cursor-not-allowed' : 'cursor-pointer'; ?>">
                         <input type="checkbox" name="property_featured" value="1"
-                            <?php checked($property_data['featured'], 1); ?> class="w-5 h-5 rounded border-slate-300">
+                            <?php checked($property_data['featured'], 1); ?>
+                            <?php disabled($is_auto_deactivated, true); ?>
+                            class="w-5 h-5 rounded border-slate-300">
                         <span class="font-semibold text-slate-900">Featured Listing</span>
                     </label>
-                    <p class="text-sm text-slate-600 mt-2">Highlight your property on homepage</p>
+                    <p class="text-sm text-slate-600 mt-2">
+                        <?php if ($is_auto_deactivated): ?>
+                            Available once you upgrade and this listing goes live.
+                        <?php else: ?>
+                            Highlight your property on homepage
+                        <?php endif; ?>
+                    </p>
                 </div>
                 <?php endif; ?>
 

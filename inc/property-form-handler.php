@@ -83,12 +83,29 @@ function property_theme_handle_property_form_submission() {
     }
 
     // ── Status resolution ─────────────────────────────────────────────────
-    // New listings always go through as `pending` for admin review. Admins bypass
-    // review. Edits keep their existing status (so an approved listing stays live).
+    // Rules:
+    //   - New listing (non-admin):           pending  → admin review
+    //   - New listing (admin):               publish  → bypass review
+    //   - Edit of publish (member or admin): publish  → keep live
+    //   - Edit of admin-rejected draft:      pending  → re-submit for review
+    //   - Edit of auto-deactivated draft     STAY DRAFT → member can't bypass plan cap.
+    //     (_property_auto_deactivated = 1)               Admin override still possible.
+    //   - Edit of pending (member):          pending  → still in queue
+    $is_admin_user   = current_user_can('manage_options');
     $existing_status = $is_edit ? get_post_status($property_id) : 'pending';
-    $resolved_status = ($is_edit && $existing_status === 'publish')
-        ? 'publish'
-        : (current_user_can('manage_options') ? 'publish' : 'pending');
+    $auto_deactivated = $is_edit ? (bool) get_post_meta($property_id, '_property_auto_deactivated', true) : false;
+
+    if (!$is_edit) {
+        $resolved_status = $is_admin_user ? 'publish' : 'pending';
+    } elseif ($existing_status === 'publish') {
+        $resolved_status = 'publish';
+    } elseif ($auto_deactivated && !$is_admin_user) {
+        // Plan cap drafted this — member edits must NOT promote it. Stays draft.
+        $resolved_status = 'draft';
+    } else {
+        // Rejected drafts, pending edits → goes back into review queue (or admin publishes).
+        $resolved_status = $is_admin_user ? 'publish' : 'pending';
+    }
 
     $post_data = array(
         'post_type'    => 'property',
@@ -267,11 +284,15 @@ function property_theme_handle_property_form_submission() {
 
     // ── Redirect with success state ───────────────────────────────────────
     $saved_status = get_post_status($post_id);
+    $saved_paused = ($saved_status === 'draft')
+        && (bool) get_post_meta($post_id, '_property_auto_deactivated', true);
+
     $redirect_url = home_url('/dashboard/');
     $redirect_url = add_query_arg(array(
         'property_id' => $post_id,
         'saved'       => 1,
         'review'      => $saved_status === 'pending' ? 1 : 0,
+        'paused'      => $saved_paused ? 1 : 0,
     ), $redirect_url);
     $redirect_url .= '#add-property';
 
