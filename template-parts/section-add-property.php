@@ -43,6 +43,25 @@ if ($is_edit && $property) {
     $rejection_reason    = (string) get_post_meta($property_id, '_property_rejection_reason', true);
 }
 
+// ── Multi-property (Realtor plan) capacity ───────────────────────────────
+// If the user's plan allows more than one listing, we surface an "Add Another"
+// CTA after each successful submission so they can rapid-fire add without
+// hunting for the add-property link again. Also gives a live X/Y counter.
+$plan_max_properties = intval($plan['max_properties'] ?? 0);
+$is_multi_plan       = $plan_max_properties === 0 || $plan_max_properties > 1;
+
+global $wpdb;
+$existing_property_count = (int) $wpdb->get_var($wpdb->prepare(
+    "SELECT COUNT(*) FROM {$wpdb->posts}
+     WHERE post_author = %d AND post_type = 'property'
+     AND post_status IN ('publish', 'pending', 'draft')",
+    $current_user->ID
+));
+$remaining_slots = $plan_max_properties === 0
+    ? PHP_INT_MAX
+    : max(0, $plan_max_properties - $existing_property_count);
+$can_add_more    = $is_multi_plan && ($remaining_slots > 0 || current_user_can('manage_options'));
+
 // ── Existing property data ────────────────────────────────────────────────
 $property_data = array(
     'title'            => '',
@@ -411,6 +430,47 @@ if (isset($_GET['action']) && $_GET['action'] === 'delete' && isset($_GET['prope
 
         <!-- Success Message -->
         <?php if (isset($_GET['saved'])): ?>
+            <?php
+            /**
+             * Shared "Add Another Property" CTA — appears in every success
+             * banner variant when the plan allows more than one listing.
+             * Multi-plan realtors want to keep adding without hunting for the
+             * link after each save.
+             */
+            $add_another_cta = '';
+            if ($is_multi_plan) {
+                $used  = $existing_property_count;
+                $cap   = $plan_max_properties;
+                $label = $cap > 0 ? sprintf('%d of %d listings used', $used, $cap) : sprintf('%d listings on your portfolio', $used);
+                $ok    = $cap === 0 || $used < $cap || current_user_can('manage_options');
+                ob_start(); ?>
+                <div class="mt-4 pt-4 border-t border-current/20 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                    <div class="text-sm">
+                        <p class="font-semibold" style="color: var(--primary-color);"><?php echo esc_html($label); ?></p>
+                        <?php if (!$ok): ?>
+                            <p class="text-xs mt-0.5 text-slate-600">You've reached your plan's limit. <a href="<?php echo esc_url(home_url('/dashboard/#billing')); ?>" class="underline">Upgrade</a> to add more.</p>
+                        <?php else: ?>
+                            <p class="text-xs mt-0.5 text-slate-600">Keep building your portfolio — each listing is reviewed before going live.</p>
+                        <?php endif; ?>
+                    </div>
+                    <?php if ($ok): ?>
+                        <a href="<?php echo esc_url(home_url('/dashboard/#add-property')); ?>"
+                           class="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-full text-sm font-semibold text-white shrink-0 hover:opacity-90 transition"
+                           style="background-color: var(--primary-color);">
+                            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+                            Add Another Property
+                        </a>
+                    <?php else: ?>
+                        <a href="<?php echo esc_url(home_url('/dashboard/#billing')); ?>"
+                           class="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-full text-sm font-semibold text-white shrink-0 hover:opacity-90 transition bg-slate-700">
+                            Upgrade plan
+                        </a>
+                    <?php endif; ?>
+                </div>
+                <?php $add_another_cta = ob_get_clean();
+            }
+            ?>
+
             <?php if (!empty($_GET['paused'])): ?>
                 <!-- Auto-deactivated draft was edited — changes saved but still not live. -->
                 <div class="mb-8 p-4 rounded-lg border"
@@ -423,6 +483,7 @@ if (isset($_GET['action']) && $_GET['action'] === 'delete' && isset($_GET['prope
                     <p class="text-sm mt-1" style="color: color-mix(in srgb, var(--primary-color) 78%, #fff);">
                         Your edits are stored. This listing remains a <strong>draft</strong> until you upgrade your plan.
                     </p>
+                    <?php echo $add_another_cta; ?>
                 </div>
             <?php elseif (!empty($_GET['review'])): ?>
                 <div class="mb-8 p-4 bg-amber-50 border border-amber-200 rounded-lg">
@@ -431,6 +492,7 @@ if (isset($_GET['action']) && $_GET['action'] === 'delete' && isset($_GET['prope
                         Property submitted for review
                     </p>
                     <p class="text-amber-800 text-sm mt-1">Your listing was saved and is now <strong>pending admin approval</strong>. We'll email you once it's approved and live on the site.</p>
+                    <?php echo $add_another_cta; ?>
                 </div>
             <?php else: ?>
                 <div class="mb-8 p-4 bg-green-50 border border-green-200 rounded-lg">
@@ -438,6 +500,7 @@ if (isset($_GET['action']) && $_GET['action'] === 'delete' && isset($_GET['prope
                         <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
                         Property saved successfully!
                     </p>
+                    <?php echo $add_another_cta; ?>
                 </div>
             <?php endif; ?>
         <?php endif; ?>
