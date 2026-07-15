@@ -395,6 +395,7 @@ while (have_posts()):
                                     <div
                                         class="grid grid-cols-2 md:grid-cols-3 gap-y-[3vw] md:gap-y-[1vw]  col-span-12 md:col-span-9">
                                         <?php foreach ($group['amenities'] as $amenity): ?>
+                                            <?php $amenity_value = isset($amenity['value']) ? trim((string) $amenity['value']) : ''; ?>
                                             <div
                                                 class="flex items-center justify-center md:justify-normal gap-[2vw] md:gap-[0.625vw]">
 
@@ -405,9 +406,9 @@ while (have_posts()):
                                                         class="w-[5vw] h-[5vw] md:w-[1.25vw] md:h-[1.25vw] object-contain">
                                                 <?php endif; ?>
 
-                                                <!-- Text -->
+                                                <!-- Text: title, plus value (from dropdown/text amenities) when present. -->
                                                 <span class="text-black/80 font-medium text-[2.824vw] md:text-[0.729vw] font-inter">
-                                                    <?= esc_html($amenity['title']); ?>
+                                                    <?= esc_html($amenity['title']); ?><?php if ($amenity_value !== ''): ?>: <strong class="text-black"><?= esc_html($amenity_value); ?></strong><?php endif; ?>
                                                 </span>
                                             </div>
                                         <?php endforeach; ?>

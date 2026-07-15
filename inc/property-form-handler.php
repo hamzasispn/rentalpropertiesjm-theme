@@ -205,7 +205,13 @@ function property_theme_handle_property_form_submission() {
                             $attachment_id = media_handle_upload('temp_icon', $post_id);
                             if (!is_wp_error($attachment_id)) $icon = wp_get_attachment_url($attachment_id);
                         }
-                        $group['amenities'][] = array('title' => sanitize_text_field($amenity['title']), 'icon' => $icon);
+                        $group['amenities'][] = array(
+                            'title' => sanitize_text_field($amenity['title']),
+                            'icon'  => $icon,
+                            // Preserves selected option / typed text for dropdown & text-type
+                            // catalog amenities. Checkbox rows store '' (presence-only).
+                            'value' => sanitize_text_field($amenity['value'] ?? ''),
+                        );
                     }
                 }
             }

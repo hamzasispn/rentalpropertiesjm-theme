@@ -890,24 +890,27 @@ if (isset($_GET['action']) && $_GET['action'] === 'delete' && isset($_GET['prope
                         ? property_theme_get_amenity_catalog()
                         : array();
 
-                    // Pre-tick catalog items that were previously saved on this property.
-                    // Any saved amenity NOT in the catalog goes into the "custom" list.
-                    $saved_titles = array();
+                    // Build lookup of catalog titles (lowercase) to detect catalog vs custom.
+                    $catalog_titles = array();
+                    foreach ($amenity_catalog as $g) {
+                        foreach ($g['amenities'] as $a) {
+                            $catalog_titles[] = strtolower($a['title']);
+                        }
+                    }
+
+                    // Saved values from a previous edit: keep title → value map for catalog
+                    // amenities; anything unmatched drops into the custom list.
+                    $saved_values = array(); // ['wi-fi' => '', 'flooring' => 'Marble', ...]
                     $custom_saved = array();
                     if (is_array($property_data['amenities_data'])) {
-                        $catalog_titles = array();
-                        foreach ($amenity_catalog as $g) {
-                            foreach ($g['amenities'] as $a) {
-                                $catalog_titles[] = strtolower($a['title']);
-                            }
-                        }
                         foreach ($property_data['amenities_data'] as $g) {
                             if (!isset($g['amenities']) || !is_array($g['amenities'])) continue;
                             foreach ($g['amenities'] as $a) {
                                 $t = $a['title'] ?? '';
                                 if ($t === '') continue;
+                                $v = isset($a['value']) ? (string) $a['value'] : '';
                                 if (in_array(strtolower($t), $catalog_titles, true)) {
-                                    $saved_titles[] = strtolower($t);
+                                    $saved_values[strtolower($t)] = $v;
                                 } else {
                                     $custom_saved[] = array(
                                         'title' => $t,
@@ -932,7 +935,7 @@ if (isset($_GET['action']) && $_GET['action'] === 'delete' && isset($_GET['prope
 
                         <div x-data="amenityPicker(
                                 <?= htmlspecialchars(json_encode($amenity_catalog), ENT_QUOTES); ?>,
-                                <?= htmlspecialchars(json_encode($saved_titles), ENT_QUOTES); ?>,
+                                <?= htmlspecialchars(json_encode($saved_values), ENT_QUOTES); ?>,
                                 <?= htmlspecialchars(json_encode($custom_saved), ENT_QUOTES); ?>
                              )" class="space-y-6">
 
@@ -943,27 +946,70 @@ if (isset($_GET['action']) && $_GET['action'] === 'delete' && isset($_GET['prope
                                 </div>
                             <?php endif; ?>
 
-                            <!-- Catalog groups → checkboxes -->
+                            <!-- Catalog groups → mixed input types (checkbox / dropdown / text). -->
                             <template x-for="(group, gIndex) in catalog" :key="gIndex">
                                 <div class="border border-slate-200 rounded-xl overflow-hidden">
                                     <div class="bg-slate-50 px-4 py-2.5 border-b border-slate-200">
                                         <h4 class="text-sm font-semibold text-slate-800" x-text="group.title"></h4>
                                     </div>
-                                    <div class="p-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
+                                    <div class="p-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
                                         <template x-for="(amenity, aIndex) in group.amenities" :key="gIndex + '-' + aIndex">
-                                            <label class="flex items-center gap-2.5 px-3 py-2 rounded-lg cursor-pointer border transition"
-                                                :class="isTicked(group.title, amenity.title)
-                                                    ? 'bg-[var(--primary-color)]/10 border-[var(--primary-color)] text-[var(--primary-color)]'
-                                                    : 'bg-white border-slate-200 hover:border-slate-300'">
-                                                <input type="checkbox"
-                                                    :checked="isTicked(group.title, amenity.title)"
-                                                    @change="toggle(group.title, amenity)"
-                                                    class="w-4 h-4 rounded text-[var(--primary-color)] focus:ring-[var(--primary-color)]/40">
-                                                <template x-if="amenity.icon">
-                                                    <img :src="amenity.icon" alt="" class="w-4 h-4 object-contain shrink-0">
+                                            <div>
+                                                <!-- CHECKBOX -->
+                                                <template x-if="!amenity.type || amenity.type === 'checkbox'">
+                                                    <label class="flex items-center gap-2.5 px-3 py-2 rounded-lg cursor-pointer border transition h-full"
+                                                        :class="isChecked(amenity.title)
+                                                            ? 'bg-[var(--primary-color)]/10 border-[var(--primary-color)] text-[var(--primary-color)]'
+                                                            : 'bg-white border-slate-200 hover:border-slate-300'">
+                                                        <input type="checkbox"
+                                                            :checked="isChecked(amenity.title)"
+                                                            @change="toggleCheckbox(amenity.title)"
+                                                            class="w-4 h-4 rounded text-[var(--primary-color)] focus:ring-[var(--primary-color)]/40">
+                                                        <template x-if="amenity.icon">
+                                                            <img :src="amenity.icon" alt="" class="w-4 h-4 object-contain shrink-0">
+                                                        </template>
+                                                        <span class="text-sm font-medium truncate" x-text="amenity.title"></span>
+                                                    </label>
                                                 </template>
-                                                <span class="text-sm font-medium truncate" x-text="amenity.title"></span>
-                                            </label>
+
+                                                <!-- DROPDOWN -->
+                                                <template x-if="amenity.type === 'select'">
+                                                    <div class="flex flex-col gap-1">
+                                                        <label class="text-xs font-medium text-slate-700 flex items-center gap-1.5">
+                                                            <template x-if="amenity.icon">
+                                                                <img :src="amenity.icon" alt="" class="w-3.5 h-3.5 object-contain">
+                                                            </template>
+                                                            <span x-text="amenity.title"></span>
+                                                        </label>
+                                                        <select
+                                                            :value="valueOf(amenity.title)"
+                                                            @change="setValue(amenity.title, $event.target.value)"
+                                                            class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm text-slate-900 bg-white focus:ring-2 focus:ring-[var(--primary-color)]/30 focus:border-[var(--primary-color)]">
+                                                            <option value="">— Not applicable —</option>
+                                                            <template x-for="opt in (amenity.options || [])" :key="opt">
+                                                                <option :value="opt" x-text="opt" :selected="valueOf(amenity.title) === opt"></option>
+                                                            </template>
+                                                        </select>
+                                                    </div>
+                                                </template>
+
+                                                <!-- TEXT FIELD -->
+                                                <template x-if="amenity.type === 'text'">
+                                                    <div class="flex flex-col gap-1">
+                                                        <label class="text-xs font-medium text-slate-700 flex items-center gap-1.5">
+                                                            <template x-if="amenity.icon">
+                                                                <img :src="amenity.icon" alt="" class="w-3.5 h-3.5 object-contain">
+                                                            </template>
+                                                            <span x-text="amenity.title"></span>
+                                                        </label>
+                                                        <input type="text"
+                                                            :value="valueOf(amenity.title)"
+                                                            @input="setValue(amenity.title, $event.target.value)"
+                                                            :placeholder="'e.g. ' + amenity.title"
+                                                            class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm text-slate-900 focus:ring-2 focus:ring-[var(--primary-color)]/30 focus:border-[var(--primary-color)]">
+                                                    </div>
+                                                </template>
+                                            </div>
                                         </template>
                                     </div>
                                 </div>
@@ -996,15 +1042,16 @@ if (isset($_GET['action']) && $_GET['action'] === 'delete' && isset($_GET['prope
                                 </div>
                             </div>
 
-                            <!-- Serialized POST fields — always output; handler expects
-                                 amenities_groups[X][title], [amenities][Y][title|icon]. -->
+                            <!-- Serialized POST fields — handler expects
+                                 amenities_groups[X][title], [amenities][Y][title|icon|value]. -->
                             <template x-for="(g, gi) in serialize()" :key="'ser-' + gi">
                                 <div>
                                     <input type="hidden" :name="`amenities_groups[${gi}][title]`" :value="g.title">
                                     <template x-for="(a, ai) in g.amenities" :key="'a-' + gi + '-' + ai">
                                         <div>
                                             <input type="hidden" :name="`amenities_groups[${gi}][amenities][${ai}][title]`" :value="a.title">
-                                            <input type="hidden" :name="`amenities_groups[${gi}][amenities][${ai}][icon]`" :value="a.icon">
+                                            <input type="hidden" :name="`amenities_groups[${gi}][amenities][${ai}][icon]`"  :value="a.icon">
+                                            <input type="hidden" :name="`amenities_groups[${gi}][amenities][${ai}][value]`" :value="a.value">
                                         </div>
                                     </template>
                                 </div>
@@ -1015,64 +1062,97 @@ if (isset($_GET['action']) && $_GET['action'] === 'delete' && isset($_GET['prope
                 </div>
 
                 <script>
-                function amenityPicker(catalog, savedTitles, customSaved) {
+                /**
+                 * Amenity picker with three input types:
+                 *   - checkbox: presence flag, value=''
+                 *   - select:   dropdown, value=chosen option (empty=unselected)
+                 *   - text:     free input, value=typed text (empty=unfilled)
+                 *
+                 * State: `values` is a Map of `amenityTitle (lowercased)` → { value, selected }.
+                 *   selected=true for checkboxes that are ticked, or for select/text where value !== ''.
+                 * Handler receives one group per catalog category (only entries with selected=true),
+                 * plus a trailing "Custom" group with user-added rows.
+                 */
+                function amenityPicker(catalog, savedValues, customSaved) {
                     return {
                         catalog: Array.isArray(catalog) ? catalog : [],
-                        // Set of `group|title` (lower-case) keys for what's ticked.
-                        ticked: new Set(
-                            (savedTitles || []).map(t => '*|' + String(t).toLowerCase())
-                        ),
+                        // { lowercaseTitle: { value: string, selected: bool } }
+                        values: {},
                         custom: Array.isArray(customSaved) ? customSaved.map(c => ({ title: c.title, icon: c.icon || '' })) : [],
 
                         init() {
-                            // On first mount, walk the catalog and mark ticked any amenity
-                            // whose title matches a saved one — this makes the group key
-                            // specific instead of the wildcard we used above.
-                            const savedLower = new Set((savedTitles || []).map(t => String(t).toLowerCase()));
-                            this.ticked = new Set();
+                            const seed = savedValues && typeof savedValues === 'object' ? savedValues : {};
                             this.catalog.forEach(g => {
                                 g.amenities.forEach(a => {
-                                    if (savedLower.has(String(a.title).toLowerCase())) {
-                                        this.ticked.add(this._key(g.title, a.title));
+                                    const k = String(a.title).toLowerCase();
+                                    if (Object.prototype.hasOwnProperty.call(seed, k)) {
+                                        this.values[k] = { value: seed[k] || '', selected: true };
                                     }
                                 });
                             });
                         },
 
-                        _key(groupTitle, amenityTitle) {
-                            return String(groupTitle).toLowerCase() + '|' + String(amenityTitle).toLowerCase();
+                        _key(title) { return String(title).toLowerCase(); },
+
+                        // Checkbox helpers
+                        isChecked(title) {
+                            const v = this.values[this._key(title)];
+                            return !!(v && v.selected);
                         },
-                        isTicked(groupTitle, amenityTitle) {
-                            return this.ticked.has(this._key(groupTitle, amenityTitle));
+                        toggleCheckbox(title) {
+                            const k = this._key(title);
+                            if (this.values[k] && this.values[k].selected) {
+                                delete this.values[k];
+                            } else {
+                                this.values[k] = { value: '', selected: true };
+                            }
+                            // Alpine reactivity nudge for object mutation.
+                            this.values = { ...this.values };
                         },
-                        toggle(groupTitle, amenity) {
-                            const k = this._key(groupTitle, amenity.title);
-                            if (this.ticked.has(k)) this.ticked.delete(k);
-                            else this.ticked.add(k);
-                            // Alpine needs a nudge for Set mutations to be reactive.
-                            this.ticked = new Set(this.ticked);
+
+                        // Select / text helpers
+                        valueOf(title) {
+                            const v = this.values[this._key(title)];
+                            return v ? v.value : '';
                         },
+                        setValue(title, val) {
+                            const k = this._key(title);
+                            const trimmed = String(val || '').trim();
+                            if (trimmed === '') {
+                                delete this.values[k];
+                            } else {
+                                this.values[k] = { value: trimmed, selected: true };
+                            }
+                            this.values = { ...this.values };
+                        },
+
                         addCustom() { this.custom.push({ title: '', icon: '' }); },
                         removeCustom(i) { this.custom.splice(i, 1); },
 
                         /**
-                         * Build the POST-shaped array the handler expects:
-                         *   [ { title, amenities: [ { title, icon }, ... ] }, ... ]
-                         * One group per catalog category (only ticked ones), plus a "Custom"
-                         * group at the end for user-added amenities.
+                         * Build POST payload:
+                         * [ { title, amenities: [ { title, icon, value }, ... ] }, ... ]
+                         * Only ticked/filled catalog entries are included; custom rows
+                         * with non-empty titles append as a final "Custom" group.
                          */
                         serialize() {
                             const out = [];
                             this.catalog.forEach(g => {
-                                const chosen = g.amenities.filter(a => this.isTicked(g.title, a.title));
+                                const chosen = g.amenities
+                                    .filter(a => {
+                                        const v = this.values[this._key(a.title)];
+                                        return v && v.selected;
+                                    })
+                                    .map(a => ({
+                                        title: a.title,
+                                        icon:  a.icon || '',
+                                        value: (this.values[this._key(a.title)]?.value) || '',
+                                    }));
                                 if (chosen.length === 0) return;
-                                out.push({
-                                    title: g.title,
-                                    amenities: chosen.map(a => ({ title: a.title, icon: a.icon || '' })),
-                                });
+                                out.push({ title: g.title, amenities: chosen });
                             });
                             const customClean = this.custom
-                                .map(c => ({ title: (c.title || '').trim(), icon: c.icon || '' }))
+                                .map(c => ({ title: (c.title || '').trim(), icon: c.icon || '', value: '' }))
                                 .filter(c => c.title !== '');
                             if (customClean.length) {
                                 out.push({ title: 'Custom', amenities: customClean });
