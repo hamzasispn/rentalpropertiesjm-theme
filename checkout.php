@@ -105,7 +105,7 @@ if (!$plan) {
                         <button type="submit" :disabled="loading"
                             class="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-slate-400 text-white font-bold py-3 px-4 rounded-lg transition-colors">
                             <span x-show="!loading">Complete Purchase - <span
-                                    x-text="'$' + (<?php echo floatval($plan['price']); ?>).toFixed(2)"></span></span>
+                                    x-text="'$' + finalTotal().toFixed(2)"></span></span>
                             <span x-show="loading" class="flex items-center justify-center gap-2">
                                 <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
                                 Processing...
@@ -177,11 +177,63 @@ if (!$plan) {
                         </ul>
                     </div>
 
+                    <!-- Coupon / Promo code -->
+                    <div class="border-b border-slate-200 pb-6" x-data="{ expand: false }">
+                        <template x-if="!coupon.applied">
+                            <div>
+                                <button type="button" @click="expand = !expand"
+                                    class="text-sm font-medium text-[var(--primary-color)] hover:underline inline-flex items-center gap-1.5">
+                                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M7 7h.01M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"/>
+                                    </svg>
+                                    <span x-text="expand ? 'Hide coupon' : 'Have a coupon?'"></span>
+                                </button>
+                                <div x-show="expand" x-transition class="mt-3 flex gap-2">
+                                    <input type="text" x-model="coupon.code"
+                                        @keydown.enter.prevent="applyCoupon()"
+                                        placeholder="Enter code"
+                                        class="flex-1 px-3 py-2 border border-slate-300 rounded-lg text-slate-900 uppercase text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                    <button type="button" @click="applyCoupon()" :disabled="coupon.loading || !coupon.code.trim()"
+                                        class="px-4 py-2 bg-[var(--primary-color)] text-white rounded-lg text-sm font-semibold disabled:opacity-50 hover:opacity-90 transition">
+                                        <span x-show="!coupon.loading">Apply</span>
+                                        <span x-show="coupon.loading" x-cloak>Checking…</span>
+                                    </button>
+                                </div>
+                                <p x-show="coupon.error" x-text="coupon.error" x-cloak
+                                    class="mt-2 text-sm text-red-600"></p>
+                            </div>
+                        </template>
+
+                        <template x-if="coupon.applied">
+                            <div class="flex items-center justify-between bg-green-50 border border-green-200 rounded-lg px-3 py-2.5">
+                                <div class="flex items-center gap-2 min-w-0">
+                                    <svg class="w-5 h-5 text-green-600 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+                                    </svg>
+                                    <div class="min-w-0">
+                                        <p class="text-sm font-semibold text-green-900 truncate" x-text="coupon.code"></p>
+                                        <p class="text-xs text-green-700 truncate" x-text="coupon.summary"></p>
+                                    </div>
+                                </div>
+                                <button type="button" @click="removeCoupon()"
+                                    class="text-xs text-green-800 hover:text-red-600 shrink-0 ml-2">Remove</button>
+                            </div>
+                        </template>
+                    </div>
+
+                    <!-- Discount line (only shown when coupon applied) -->
+                    <div x-show="coupon.applied" x-cloak
+                        class="flex justify-between items-center text-sm">
+                        <span class="text-slate-600">Discount</span>
+                        <span class="text-green-700 font-semibold"
+                            x-text="'−$' + coupon.discountAmount.toFixed(2)"></span>
+                    </div>
+
                     <!-- Total -->
                     <div class="flex justify-between items-center pt-6 border-t border-slate-200">
                         <span class="text-lg font-semibold text-slate-900">Total</span>
                         <span class="text-2xl font-bold text-blue-600"
-                            x-text="'$' + (<?php echo floatval($plan['price']); ?>).toFixed(2)"></span>
+                            x-text="'$' + finalTotal().toFixed(2)"></span>
                     </div>
 
                     <!-- Secure Badge -->
@@ -202,8 +254,11 @@ if (!$plan) {
 <script src="https://js.stripe.com/v3/"></script>
 <script>
     function checkoutForm(planId) {
+        const basePrice = <?php echo floatval($plan['price']); ?>;
+
         return {
             planId: planId,
+            basePrice: basePrice,
             form: {
                 name: '',
                 email: '<?php echo esc_js($user->user_email); ?>',
@@ -212,6 +267,16 @@ if (!$plan) {
                 country: 'JM',
                 terms: false,
             },
+            coupon: {
+                code: '',
+                applied: false,
+                loading: false,
+                error: '',
+                summary: '',
+                percentOff: null,
+                amountOff: null,   // cents
+                discountAmount: 0, // dollars
+            },
             loading: false,
             error: '',
             stripe: null,
@@ -219,6 +284,60 @@ if (!$plan) {
 
             init() {
                 this.initStripe();
+            },
+
+            finalTotal() {
+                const t = this.basePrice - this.coupon.discountAmount;
+                return t > 0 ? t : 0;
+            },
+
+            async applyCoupon() {
+                this.coupon.error = '';
+                const code = this.coupon.code.trim().toUpperCase();
+                if (!code) return;
+                this.coupon.code = code;
+                this.coupon.loading = true;
+                try {
+                    const res = await fetch(`${wpData.restUrl}property-theme/v1/validate-coupon`, {
+                        method: 'POST',
+                        credentials: 'same-origin',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-WP-Nonce': wpData.nonce,
+                        },
+                        body: JSON.stringify({ code }),
+                    });
+                    const data = await res.json();
+                    if (!res.ok || !data.success) {
+                        throw new Error(data.message || 'That coupon isn\'t valid.');
+                    }
+                    this.coupon.summary    = data.summary || 'Discount applied';
+                    this.coupon.percentOff = data.percent_off;
+                    this.coupon.amountOff  = data.amount_off;
+                    // Compute a preview discount for the summary. Server-side is
+                    // the source of truth; this is display-only.
+                    if (data.percent_off) {
+                        this.coupon.discountAmount = +(this.basePrice * (data.percent_off / 100)).toFixed(2);
+                    } else if (data.amount_off) {
+                        this.coupon.discountAmount = +(data.amount_off / 100).toFixed(2);
+                    } else {
+                        this.coupon.discountAmount = 0;
+                    }
+                    this.coupon.applied = true;
+                } catch (e) {
+                    this.coupon.error = e.message || 'Could not apply coupon.';
+                    this.coupon.applied = false;
+                    this.coupon.discountAmount = 0;
+                } finally {
+                    this.coupon.loading = false;
+                }
+            },
+
+            removeCoupon() {
+                this.coupon = {
+                    code: '', applied: false, loading: false, error: '',
+                    summary: '', percentOff: null, amountOff: null, discountAmount: 0,
+                };
             },
 
             initStripe() {
@@ -281,6 +400,7 @@ if (!$plan) {
                             plan_id: this.planId,
                             payment_method_id: paymentMethod.id,
                             billing_details: this.form,
+                            coupon: this.coupon.applied ? this.coupon.code : '',
                         }),
                     });
 

@@ -23,9 +23,14 @@ while (have_posts()):
 
     // Get full address details
     $full_address = property_theme_get_full_address($property_id);
-    $coords = property_theme_get_property_coords($property_id);
-    $lat = !empty($coords['lat']) ? $coords['lat'] : 25.2048;
-    $lng = !empty($coords['lng']) ? $coords['lng'] : 55.2708;
+    $coords       = property_theme_get_property_coords($property_id);
+    $lat          = !empty($coords['lat']) ? $coords['lat'] : 18.1096; // Jamaica centroid fallback
+    $lng          = !empty($coords['lng']) ? $coords['lng'] : -77.2975;
+    $property_city    = get_post_meta($property_id, '_property_city', true);
+    $property_address = get_post_meta($property_id, '_property_address', true);
+    // Full string sent to the geocoder — city + address gives Google enough context
+    // even when the user typed a short street name.
+    $geocode_query = trim(implode(', ', array_filter([$property_address, $property_city, 'Jamaica'])));
 
 
 
@@ -416,8 +421,8 @@ while (have_posts()):
                         <!-- View More Button (only if more than 1 group) -->
                         <?php if (count($amenities_data) > 1): ?>
                             <div class="flex justify-end">
-                                <button @click="showAll = !showAll" class="flex items-center gap-[1vw] md:gap-[0.417vw] 
-                       text-green-600 font-medium 
+                                <button @click="showAll = !showAll" class="flex items-center gap-[1vw] md:gap-[0.417vw]
+                       text-green-600 font-medium
                        text-[2.824vw] md:text-[0.729vw]">
 
                                     <span x-text="showAll ? 'View Less' : 'View More'"></span>
@@ -425,8 +430,7 @@ while (have_posts()):
                                     <svg :class="showAll ? 'rotate-180' : ''"
                                         class="transition-transform w-[3vw] h-[3vw] md:w-[0.833vw] md:h-[0.833vw]" fill="none"
                                         viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                            d="M19 9l-7 7-7-7" />
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
                                     </svg>
                                 </button>
                             </div>
@@ -434,6 +438,38 @@ while (have_posts()):
 
                     </div>
 
+                </div>
+
+                <!-- Location Map — moved from sidebar; sits under Features & Amenities -->
+                <div class="propertyLocation md:mt-[1.25vw] mt-[5.647vw] md:p-[0.833vw] p-[3.765vw] bg-white rounded-[8px] shadow-lg">
+                    <div class="flex items-start justify-between gap-3 md:mb-[0.833vw] mb-[3.765vw] flex-wrap">
+                        <div>
+                            <h2 class="md:text-[1.25vw] text-[5.647vw] font-semibold">Location</h2>
+                            <?php if ($property_city || $property_address): ?>
+                                <p class="text-gray-500 text-[3vw] md:text-[0.833vw] mt-1 inline-flex items-center gap-1.5">
+                                    <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a2 2 0 01-2.828 0l-4.243-4.243a8 8 0 1111.314 0z"/>
+                                        <circle cx="12" cy="11" r="3"/>
+                                    </svg>
+                                    <span><?= esc_html(trim($property_address . ($property_city ? ', ' . $property_city : ''))); ?></span>
+                                </p>
+                            <?php endif; ?>
+                        </div>
+                        <?php
+                        $directions_url = 'https://www.google.com/maps/dir/?api=1&destination='
+                            . rawurlencode($geocode_query);
+                        ?>
+                        <a href="<?= esc_url($directions_url); ?>" target="_blank" rel="noopener"
+                            class="inline-flex items-center gap-1.5 text-[var(--primary-color)] hover:underline text-[3vw] md:text-[0.833vw] font-medium">
+                            Get directions
+                            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M14 3h7v7M10 14L21 3M21 14v7H3V3h7"/>
+                            </svg>
+                        </a>
+                    </div>
+                    <div id="property-map"
+                        class="w-full h-[80vw] md:h-[22vw] rounded-xl overflow-hidden bg-slate-100">
+                    </div>
                 </div>
 
             </div>
@@ -457,69 +493,12 @@ while (have_posts()):
                                     </h4>
                                     <span class="text-[#616161] font-inter capitalize text-[3.765vw] md:text-[0.833vw]">Estate
                                         Agent</span>
-                                    <ul class="flex items-center gap-[3.765vw] md:gap-[0.833vw] mt-[0.625vw] md:mt-[0.625vw]">
-                                        <li>
-                                            <a href="">
-                                                <svg class="md:w-[1.25vw] md:h-[1.25vw] w-[5.647vw] h-[5.647vw]"
-                                                    viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                                    <g clip-path="url(#clip0_34202_47)">
-                                                        <path
-                                                            d="M4.38226 0C1.95468 0 0 1.95468 0 4.38226V19.6178C0 22.0453 1.95468 24 4.38226 24H12.6398V14.6175H10.1588V11.2395H12.6398V8.35351C12.6398 6.08611 14.1057 4.00426 17.4825 4.00426C18.8497 4.00426 19.8608 4.13551 19.8608 4.13551L19.7813 7.29002C19.7813 7.29002 18.7501 7.28028 17.625 7.28028C16.4073 7.28028 16.212 7.84135 16.212 8.77279V11.2395H19.878L19.7183 14.6175H16.212V24H19.6177C22.0453 24 24 22.0454 24 19.6178V4.38228C24 1.9547 22.0453 2.4e-05 19.6177 2.4e-05H4.38223L4.38226 0Z"
-                                                            fill="#132364" />
-                                                    </g>
-                                                    <defs>
-                                                        <clipPath id="clip0_34202_47">
-                                                            <rect width="24" height="24" fill="white" />
-                                                        </clipPath>
-                                                    </defs>
-                                                </svg>
-                                            </a>
-                                        </li>
-                                        <li>
-                                            <a href="">
-                                                <svg class="md:w-[1.25vw] md:h-[1.25vw] w-[5.647vw] h-[5.647vw]"
-                                                    viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                                    <g clip-path="url(#clip0_34202_53)">
-                                                        <path
-                                                            d="M4.70556 0.00598145C2.12036 0.00598145 0.0045166 2.12177 0.0045166 4.70703V19.2952C0.0045166 21.8804 2.12031 23.9955 4.70556 23.9955H19.2937C21.879 23.9955 23.994 21.8804 23.994 19.2952V4.70703C23.994 2.12182 21.879 0.00598145 19.2937 0.00598145H4.70556ZM5.88795 3.96473C7.1275 3.96473 7.89101 4.77848 7.91458 5.84813C7.91458 6.89417 7.12745 7.73079 5.86397 7.73079H5.84072C4.62476 7.73079 3.83883 6.89422 3.83883 5.84813C3.83883 4.7785 4.64854 3.96473 5.88792 3.96473H5.88795ZM16.5699 8.96417C18.9538 8.96417 20.7408 10.5223 20.7408 13.8706V20.1214H17.118V14.2897C17.118 12.8243 16.5936 11.8245 15.2825 11.8245C14.2816 11.8245 13.685 12.4984 13.4231 13.1493C13.3274 13.3822 13.3039 13.7075 13.3039 14.0333V20.1214H9.68103C9.68103 20.1214 9.72857 10.2427 9.68103 9.21982H13.3046V10.7636C13.7861 10.0208 14.6473 8.96415 16.5699 8.96415V8.96417ZM4.05253 9.22061H7.6754V20.1215H4.05253V9.22061Z"
-                                                            fill="#132364" />
-                                                    </g>
-                                                    <defs>
-                                                        <clipPath id="clip0_34202_53">
-                                                            <rect width="24" height="24" fill="white" />
-                                                        </clipPath>
-                                                    </defs>
-                                                </svg>
-
-                                            </a>
-                                        </li>
-                                        <li>
-                                            <a href="">
-                                                <svg class="md:w-[1.25vw] md:h-[1.25vw] w-[5.647vw] h-[5.647vw]"
-                                                    viewBox="0 0 26 26" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                                    <path fill-rule="evenodd" clip-rule="evenodd"
-                                                        d="M5.41671 1.08337C4.26744 1.08337 3.16524 1.53992 2.35258 2.35258C1.53992 3.16524 1.08337 4.26744 1.08337 5.41671V20.5834C1.08337 21.7326 1.53992 22.8348 2.35258 23.6475C3.16524 24.4602 4.26744 24.9167 5.41671 24.9167H20.5834C21.7326 24.9167 22.8348 24.4602 23.6475 23.6475C24.4602 22.8348 24.9167 21.7326 24.9167 20.5834V5.41671C24.9167 4.26744 24.4602 3.16524 23.6475 2.35258C22.8348 1.53992 21.7326 1.08337 20.5834 1.08337H5.41671ZM5.05487 4.87504C4.93628 4.91911 4.82962 4.99027 4.74339 5.08284C4.65715 5.17542 4.59373 5.28685 4.55817 5.40827C4.52261 5.52968 4.51589 5.65772 4.53855 5.78219C4.56122 5.90666 4.61263 6.02412 4.68871 6.12521L10.7705 14.196L4.36262 21.0698L4.31496 21.125H6.53254L11.765 15.5145L15.7864 20.8531C15.8797 20.9767 16.0063 21.071 16.1515 21.125H20.942C21.0604 21.0807 21.1668 21.0094 21.2528 20.9167C21.3388 20.8241 21.402 20.7126 21.4373 20.5912C21.4727 20.4698 21.4792 20.3418 21.4564 20.2175C21.4336 20.0931 21.3821 19.9758 21.306 19.8749L15.2241 11.804L21.6851 4.87504H19.4643L14.2318 10.4867L10.2083 5.14804C10.1151 5.02407 9.98846 4.92934 9.84321 4.87504H5.05487ZM16.8415 19.552L6.96696 6.44804H9.15421L19.0277 19.551L16.8415 19.552Z"
-                                                        fill="#132364" />
-                                                </svg>
-                                            </a>
-                                        </li>
-                                        <li>
-                                            <a href="">
-                                                <svg class="md:w-[1.25vw] md:h-[1.25vw] w-[5.647vw] h-[5.647vw]"
-                                                    viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                                    <path fill-rule="evenodd" clip-rule="evenodd"
-                                                        d="M6.78002 1.57397C5.39912 1.57397 4.07475 2.1224 3.09812 3.09866C2.12148 4.07491 1.57255 5.39907 1.57202 6.77997V20.668C1.57202 22.0492 2.12072 23.3739 3.09741 24.3506C4.0741 25.3273 5.39877 25.876 6.78002 25.876H20.668C22.0489 25.8754 23.3731 25.3265 24.3493 24.3499C25.3256 23.3732 25.874 22.0489 25.874 20.668V6.77997C25.8735 5.39942 25.3248 4.07556 24.3486 3.09936C23.3724 2.12316 22.0486 1.5745 20.668 1.57397H6.78002ZM22.166 6.78797C22.166 7.1858 22.008 7.56733 21.7267 7.84863C21.4454 8.12994 21.0638 8.28797 20.666 8.28797C20.2682 8.28797 19.8867 8.12994 19.6054 7.84863C19.3241 7.56733 19.166 7.1858 19.166 6.78797C19.166 6.39015 19.3241 6.00862 19.6054 5.72731C19.8867 5.44601 20.2682 5.28797 20.666 5.28797C21.0638 5.28797 21.4454 5.44601 21.7267 5.72731C22.008 6.00862 22.166 6.39015 22.166 6.78797ZM13.726 9.56397C12.6227 9.56397 11.5646 10.0023 10.7845 10.7824C10.0043 11.5626 9.56602 12.6207 9.56602 13.724C9.56602 14.8273 10.0043 15.8854 10.7845 16.6655C11.5646 17.4457 12.6227 17.884 13.726 17.884C14.8293 17.884 15.8874 17.4457 16.6676 16.6655C17.4477 15.8854 17.886 14.8273 17.886 13.724C17.886 12.6207 17.4477 11.5626 16.6676 10.7824C15.8874 10.0023 14.8293 9.56397 13.726 9.56397ZM7.56402 13.724C7.56402 12.0902 8.21302 10.5234 9.36824 9.3682C10.5235 8.21297 12.0903 7.56397 13.724 7.56397C15.3578 7.56397 16.9246 8.21297 18.0798 9.3682C19.235 10.5234 19.884 12.0902 19.884 13.724C19.884 15.3577 19.235 16.9245 18.0798 18.0798C16.9246 19.235 15.3578 19.884 13.724 19.884C12.0903 19.884 10.5235 19.235 9.36824 18.0798C8.21302 16.9245 7.56402 15.3577 7.56402 13.724Z"
-                                                        fill="#132364" />
-                                                </svg>
-                                            </a>
-                                        </li>
-                                    </ul>
                                 </div>
                             </div>
 
                         </div>
 
-                        <div x-data="{ openShare:false }"
+                        <div x-data="{ openShare: true }"
                             class="mt-[4.706vw] md:mt-[1.25vw] space-y-[3.765vw] md:space-y-[0.833vw]">
 
                             <!-- Action Buttons -->
@@ -589,47 +568,75 @@ while (have_posts()):
                             </button>
 
                             <!-- Share Icons -->
-                            <div x-show="openShare" x-transition class="flex items-center gap-[3.765vw] md:gap-[0.833vw]">
+                            <?php
+                                $share_url   = get_permalink();
+                                $share_title = get_the_title();
+                                $share_body  = 'Check out this property: ' . $share_title . "\n\n" . $share_url;
+                            ?>
+                            <div x-show="openShare" x-transition
+                                 class="flex items-center flex-wrap gap-[3vw] md:gap-[0.625vw]">
 
                                 <!-- WhatsApp -->
-                                <a target="_blank" href="https://wa.me/?text=<?= urlencode(get_permalink()); ?>" class="flex items-center justify-center
-                                    w-[10.588vw] h-[10.588vw] md:w-[2.5vw] md:h-[2.5vw]
-                                    rounded-full bg-[#25D366] text-white
-                                    text-[3.294vw] md:text-[0.729vw]">
-                                    WA
+                                <a target="_blank" rel="noopener"
+                                    href="https://wa.me/?text=<?= rawurlencode($share_title . ' — ' . $share_url); ?>"
+                                    title="Share on WhatsApp"
+                                    class="flex items-center justify-center w-[10.588vw] h-[10.588vw] md:w-[2.5vw] md:h-[2.5vw] rounded-full bg-[#25D366] text-white hover:opacity-90 transition">
+                                    <svg class="w-[5.647vw] h-[5.647vw] md:w-[1.35vw] md:h-[1.35vw]" viewBox="0 0 640 640" fill="currentColor">
+                                        <path d="M476.9 161.1C435 119.1 379.2 96 319.9 96C197.5 96 97.9 195.6 97.9 318C97.9 357.1 108.1 395.3 127.5 429L96 544L213.7 513.1C246.1 530.8 282.6 540.1 319.8 540.1L319.9 540.1C442.2 540.1 544 440.5 544 318.1C544 258.8 518.8 203.1 476.9 161.1zM319.9 502.7C286.7 502.7 254.2 493.8 225.9 477L219.2 473L149.4 491.3L168 423.2L163.6 416.2C145.1 386.8 135.4 352.9 135.4 318C135.4 216.3 218.2 133.5 320 133.5C369.3 133.5 415.6 152.7 450.4 187.6C485.2 222.5 506.6 268.8 506.5 318.1C506.5 419.9 421.6 502.7 319.9 502.7zM421.1 364.5C415.6 361.7 388.3 348.3 383.2 346.5C378.1 344.6 374.4 343.7 370.7 349.3C367 354.9 356.4 367.3 353.1 371.1C349.9 374.8 346.6 375.3 341.1 372.5C308.5 356.2 287.1 343.4 265.6 306.5C259.9 296.7 271.3 297.4 281.9 276.2C283.7 272.5 282.8 269.3 281.4 266.5C280 263.7 268.9 236.4 264.3 225.3C259.8 214.5 255.2 216 251.8 215.8C248.6 215.6 244.9 215.6 241.2 215.6C237.5 215.6 231.5 217 226.4 222.5C221.3 228.1 207 241.5 207 268.8C207 296.1 226.9 322.5 229.6 326.2C232.4 329.9 268.7 385.9 324.4 410C359.6 425.2 373.4 426.5 391 423.9C401.7 422.3 423.8 410.5 428.4 397.5C433 384.5 433 373.4 431.6 371.1C430.3 368.6 426.6 367.2 421.1 364.5z"/>
+                                    </svg>
                                 </a>
 
                                 <!-- Facebook -->
-                                <a target="_blank"
-                                    href="https://www.facebook.com/sharer/sharer.php?u=<?= urlencode(get_permalink()); ?>"
-                                    class="flex items-center justify-center
-                                    w-[10.588vw] h-[10.588vw] md:w-[2.5vw] md:h-[2.5vw]
-                                    rounded-full bg-[#1877F2] text-white">
-                                    FB
+                                <a target="_blank" rel="noopener"
+                                    href="https://www.facebook.com/sharer/sharer.php?u=<?= rawurlencode($share_url); ?>"
+                                    title="Share on Facebook"
+                                    class="flex items-center justify-center w-[10.588vw] h-[10.588vw] md:w-[2.5vw] md:h-[2.5vw] rounded-full bg-[#1877F2] text-white hover:opacity-90 transition">
+                                    <svg class="w-[5.647vw] h-[5.647vw] md:w-[1.25vw] md:h-[1.25vw]" viewBox="0 0 24 24" fill="currentColor">
+                                        <path d="M9.101 23.691v-7.98H6.627v-3.667h2.474v-1.58c0-4.085 1.848-5.978 5.858-5.978.401 0 .955.042 1.468.103a8.68 8.68 0 0 1 1.141.195v3.325a8.623 8.623 0 0 0-.653-.036 26.805 26.805 0 0 0-.733-.009c-.707 0-1.259.096-1.675.309a1.686 1.686 0 0 0-.679.622c-.258.42-.374.995-.374 1.752v1.297h3.919l-.386 2.103-.287 1.564h-3.246v8.245C19.396 23.238 24 18.179 24 12.044c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.628 3.874 10.35 9.101 11.647Z"/>
+                                    </svg>
                                 </a>
 
-                                <!-- X -->
-                                <a target="_blank"
-                                    href="https://twitter.com/intent/tweet?url=<?= urlencode(get_permalink()); ?>" class="flex items-center justify-center
-                                    w-[10.588vw] h-[10.588vw] md:w-[2.5vw] md:h-[2.5vw]
-                                    rounded-full bg-black text-white">
-                                    X
+                                <!-- X (Twitter) -->
+                                <a target="_blank" rel="noopener"
+                                    href="https://twitter.com/intent/tweet?url=<?= rawurlencode($share_url); ?>&text=<?= rawurlencode($share_title); ?>"
+                                    title="Share on X"
+                                    class="flex items-center justify-center w-[10.588vw] h-[10.588vw] md:w-[2.5vw] md:h-[2.5vw] rounded-full bg-black text-white hover:opacity-90 transition">
+                                    <svg class="w-[5vw] h-[5vw] md:w-[1.15vw] md:h-[1.15vw]" viewBox="0 0 24 24" fill="currentColor">
+                                        <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+                                    </svg>
                                 </a>
 
-                                <!-- Instagram (copy link) -->
-                                <button @click="navigator.clipboard.writeText('<?= get_permalink(); ?>')" class="flex items-center justify-center
-                                    w-[10.588vw] h-[10.588vw] md:w-[2.5vw] md:h-[2.5vw]
-                                    rounded-full bg-gradient-to-tr from-pink-500 to-yellow-500 text-white">
-                                    IG
-                                </button>
+                                <!-- LinkedIn -->
+                                <a target="_blank" rel="noopener"
+                                    href="https://www.linkedin.com/sharing/share-offsite/?url=<?= rawurlencode($share_url); ?>"
+                                    title="Share on LinkedIn"
+                                    class="flex items-center justify-center w-[10.588vw] h-[10.588vw] md:w-[2.5vw] md:h-[2.5vw] rounded-full bg-[#0A66C2] text-white hover:opacity-90 transition">
+                                    <svg class="w-[5.647vw] h-[5.647vw] md:w-[1.25vw] md:h-[1.25vw]" viewBox="0 0 24 24" fill="currentColor">
+                                        <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.063 2.063 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
+                                    </svg>
+                                </a>
 
-                                <!-- More -->
-                                <button
-                                    @click="navigator.share ? navigator.share({ url:'<?= get_permalink(); ?>' }) : navigator.clipboard.writeText('<?= get_permalink(); ?>')"
-                                    class="flex items-center justify-center
-                                    w-[10.588vw] h-[10.588vw] md:w-[2.5vw] md:h-[2.5vw]
-                                    rounded-full bg-gray-200 text-black">
-                                    +
+                                <!-- Email -->
+                                <a href="mailto:?subject=<?= rawurlencode($share_title); ?>&body=<?= rawurlencode($share_body); ?>"
+                                    title="Share via email"
+                                    class="flex items-center justify-center w-[10.588vw] h-[10.588vw] md:w-[2.5vw] md:h-[2.5vw] rounded-full bg-slate-700 text-white hover:opacity-90 transition">
+                                    <svg class="w-[5.647vw] h-[5.647vw] md:w-[1.25vw] md:h-[1.25vw]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                                    </svg>
+                                </a>
+
+                                <!-- Copy link -->
+                                <button type="button"
+                                    x-data="{ copied: false }"
+                                    @click="navigator.clipboard.writeText('<?= esc_js($share_url); ?>'); copied = true; setTimeout(() => copied = false, 1500)"
+                                    title="Copy link"
+                                    class="flex items-center justify-center w-[10.588vw] h-[10.588vw] md:w-[2.5vw] md:h-[2.5vw] rounded-full bg-slate-200 text-slate-700 hover:bg-slate-300 transition relative">
+                                    <svg x-show="!copied" class="w-[5.647vw] h-[5.647vw] md:w-[1.25vw] md:h-[1.25vw]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/>
+                                    </svg>
+                                    <svg x-show="copied" x-cloak class="w-[5.647vw] h-[5.647vw] md:w-[1.25vw] md:h-[1.25vw] text-green-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+                                    </svg>
                                 </button>
 
                             </div>
@@ -638,13 +645,6 @@ while (have_posts()):
 
                     </div>
                 <?php endif; ?>
-
-                <div class="mt-[3.765vw] md:mt-[0.833vw] overflow-hidden rounded-[16px]">
-                    <div
-                        id="property-map"
-                        class="w-full h-[122.353vw] md:h-[27.083vw] rounded-xl overflow-hidden"
-                    ></div>
-                </div>
 
                 <?php if (property_author_is_free_plan($author_id)): ?>
                 <!-- Sticky sidebar ads — only on free-plan listings (paid plans get an ad-free page) -->
@@ -660,41 +660,109 @@ while (have_posts()):
 
 
 <script>
+/**
+ * Property map — address must geocode successfully, or we show an error.
+ *
+ * Per client request: NO silent fallback to city-centroid coords. If Google
+ * can't resolve the address, the map area is replaced with a visible error
+ * telling the admin exactly what to fix. Silent-wrong-pin is worse than
+ * loud-no-pin for a real-estate site.
+ */
 function initPropertyMap() {
-    const lat = <?= esc_js($lat); ?>;
-    const lng = <?= esc_js($lng); ?>;
+    const areaName    = <?= wp_json_encode($property_city ?: 'Property location'); ?>;
+    const addressText = <?= wp_json_encode($property_address); ?>;
+    const geoQuery    = <?= wp_json_encode($geocode_query); ?>;
 
     const mapEl = document.getElementById('property-map');
     if (!mapEl) return;
 
-    const map = new google.maps.Map(mapEl, {
-        zoom: 15,
-        center: { lat: parseFloat(lat), lng: parseFloat(lng) },
-        mapTypeControl: false,
-        zoomControl: true,
-        mapId: 'c484b19c4f8c16ebb3dcf3d1'
-    });
+    const primary = getComputedStyle(document.documentElement)
+        .getPropertyValue('--primary-color').trim() || '#132364';
 
-    const customIcon = {
-        url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
-            <svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 60 60">
-                <g>
-                    <path fill="#95a5a5" d="M33 32.72v21.39a3.016 3.016 0 0 1-.43 1.55l-1.71 2.85a1 1 0 0 1-1.72 0l-1.71-2.85a3.016 3.016 0 0 1-.43-1.55V32.72z" opacity="1" data-original="#95a5a5"></path>
-                    <path fill="#c03a2b" d="M46 17a15.98 15.98 0 1 1-6.44-12.84A16 16 0 0 1 46 17z" opacity="1" data-original="#c03a2b" class=""></path>
-                    <path fill="#e64c3c" d="M40 8a17 17 0 0 1-17 17 16.853 16.853 0 0 1-7.79-1.89A16.009 16.009 0 0 1 39.56 4.16 16.744 16.744 0 0 1 40 8z" opacity="1" data-original="#e64c3c" class=""></path>
-                </g>
-            </svg>
-        `),
-        scaledSize: new google.maps.Size(40, 40),
-        anchor: new google.maps.Point(20, 40)
+    const showError = (reason, hint) => {
+        mapEl.innerHTML = `
+            <div style="width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:24px;background:#fef2f2;border:1px dashed #fca5a5;color:#991b1b;font-family:Inter,system-ui,sans-serif;">
+                <svg style="width:40px;height:40px;margin-bottom:12px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01M12 3l9 16H3l9-16z"/>
+                </svg>
+                <p style="font-weight:600;font-size:15px;margin:0 0 6px;">Map unavailable — address couldn't be located</p>
+                <p style="font-size:13px;margin:0 0 8px;max-width:44ch;">${reason}</p>
+                ${hint ? `<p style="font-size:12px;color:#7f1d1d;margin:0;">${hint}</p>` : ''}
+            </div>
+        `;
+        console.warn('[property_listing] map geocode failed:', reason, { addressText, areaName, geoQuery });
     };
 
-    new google.maps.Marker({
-        position: { lat: parseFloat(lat), lng: parseFloat(lng) },
-        map: map,
-        title: 'Property Location',
-        icon: customIcon
-    });
+    if (!geoQuery) {
+        showError(
+            'This listing has no address on record.',
+            'Edit the listing and fill in the Address field.'
+        );
+        return;
+    }
+
+    if (!(window.google && google.maps && google.maps.Geocoder)) {
+        showError(
+            'Google Maps failed to load. Check the API key and network tab.',
+            ''
+        );
+        return;
+    }
+
+    const pinSvg = (color) => 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(
+        `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 52" width="40" height="52">
+            <path d="M20 0C9 0 0 8.7 0 19.5c0 14.5 20 32.5 20 32.5s20-18 20-32.5C40 8.7 31 0 20 0z" fill="${color}"/>
+            <circle cx="20" cy="19" r="7" fill="#fff"/>
+        </svg>`
+    );
+
+    const geocoder = new google.maps.Geocoder();
+    geocoder.geocode(
+        { address: geoQuery, componentRestrictions: { country: 'jm' } },
+        (results, status) => {
+            if (status !== 'OK' || !results || results.length === 0) {
+                showError(
+                    `Google couldn't find "${addressText || geoQuery}" in ${areaName}. Status: ${status}.`,
+                    'Edit the listing and re-enter the address using the Google Places autocomplete suggestions.'
+                );
+                return;
+            }
+
+            const loc = results[0].geometry.location;
+            const position = { lat: loc.lat(), lng: loc.lng() };
+
+            const map = new google.maps.Map(mapEl, {
+                zoom: 15,
+                center: position,
+                mapTypeControl: false,
+                zoomControl: true,
+                streetViewControl: false,
+                mapId: 'c484b19c4f8c16ebb3dcf3d1',
+            });
+
+            const marker = new google.maps.Marker({
+                position,
+                map,
+                title: areaName,
+                icon: {
+                    url: pinSvg(primary),
+                    scaledSize: new google.maps.Size(40, 52),
+                    anchor: new google.maps.Point(20, 52),
+                },
+            });
+
+            // Permanent label above the pin with the area/parish name.
+            const infoWindow = new google.maps.InfoWindow({
+                disableAutoPan: true,
+                content: `
+                    <div style="font-family:Inter,system-ui,sans-serif;padding:4px 8px;font-weight:600;color:${primary};">
+                        ${areaName.replace(/[<>]/g, '')}
+                    </div>
+                `,
+            });
+            infoWindow.open({ anchor: marker, map, shouldFocus: false });
+        }
+    );
 }
 </script>
 

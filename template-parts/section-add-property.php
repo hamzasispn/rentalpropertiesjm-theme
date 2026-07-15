@@ -881,86 +881,207 @@ if (isset($_GET['action']) && $_GET['action'] === 'delete' && isset($_GET['prope
                         </div>
                     </div>
 
-                    <!-- Feature & Amenities modal trigger -->
-                    <div class="flex gap-4 mb-6 items-start">
-                        <div class="flex items-center p-2 justify-center rounded-lg bg-gray-200 text-gray-900">
-                            <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 24 24" height="1.2em" width="1.2em" xmlns="http://www.w3.org/2000/svg"><path fill="none" d="M0 0h24v24H0z"></path><path d="M12 3 1 11.4l1.21 1.59L4 11.62V21h16v-9.38l1.79 1.36L23 11.4 12 3zm6 16H6v-8.9l6-4.58 6 4.58V19zm-9-5c0 .55-.45 1-1 1s-1-.45-1-1 .45-1 1-1 1 .45 1 1zm3-1c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zm3 1c0-.55.45-1 1-1s1 .45 1 1-.45 1-1 1-1-.45-1-1z"></path></svg>
-                        </div>
-                        <div class="flex justify-between gap-6 items-end" x-data="{ openModal: false }">
-                            <div>
-                                <h3 class="text-md font-semibold text-slate-900 mb-2">Features and Amenities</h3>
-                                <p class="text-sm text-[var(--text-primary-color)] mb-2">Add features e.g. parking, internet, etc.</p>
-                            </div>
-                            <button type="button" @click="openModal = !openModal"
-                                class="px-4 py-2 bg-[var(--primary-color)] text-white rounded-lg font-semibold text-sm">+ Add Amenities</button>
+                    <!-- ── Features and Amenities ────────────────────────────────
+                         Admin defines the catalog under Properties → Amenity Catalog.
+                         Users just tick what applies. They can still add custom
+                         one-off amenities at the bottom for anything not in the catalog. -->
+                    <?php
+                    $amenity_catalog = function_exists('property_theme_get_amenity_catalog')
+                        ? property_theme_get_amenity_catalog()
+                        : array();
 
-                            <!-- AMENITIES MODAL -->
-                            <div x-data="{
-                                    open: true, activeTab: 0,
-                                    groups: <?= esc_js(json_encode($property_data['amenities_data'] ?: [['title'=>'Main Features','amenities'=>[]]])) ?>,
-                                    addGroup() { this.groups.push({title:'',amenities:[]}); this.activeTab=this.groups.length-1; },
-                                    addAmenity() { this.groups[this.activeTab].amenities.push({title:'',icon:''}); },
-                                    removeAmenity(i) { this.groups[this.activeTab].amenities.splice(i,1); },
-                                    uploadIcon(g,a,e) { const f=e.target.files[0]; if(f) this.groups[g].amenities[a].icon=URL.createObjectURL(f); }
-                                }" x-show="openModal" x-transition
-                                class="fixed inset-0 bg-black/30 flex items-center justify-center z-50">
-                                <div class="bg-white w-[70%] h-[85vh] rounded-xl shadow-xl flex flex-col overflow-hidden">
-                                    <div class="flex items-center justify-between px-6 py-4 border-b">
-                                        <h2 class="text-lg font-semibold">Feature and Amenities</h2>
-                                        <button type="button" @click="openModal=false" class="text-slate-500 hover:text-slate-800 text-2xl leading-none">×</button>
+                    // Pre-tick catalog items that were previously saved on this property.
+                    // Any saved amenity NOT in the catalog goes into the "custom" list.
+                    $saved_titles = array();
+                    $custom_saved = array();
+                    if (is_array($property_data['amenities_data'])) {
+                        $catalog_titles = array();
+                        foreach ($amenity_catalog as $g) {
+                            foreach ($g['amenities'] as $a) {
+                                $catalog_titles[] = strtolower($a['title']);
+                            }
+                        }
+                        foreach ($property_data['amenities_data'] as $g) {
+                            if (!isset($g['amenities']) || !is_array($g['amenities'])) continue;
+                            foreach ($g['amenities'] as $a) {
+                                $t = $a['title'] ?? '';
+                                if ($t === '') continue;
+                                if (in_array(strtolower($t), $catalog_titles, true)) {
+                                    $saved_titles[] = strtolower($t);
+                                } else {
+                                    $custom_saved[] = array(
+                                        'title' => $t,
+                                        'icon'  => $a['icon'] ?? '',
+                                    );
+                                }
+                            }
+                        }
+                    }
+                    ?>
+
+                    <div class="border-t pt-6 mt-6">
+                        <div class="flex items-start gap-4 mb-4">
+                            <div class="flex items-center p-2 justify-center rounded-lg bg-gray-200 text-gray-900 shrink-0">
+                                <svg viewBox="0 0 24 24" width="1.2em" height="1.2em" fill="currentColor"><path fill="none" d="M0 0h24v24H0z"/><path d="M12 3 1 11.4l1.21 1.59L4 11.62V21h16v-9.38l1.79 1.36L23 11.4 12 3zm6 16H6v-8.9l6-4.58 6 4.58V19z"/></svg>
+                            </div>
+                            <div>
+                                <h3 class="text-md font-semibold text-slate-900">Features and Amenities</h3>
+                                <p class="text-sm text-slate-600">Tick everything this property has. Not in the list? Add your own below.</p>
+                            </div>
+                        </div>
+
+                        <div x-data="amenityPicker(
+                                <?= htmlspecialchars(json_encode($amenity_catalog), ENT_QUOTES); ?>,
+                                <?= htmlspecialchars(json_encode($saved_titles), ENT_QUOTES); ?>,
+                                <?= htmlspecialchars(json_encode($custom_saved), ENT_QUOTES); ?>
+                             )" class="space-y-6">
+
+                            <?php if (empty($amenity_catalog)): ?>
+                                <div class="p-4 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-900">
+                                    No amenity catalog defined yet. Ask the admin to set one up under
+                                    <em>Properties → Amenity Catalog</em>. You can still add custom amenities below.
+                                </div>
+                            <?php endif; ?>
+
+                            <!-- Catalog groups → checkboxes -->
+                            <template x-for="(group, gIndex) in catalog" :key="gIndex">
+                                <div class="border border-slate-200 rounded-xl overflow-hidden">
+                                    <div class="bg-slate-50 px-4 py-2.5 border-b border-slate-200">
+                                        <h4 class="text-sm font-semibold text-slate-800" x-text="group.title"></h4>
                                     </div>
-                                    <div class="flex flex-1 overflow-hidden">
-                                        <div class="w-64 border-r bg-slate-50 overflow-y-auto">
-                                            <template x-for="(group,gIndex) in groups" :key="gIndex">
-                                                <button type="button" @click="activeTab=gIndex"
-                                                    class="w-full text-left px-4 py-3 border-b text-sm font-medium transition"
-                                                    :class="activeTab===gIndex?'bg-white text-[var(--primary-color)] border-l-4 border-[var(--primary-color)]':'text-slate-600 hover:bg-slate-100'">
-                                                    <span x-text="group.title||'Untitled Group'"></span>
-                                                </button>
-                                            </template>
-                                            <button type="button" @click="addGroup()" class="w-full px-4 py-3 text-left text-sm font-medium text-[var(--primary-color)] hover:bg-white border-t">+ Add Group</button>
-                                        </div>
-                                        <div class="flex-1 p-6 overflow-y-auto">
-                                            <template x-if="groups[activeTab]">
-                                                <div class="space-y-6">
-                                                    <input type="text" x-model="groups[activeTab].title" :name="`amenities_groups[${activeTab}][title]`"
-                                                        class="w-full text-lg font-semibold px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[var(--primary-color)] outline-none" placeholder="Group Title">
-                                                    <div class="grid grid-cols-2 gap-4">
-                                                        <template x-for="(amenity,aIndex) in groups[activeTab].amenities" :key="aIndex">
-                                                            <div class="flex items-center gap-3 p-4 border rounded-lg bg-white">
-                                                                <div class="w-10 h-10 bg-slate-100 rounded flex items-center justify-center relative">
-                                                                    <template x-if="amenity.icon"><img :src="amenity.icon" class="w-8 h-8 object-contain"></template>
-                                                                    <template x-if="!amenity.icon">
-                                                                        <svg class="w-5 h-5 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                                                            <path stroke-linecap="round" stroke-linejoin="round" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/>
-                                                                        </svg>
-                                                                    </template>
-                                                                    <input type="file" accept="image/*" class="absolute inset-0 opacity-0 cursor-pointer"
-                                                                        :name="`amenities_groups[${activeTab}][amenities][${aIndex}][icon_file]`"
-                                                                        @change="uploadIcon(activeTab,aIndex,$event)">
-                                                                </div>
-                                                                <input type="text" x-model="amenity.title"
-                                                                    :name="`amenities_groups[${activeTab}][amenities][${aIndex}][title]`"
-                                                                    class="flex-1 px-3 py-2 text-sm border rounded-md" placeholder="Amenity name">
-                                                                <input type="hidden" x-model="amenity.icon" :name="`amenities_groups[${activeTab}][amenities][${aIndex}][icon]`">
-                                                                <button type="button" @click="removeAmenity(aIndex)" class="text-red-500 hover:text-red-700 text-lg">×</button>
-                                                            </div>
-                                                        </template>
-                                                    </div>
-                                                    <button type="button" @click="addAmenity()" class="px-4 py-2 rounded-lg text-sm font-medium text-white bg-[var(--secondary-color)] hover:opacity-90">+ Add Amenity</button>
-                                                </div>
-                                            </template>
-                                        </div>
-                                    </div>
-                                    <div class="flex justify-end gap-3 px-6 py-4 border-t">
-                                        <button type="button" @click="openModal=false" class="px-4 py-2 rounded-lg border text-sm">Cancel</button>
-                                        <button type="button" @click="openModal=false" class="px-5 py-2 rounded-lg text-sm font-medium text-white bg-[var(--primary-color)]">Save Amenities</button>
+                                    <div class="p-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
+                                        <template x-for="(amenity, aIndex) in group.amenities" :key="gIndex + '-' + aIndex">
+                                            <label class="flex items-center gap-2.5 px-3 py-2 rounded-lg cursor-pointer border transition"
+                                                :class="isTicked(group.title, amenity.title)
+                                                    ? 'bg-[var(--primary-color)]/10 border-[var(--primary-color)] text-[var(--primary-color)]'
+                                                    : 'bg-white border-slate-200 hover:border-slate-300'">
+                                                <input type="checkbox"
+                                                    :checked="isTicked(group.title, amenity.title)"
+                                                    @change="toggle(group.title, amenity)"
+                                                    class="w-4 h-4 rounded text-[var(--primary-color)] focus:ring-[var(--primary-color)]/40">
+                                                <template x-if="amenity.icon">
+                                                    <img :src="amenity.icon" alt="" class="w-4 h-4 object-contain shrink-0">
+                                                </template>
+                                                <span class="text-sm font-medium truncate" x-text="amenity.title"></span>
+                                            </label>
+                                        </template>
                                     </div>
                                 </div>
+                            </template>
+
+                            <!-- Custom amenities row -->
+                            <div class="border border-slate-200 rounded-xl overflow-hidden">
+                                <div class="bg-slate-50 px-4 py-2.5 border-b border-slate-200 flex items-center justify-between">
+                                    <h4 class="text-sm font-semibold text-slate-800">Your custom amenities</h4>
+                                    <button type="button" @click="addCustom()"
+                                        class="text-xs font-semibold text-[var(--primary-color)] hover:underline">
+                                        + Add custom
+                                    </button>
+                                </div>
+                                <div class="p-4 space-y-2">
+                                    <template x-for="(row, idx) in custom" :key="idx">
+                                        <div class="flex items-center gap-2">
+                                            <input type="text" x-model="row.title"
+                                                placeholder="e.g. Rooftop terrace"
+                                                class="flex-1 px-3 py-2 border border-slate-300 rounded-lg text-sm text-slate-900">
+                                            <button type="button" @click="removeCustom(idx)"
+                                                class="p-2 text-red-500 hover:bg-red-50 rounded-lg" title="Remove">
+                                                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                                            </button>
+                                        </div>
+                                    </template>
+                                    <template x-if="custom.length === 0">
+                                        <p class="text-xs text-slate-500 italic">No custom amenities yet — click "Add custom" to add one.</p>
+                                    </template>
+                                </div>
                             </div>
+
+                            <!-- Serialized POST fields — always output; handler expects
+                                 amenities_groups[X][title], [amenities][Y][title|icon]. -->
+                            <template x-for="(g, gi) in serialize()" :key="'ser-' + gi">
+                                <div>
+                                    <input type="hidden" :name="`amenities_groups[${gi}][title]`" :value="g.title">
+                                    <template x-for="(a, ai) in g.amenities" :key="'a-' + gi + '-' + ai">
+                                        <div>
+                                            <input type="hidden" :name="`amenities_groups[${gi}][amenities][${ai}][title]`" :value="a.title">
+                                            <input type="hidden" :name="`amenities_groups[${gi}][amenities][${ai}][icon]`" :value="a.icon">
+                                        </div>
+                                    </template>
+                                </div>
+                            </template>
                         </div>
                     </div>
+
                 </div>
+
+                <script>
+                function amenityPicker(catalog, savedTitles, customSaved) {
+                    return {
+                        catalog: Array.isArray(catalog) ? catalog : [],
+                        // Set of `group|title` (lower-case) keys for what's ticked.
+                        ticked: new Set(
+                            (savedTitles || []).map(t => '*|' + String(t).toLowerCase())
+                        ),
+                        custom: Array.isArray(customSaved) ? customSaved.map(c => ({ title: c.title, icon: c.icon || '' })) : [],
+
+                        init() {
+                            // On first mount, walk the catalog and mark ticked any amenity
+                            // whose title matches a saved one — this makes the group key
+                            // specific instead of the wildcard we used above.
+                            const savedLower = new Set((savedTitles || []).map(t => String(t).toLowerCase()));
+                            this.ticked = new Set();
+                            this.catalog.forEach(g => {
+                                g.amenities.forEach(a => {
+                                    if (savedLower.has(String(a.title).toLowerCase())) {
+                                        this.ticked.add(this._key(g.title, a.title));
+                                    }
+                                });
+                            });
+                        },
+
+                        _key(groupTitle, amenityTitle) {
+                            return String(groupTitle).toLowerCase() + '|' + String(amenityTitle).toLowerCase();
+                        },
+                        isTicked(groupTitle, amenityTitle) {
+                            return this.ticked.has(this._key(groupTitle, amenityTitle));
+                        },
+                        toggle(groupTitle, amenity) {
+                            const k = this._key(groupTitle, amenity.title);
+                            if (this.ticked.has(k)) this.ticked.delete(k);
+                            else this.ticked.add(k);
+                            // Alpine needs a nudge for Set mutations to be reactive.
+                            this.ticked = new Set(this.ticked);
+                        },
+                        addCustom() { this.custom.push({ title: '', icon: '' }); },
+                        removeCustom(i) { this.custom.splice(i, 1); },
+
+                        /**
+                         * Build the POST-shaped array the handler expects:
+                         *   [ { title, amenities: [ { title, icon }, ... ] }, ... ]
+                         * One group per catalog category (only ticked ones), plus a "Custom"
+                         * group at the end for user-added amenities.
+                         */
+                        serialize() {
+                            const out = [];
+                            this.catalog.forEach(g => {
+                                const chosen = g.amenities.filter(a => this.isTicked(g.title, a.title));
+                                if (chosen.length === 0) return;
+                                out.push({
+                                    title: g.title,
+                                    amenities: chosen.map(a => ({ title: a.title, icon: a.icon || '' })),
+                                });
+                            });
+                            const customClean = this.custom
+                                .map(c => ({ title: (c.title || '').trim(), icon: c.icon || '' }))
+                                .filter(c => c.title !== '');
+                            if (customClean.length) {
+                                out.push({ title: 'Custom', amenities: customClean });
+                            }
+                            return out;
+                        },
+                    };
+                }
+                </script>
 
                 <!-- ── Gallery Section with plan-based limits ───────────────────────────── -->
                 <div class="bg-white rounded-lg shadow-sm border border-slate-200 p-6">

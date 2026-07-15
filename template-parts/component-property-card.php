@@ -6,7 +6,16 @@
 
 
         <div x-data="{
-        images: [property.image, ...((property.gallery && Array.isArray(property.gallery)) ? property.gallery : [])].filter(Boolean),
+        // Cards only show images. Skip video-type gallery entries so they
+        // don't render as broken <img> tags (video URLs aren't valid image src).
+        images: [
+            property.image,
+            ...((property.gallery && Array.isArray(property.gallery))
+                ? property.gallery
+                    .filter(g => !(g && typeof g === 'object' && g.type === 'video'))
+                    .map(g => (typeof g === 'string' ? g : g.media_url))
+                : [])
+        ].filter(Boolean),
         index: 0,
         hover(e) {
             const rect = e.currentTarget.getBoundingClientRect()
@@ -26,7 +35,7 @@
                     x-transition:leave="transition transform duration-500"
                     x-transition:leave-start="translate-x-0 opacity-100"
                     x-transition:leave-end="-translate-x-full opacity-0"
-                    :src="typeof image === 'string' ? image : image.media_url" :alt="property.title"
+                    :src="image" :alt="property.title"
                     class="absolute inset-0 w-full h-full object-cover">
             </template>
         </div>

@@ -223,6 +223,7 @@ require_once get_template_directory() . '/inc/admin-panel.php';
 require_once get_template_directory() . '/inc/email-verification.php';
 require_once get_template_directory() . '/inc/property-cron.php';
 require_once get_template_directory() . '/inc/property-form-handler.php';
+require_once get_template_directory() . '/inc/amenities.php';
 
 require_once get_template_directory() . '/admin/migration-page.php';
 

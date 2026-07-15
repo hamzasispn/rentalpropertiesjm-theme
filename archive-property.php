@@ -127,14 +127,19 @@ $listing_statuses_archive = get_terms(array('taxonomy' => 'property_listing_stat
                         <svg class="w-5 h-5 text-slate-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
                         </svg>
-                        <select id="city-select" x-model="filters.city"
-                            @change="resetLocationSuggestions(); applyFilters()"
-                            class="bg-transparent border-0 text-sm font-medium text-slate-800 focus:outline-none focus:ring-0 px-0 py-1 max-w-[160px]">
-                            <option value="">Any parish</option>
-                            <template x-for="city in citiesList" :key="city">
-                                <option :value="city" x-text="city"></option>
-                            </template>
-                        </select>
+                        <!-- Parish select — needs enough width for parish name + TomSelect's
+                             dropdown chevron; without min-width it collapses and the arrow
+                             overlaps the "Any parish" label. -->
+                        <div class="shrink-0 min-w-[210px] md:min-w-[220px]">
+                            <select id="city-select" x-model="filters.city"
+                                @change="resetLocationSuggestions(); applyFilters()"
+                                class="bg-transparent border-0 text-sm font-medium text-slate-800 focus:outline-none focus:ring-0 px-0 py-1 w-full">
+                                <option value="">Any parish</option>
+                                <template x-for="city in citiesList" :key="city">
+                                    <option :value="city" x-text="city"></option>
+                                </template>
+                            </select>
+                        </div>
                         <span class="w-px h-5 bg-slate-300 hidden md:block"></span>
                         <input type="text" x-model="filters.location" @input="searchLocations($event)"
                             @focus="showLocationSuggestions = true"
@@ -161,20 +166,8 @@ $listing_statuses_archive = get_terms(array('taxonomy' => 'property_listing_stat
                         </div>
                     </div>
 
-                    <!-- View toggle + Sort -->
+                    <!-- Sort only — layout is card+map Airbnb-style, no list toggle. -->
                     <div class="flex items-center gap-2 self-start lg:self-auto">
-                        <div class="hidden md:inline-flex bg-slate-100 rounded-lg p-1">
-                            <button type="button" @click="viewType = 'list'"
-                                :class="viewType === 'list' ? 'bg-white text-[var(--primary-color)] shadow-sm' : 'text-slate-500 hover:text-slate-800'"
-                                class="p-2 rounded-md transition" title="List view">
-                                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M3 4h18v2H3V4zm0 7h18v2H3v-2zm0 7h18v2H3v-2z"/></svg>
-                            </button>
-                            <button type="button" @click="viewType = 'grid'"
-                                :class="viewType === 'grid' ? 'bg-white text-[var(--primary-color)] shadow-sm' : 'text-slate-500 hover:text-slate-800'"
-                                class="p-2 rounded-md transition" title="Grid view">
-                                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M3 3h7v7H3zm11 0h7v7h-7zm-11 11h7v7H3zm11 0h7v7h-7z"/></svg>
-                            </button>
-                        </div>
                         <select x-model="sortBy" @change="applyFilters()"
                             class="px-3 py-2 border border-slate-200 bg-white rounded-lg focus:ring-2 focus:ring-[var(--primary-color)]/30 focus:border-[var(--primary-color)] text-slate-900 text-sm font-medium">
                             <option value="newest">Newest</option>
@@ -331,54 +324,42 @@ $listing_statuses_archive = get_terms(array('taxonomy' => 'property_listing_stat
                 </div>
             </div>
 
-            <!-- Results + Ad Sidebar Layout -->
-            <div class="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-6">
+            <!-- Airbnb-style split: cards left, sticky map right, no sponsors. -->
+            <div class="grid grid-cols-1 lg:grid-cols-[minmax(0,_1.15fr)_minmax(0,_1fr)] gap-6">
 
-                <!-- Results column -->
+                <!-- Cards column -->
                 <div>
-                    <!-- Top leaderboard ad -->
-                    <div class="mb-6">
-                        <?php get_template_part('template-parts/component', 'ad-space', ['slot' => 'leaderboard', 'label' => 'Sponsored']); ?>
-                    </div>
-
-                    <!-- Skeleton Cards Loading State -->
-                    <div x-show="loading" :class="viewType === 'list' ? 'space-y-4' : 'grid grid-cols-1 md:grid-cols-3 gap-6'">
-                        <template x-for="i in [1,2,3,4,5,6]" :key="i">
-                            <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden animate-pulse"
-                                 :class="viewType === 'list' && 'flex items-center'">
-                                <div :class="viewType === 'list' ? 'h-40 w-1/3 shrink-0' : 'h-56'" class="bg-gradient-to-r from-slate-200 to-slate-100"></div>
-                                <div class="p-6 flex-1">
-                                    <div class="h-6 bg-slate-200 rounded w-3/4 mb-4"></div>
-                                    <div class="h-4 bg-slate-200 rounded w-full mb-3"></div>
-                                    <div class="h-4 bg-slate-200 rounded w-2/3 mb-6"></div>
-                                    <div class="flex gap-2 mb-4">
-                                        <div class="h-8 bg-slate-200 rounded-full w-20"></div>
-                                        <div class="h-8 bg-slate-200 rounded-full w-20"></div>
-                                    </div>
+                    <!-- Skeleton loading state -->
+                    <div x-show="loading && allProperties.length === 0"
+                        class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                        <template x-for="i in [1,2,3,4]" :key="i">
+                            <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden animate-pulse">
+                                <div class="h-56 bg-gradient-to-r from-slate-200 to-slate-100"></div>
+                                <div class="p-5">
+                                    <div class="h-6 bg-slate-200 rounded w-3/4 mb-3"></div>
+                                    <div class="h-4 bg-slate-200 rounded w-full mb-2"></div>
+                                    <div class="h-4 bg-slate-200 rounded w-2/3"></div>
                                 </div>
                             </div>
                         </template>
                     </div>
 
-                    <!-- Grid View -->
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6" x-show="!loading && viewType === 'grid'">
+                    <!-- Card grid (always cards — no list toggle in Airbnb-style layout) -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-5" x-show="!loading || allProperties.length > 0">
                         <template x-for="property in properties" :key="property.id">
                             <template x-if="property">
-                                <?php get_template_part('template-parts/component', 'property-card'); ?>
+                                <div :id="'card-' + property.id"
+                                     @mouseenter="hoverProperty(property.id)"
+                                     @mouseleave="hoverProperty(null)"
+                                     :class="highlightedId === property.id ? 'ring-2 ring-[var(--primary-color)] shadow-xl -translate-y-0.5' : ''"
+                                     class="transition duration-150">
+                                    <?php get_template_part('template-parts/component', 'property-card'); ?>
+                                </div>
                             </template>
                         </template>
                     </div>
 
-                    <!-- List View (default) -->
-                    <div class="space-y-4" x-show="!loading && viewType === 'list'">
-                        <template x-for="property in properties" :key="property.id">
-                            <template x-if="property">
-                                <?php get_template_part('template-parts/component', 'property-card'); ?>
-                            </template>
-                        </template>
-                    </div>
-
-                    <!-- No Results State -->
+                    <!-- No results -->
                     <div x-show="!loading && allProperties.length === 0"
                         class="bg-white rounded-xl shadow-sm border border-slate-200 p-12 text-center">
                         <div class="mb-4 flex justify-center">
@@ -388,39 +369,29 @@ $listing_statuses_archive = get_terms(array('taxonomy' => 'property_listing_stat
                         </div>
                         <p class="text-slate-600 text-lg mb-6 font-medium">No properties found matching your criteria.</p>
                         <button @click="clearFilters()"
-                            class="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-bold py-3 px-8 rounded-lg transition-all shadow-sm hover:shadow-md">Reset
-                            Filters</button>
+                            class="bg-[var(--primary-color)] hover:opacity-90 text-white font-bold py-3 px-8 rounded-lg transition-all shadow-sm hover:shadow-md">Reset Filters</button>
                     </div>
 
-                    <!-- Infinite Scroll Loading Indicator -->
-                    <div x-show="loading && allProperties.length > 0" class="flex justify-center mt-10">
+                    <!-- Infinite scroll indicator -->
+                    <div x-show="loading && allProperties.length > 0" class="flex justify-center mt-8">
                         <div class="inline-flex items-center gap-2 px-6 py-3 bg-white rounded-lg shadow-sm border border-slate-200">
-                            <div class="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-                            <span class="text-slate-700 font-medium">Loading more...</span>
+                            <div class="w-4 h-4 border-2 border-[var(--primary-color)] border-t-transparent rounded-full animate-spin"></div>
+                            <span class="text-slate-700 font-medium">Loading more…</span>
                         </div>
                     </div>
 
-                    <!-- Infinite Scroll Trigger Element -->
-                    <div id="infinite-scroll-trigger" x-ref="infiniteScrollTrigger" class="py-8"></div>
+                    <div id="infinite-scroll-trigger" x-ref="infiniteScrollTrigger" class="py-6"></div>
                 </div>
 
-                <!-- Ads sidebar — sticky on desktop, hidden on small screens -->
+                <!-- Sticky map — right column on desktop, top on mobile via ordering -->
                 <aside class="hidden lg:block">
-                    <div class="sticky top-[180px] flex flex-col gap-6">
-                        <?php get_template_part('template-parts/component', 'ad-space', ['slot' => 'sidebar', 'label' => 'Sponsored']); ?>
-                        <?php get_template_part('template-parts/component', 'ad-space', ['slot' => 'sidebar', 'label' => 'Sponsored']); ?>
-
-                        <!-- Newsletter / promo card -->
-                        <div class="bg-gradient-to-br from-blue-700 to-indigo-700 text-white rounded-xl p-5 shadow-lg">
-                            <p class="text-xs font-bold uppercase tracking-wider text-blue-200 mb-2">List your property</p>
-                            <h4 class="text-xl font-bold mb-2 leading-tight">Reach buyers across Jamaica</h4>
-                            <p class="text-sm text-blue-50 mb-4">Get your listing in front of thousands of property seekers every month.</p>
-                            <a href="<?php echo esc_url(home_url('/pricing')); ?>"
-                               class="inline-flex items-center gap-1.5 bg-white text-blue-700 hover:bg-blue-50 font-semibold text-sm px-4 py-2 rounded-lg transition">
-                                See pricing
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg>
-                            </a>
-                        </div>
+                    <div class="sticky top-[200px]">
+                        <div id="archive-map"
+                             x-ref="archiveMap"
+                             class="w-full h-[calc(100vh-220px)] min-h-[520px] rounded-2xl overflow-hidden bg-slate-100 shadow-md border border-slate-200"></div>
+                        <p class="text-xs text-slate-500 mt-2 text-center">
+                            <span x-text="mappableCount"></span> of <span x-text="properties.length"></span> visible listings shown on the map
+                        </p>
                     </div>
                 </aside>
             </div>
@@ -459,13 +430,21 @@ $listing_statuses_archive = get_terms(array('taxonomy' => 'property_listing_stat
                 listingStatus: initialParams.listing_status || '',
             },
             sortBy: initialParams.sort || 'newest',
-            viewType: initialParams.view || 'list',
+            // Always grid — Airbnb-style layout has no list mode. Card component
+            // reads this from the outer scope and flips to horizontal when 'list'.
+            viewType: 'grid',
             allProperties: [],
             properties: [],
             loading: false,
             currentPage: 1,
             totalResults: 0,
             totalPages: 1,
+
+            // Map state
+            map: null,
+            markers: {},        // { propertyId: google.maps.Marker }
+            highlightedId: null,
+            mappableCount: 0,
 
             citiesData: citiesData,
             citiesList: Object.keys(citiesData),
@@ -497,6 +476,122 @@ $listing_statuses_archive = get_terms(array('taxonomy' => 'property_listing_stat
                 // No default listing status — show all properties
                 this.applyFilters();
                 this.setupInfiniteScroll();
+                this.initArchiveMap();
+            },
+
+            /**
+             * Airbnb-style archive map. Plots one price-bubble marker per
+             * property that has coords; refits bounds on every filter change;
+             * hover on a card highlights the marker (and vice-versa).
+             */
+            initArchiveMap() {
+                const mapEl = document.getElementById('archive-map');
+                if (!mapEl || !window.google || !google.maps) return;
+
+                this.map = new google.maps.Map(mapEl, {
+                    zoom: 8,
+                    center: { lat: 18.1096, lng: -77.2975 }, // Jamaica centroid
+                    mapTypeControl: false,
+                    streetViewControl: false,
+                    fullscreenControl: false,
+                    gestureHandling: 'greedy',
+                    mapId: 'c484b19c4f8c16ebb3dcf3d1',
+                });
+            },
+
+            hoverProperty(id) {
+                this.highlightedId = id;
+                this.updateMarkerStyles();
+            },
+
+            updateMarkerStyles() {
+                const primary = getComputedStyle(document.documentElement)
+                    .getPropertyValue('--primary-color').trim() || '#132364';
+                Object.entries(this.markers).forEach(([pid, marker]) => {
+                    const isActive = String(pid) === String(this.highlightedId);
+                    marker.setIcon(this.priceBubbleIcon(marker.priceLabel, isActive ? '#111827' : primary, isActive));
+                    marker.setZIndex(isActive ? 1000 : 1);
+                });
+            },
+
+            priceBubbleIcon(label, bg, active) {
+                const w = 8 + label.length * 7;
+                const svg =
+                    `<svg xmlns="http://www.w3.org/2000/svg" width="${w + 8}" height="34" viewBox="0 0 ${w + 8} 34">` +
+                        `<rect x="1" y="1" rx="16" ry="16" width="${w + 6}" height="30" ` +
+                            `fill="${bg}" stroke="#fff" stroke-width="${active ? 3 : 2}"/>` +
+                        `<text x="${(w + 8) / 2}" y="20" text-anchor="middle" font-family="Inter,system-ui,sans-serif" ` +
+                            `font-size="12" font-weight="700" fill="#fff">${label}</text>` +
+                    `</svg>`;
+                return {
+                    url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(svg),
+                    anchor: new google.maps.Point((w + 8) / 2, 34),
+                };
+            },
+
+            /**
+             * Re-plot markers after properties change (initial load or filter update).
+             * Clears old markers, keeps only those with lat/lng, fits bounds to visible set.
+             */
+            renderMarkers() {
+                if (!this.map) return;
+                Object.values(this.markers).forEach(m => m.setMap(null));
+                this.markers = {};
+
+                const primary = getComputedStyle(document.documentElement)
+                    .getPropertyValue('--primary-color').trim() || '#132364';
+
+                const bounds = new google.maps.LatLngBounds();
+                let count = 0;
+                const infoWindow = new google.maps.InfoWindow();
+
+                this.properties.forEach(p => {
+                    if (!p || p.lat == null || p.lng == null) return;
+                    const position = { lat: parseFloat(p.lat), lng: parseFloat(p.lng) };
+                    const priceLabel = window.formatPrice ? window.formatPrice(p.price) : ('$' + p.price);
+
+                    const marker = new google.maps.Marker({
+                        position, map: this.map,
+                        icon: this.priceBubbleIcon(priceLabel, primary, false),
+                        title: p.title,
+                    });
+                    marker.priceLabel = priceLabel;
+
+                    marker.addListener('mouseover', () => {
+                        this.highlightedId = p.id;
+                        this.updateMarkerStyles();
+                    });
+                    marker.addListener('mouseout', () => {
+                        this.highlightedId = null;
+                        this.updateMarkerStyles();
+                    });
+                    marker.addListener('click', () => {
+                        // Popup card + scroll the matching card into view
+                        infoWindow.setContent(
+                            `<div style="font-family:Inter,system-ui,sans-serif;min-width:180px;max-width:220px;">
+                                ${p.image ? `<img src="${p.image}" style="width:100%;height:110px;object-fit:cover;border-radius:8px;margin-bottom:8px;">` : ''}
+                                <p style="margin:0;font-weight:700;font-size:14px;color:#0f172a;line-height:1.2;">${p.title.replace(/[<>]/g, '')}</p>
+                                <p style="margin:4px 0 8px;font-size:13px;color:${primary};font-weight:600;">${priceLabel}</p>
+                                <a href="${p.permalink}" style="display:inline-block;padding:6px 12px;background:${primary};color:#fff;text-decoration:none;border-radius:6px;font-size:12px;font-weight:600;">View details</a>
+                            </div>`
+                        );
+                        infoWindow.open({ anchor: marker, map: this.map });
+                        const card = document.getElementById('card-' + p.id);
+                        if (card) card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    });
+
+                    this.markers[p.id] = marker;
+                    bounds.extend(position);
+                    count++;
+                });
+
+                this.mappableCount = count;
+                if (count === 1) {
+                    this.map.setCenter(bounds.getCenter());
+                    this.map.setZoom(14);
+                } else if (count > 1) {
+                    this.map.fitBounds(bounds, { top: 40, right: 40, bottom: 40, left: 40 });
+                }
             },
 
             async fetchExchangeRate() {
@@ -693,6 +788,9 @@ $listing_statuses_archive = get_terms(array('taxonomy' => 'property_listing_stat
                         this.currentPage = data.current_page;
                         this.properties = this.allProperties;
                         this.loading = false;
+                        // Repaint map markers after each response so the pins
+                        // always match the visible card set (initial load + infinite scroll + filter change).
+                        this.$nextTick(() => this.renderMarkers());
                     })
                     .catch(error => {
                         console.error('Error fetching properties:', error);

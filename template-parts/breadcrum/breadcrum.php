@@ -50,14 +50,6 @@ if (is_archive()) {
     <!-- ── Content ─────────────────────────────────────────────────────── -->
     <div class="relative max-w-[90%] mx-auto pt-[24vw] pb-[10vw] md:pt-[15vw] md:pb-[7vw] lg:pt-44 lg:pb-24">
 
-        <!-- Eyebrow with thin rule -->
-        <div class="flex items-center gap-3 mb-5 md:mb-7">
-            <span class="block w-10 md:w-14 h-px bg-white/70"></span>
-            <span class="text-white/85 text-[2.5vw] md:text-[0.72vw] tracking-[0.32em] font-semibold uppercase">
-                RentalPropertiesJM
-            </span>
-        </div>
-
         <!-- Title -->
         <h1 class="text-white font-bold tracking-tight leading-[0.95] text-[10vw] md:text-[4.2vw] max-w-[22ch]">
             <?php echo wp_kses_post($page_title); ?>
@@ -68,9 +60,6 @@ if (is_archive()) {
                 <?php echo esc_html($page_kicker); ?>
             </p>
         <?php endif; ?>
-
-        <!-- Accent bar below title -->
-        <div class="mt-6 md:mt-8 h-[3px] w-16 md:w-24 bg-white rounded-full"></div>
 
         <!-- Breadcrumb trail -->
         <?php if (!is_front_page() && !is_archive()): ?>

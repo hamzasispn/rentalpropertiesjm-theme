@@ -52,6 +52,7 @@ function property_theme_create_subscription_endpoint($request)
     $payment_method_id = sanitize_text_field($request->get_param('payment_method_id'));
     $billing_cycle = sanitize_text_field($request->get_param('billing_cycle')) ?: 'monthly';
     $billing_details = $request->get_param('billing_details') ?: array();
+    $coupon_code    = sanitize_text_field($request->get_param('coupon') ?: '');
 
     // Validate inputs
     if (!$user_id || !$plan_id || !$payment_method_id) {
@@ -62,13 +63,127 @@ function property_theme_create_subscription_endpoint($request)
         return new WP_Error('invalid_billing_cycle', 'Billing cycle must be monthly or yearly', array('status' => 400));
     }
 
-    $result = property_theme_create_stripe_native_subscription($user_id, $plan_id, $payment_method_id, $billing_cycle, $billing_details);
+    $result = property_theme_create_stripe_native_subscription($user_id, $plan_id, $payment_method_id, $billing_cycle, $billing_details, $coupon_code);
 
     if (is_wp_error($result)) {
         return $result;
     }
 
     return $result;
+}
+
+/**
+ * POST /property-theme/v1/validate-coupon
+ * Body: { "code": "SAVE20" }
+ * Returns discount details from Stripe so the checkout UI can preview the price.
+ */
+add_action('rest_api_init', function () {
+    register_rest_route('property-theme/v1', '/validate-coupon', array(
+        'methods'             => 'POST',
+        'callback'            => 'property_theme_validate_coupon_endpoint',
+        'permission_callback' => function () { return is_user_logged_in(); },
+    ));
+});
+
+function property_theme_validate_coupon_endpoint($request) {
+    $code = trim(sanitize_text_field($request->get_param('code') ?? ''));
+    if ($code === '') {
+        return new WP_Error('missing_code', 'Coupon code required.', array('status' => 400));
+    }
+
+    $result = property_theme_resolve_stripe_coupon($code);
+    if (is_wp_error($result)) return $result;
+
+    return array(
+        'success'     => true,
+        'code'        => $code,
+        'coupon_id'   => $result['coupon_id'],
+        'promo_id'    => $result['promo_id'],
+        'name'        => $result['name'],
+        'percent_off' => $result['percent_off'],
+        'amount_off'  => $result['amount_off'],
+        'currency'    => $result['currency'],
+        'duration'    => $result['duration'],
+        'summary'     => $result['summary'],
+    );
+}
+
+/**
+ * Look up a code the user typed. Tries promotion_codes first (customer-facing
+ * codes like "SAVE20"), then falls back to plain coupons (raw coupon IDs).
+ * Returns normalized shape or WP_Error.
+ */
+function property_theme_resolve_stripe_coupon($code) {
+    // Promotion codes: user-facing, one per active row in Stripe Dashboard.
+    $promo_resp = property_theme_stripe_api_call(
+        'GET',
+        '/v1/promotion_codes?code=' . rawurlencode($code) . '&active=true&limit=1',
+        array(),
+        STRIPE_SECRET_KEY
+    );
+    if (isset($promo_resp['error'])) {
+        return new WP_Error('stripe_error', $promo_resp['error']['message'], array('status' => 502));
+    }
+    if (!empty($promo_resp['data'][0])) {
+        $promo  = $promo_resp['data'][0];
+        $coupon = $promo['coupon'];
+        if (!empty($coupon['valid'])) {
+            return array(
+                'promo_id'    => $promo['id'],
+                'coupon_id'   => $coupon['id'],
+                'name'        => $coupon['name'] ?? $promo['code'],
+                'percent_off' => $coupon['percent_off'] ?? null,
+                'amount_off'  => $coupon['amount_off'] ?? null,
+                'currency'    => $coupon['currency'] ?? null,
+                'duration'    => $coupon['duration'] ?? 'once',
+                'summary'     => property_theme_format_coupon_summary($coupon),
+            );
+        }
+    }
+
+    // Fall back to plain coupon ID (admin might share the coupon ID directly).
+    $coupon_resp = property_theme_stripe_api_call(
+        'GET',
+        '/v1/coupons/' . rawurlencode($code),
+        array(),
+        STRIPE_SECRET_KEY
+    );
+    if (!isset($coupon_resp['error']) && !empty($coupon_resp['valid'])) {
+        return array(
+            'promo_id'    => null,
+            'coupon_id'   => $coupon_resp['id'],
+            'name'        => $coupon_resp['name'] ?? $coupon_resp['id'],
+            'percent_off' => $coupon_resp['percent_off'] ?? null,
+            'amount_off'  => $coupon_resp['amount_off'] ?? null,
+            'currency'    => $coupon_resp['currency'] ?? null,
+            'duration'    => $coupon_resp['duration'] ?? 'once',
+            'summary'     => property_theme_format_coupon_summary($coupon_resp),
+        );
+    }
+
+    return new WP_Error('invalid_coupon', 'That coupon code isn\'t valid or has expired.', array('status' => 404));
+}
+
+function property_theme_format_coupon_summary($coupon) {
+    $duration_label = '';
+    if (($coupon['duration'] ?? 'once') === 'repeating') {
+        $months = intval($coupon['duration_in_months'] ?? 0);
+        $duration_label = $months > 0 ? ' for ' . $months . ' month' . ($months > 1 ? 's' : '') : '';
+    } elseif (($coupon['duration'] ?? 'once') === 'forever') {
+        $duration_label = ' every billing cycle';
+    } elseif (($coupon['duration'] ?? 'once') === 'once') {
+        $duration_label = ' on first payment';
+    }
+
+    if (!empty($coupon['percent_off'])) {
+        return $coupon['percent_off'] . '% off' . $duration_label;
+    }
+    if (!empty($coupon['amount_off'])) {
+        $amount = number_format($coupon['amount_off'] / 100, 2);
+        $currency = strtoupper($coupon['currency'] ?? 'usd');
+        return '$' . $amount . ' ' . $currency . ' off' . $duration_label;
+    }
+    return 'Discount applied' . $duration_label;
 }
 
 /**

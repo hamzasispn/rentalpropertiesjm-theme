@@ -65,7 +65,7 @@ function property_theme_resolve_subscription_period($sub) {
  * @param array $billing_details Optional billing address info
  * @return array|WP_Error Subscription response or error
  */
-function property_theme_create_stripe_native_subscription($user_id, $plan_id, $payment_method_id, $billing_cycle = 'monthly', $billing_details = array()) {
+function property_theme_create_stripe_native_subscription($user_id, $plan_id, $payment_method_id, $billing_cycle = 'monthly', $billing_details = array(), $coupon_code = '') {
     try {
         // Validate inputs
         $user = get_userdata($user_id);
@@ -133,6 +133,24 @@ function property_theme_create_stripe_native_subscription($user_id, $plan_id, $p
             'metadata[billing_cycle]' => $effective_billing_cycle,
             'description' => $plan['name'] . ' Subscription - ' . get_bloginfo('name'),
         );
+
+        // Coupon / promotion code — resolved server-side against Stripe.
+        if (!empty($coupon_code) && function_exists('property_theme_resolve_stripe_coupon')) {
+            $resolved = property_theme_resolve_stripe_coupon($coupon_code);
+            if (!is_wp_error($resolved)) {
+                if (!empty($resolved['promo_id'])) {
+                    // Promotion code path — Stripe recommends `discounts[]` over legacy `coupon`.
+                    $subscription_data['discounts[0][promotion_code]'] = $resolved['promo_id'];
+                } elseif (!empty($resolved['coupon_id'])) {
+                    $subscription_data['discounts[0][coupon]'] = $resolved['coupon_id'];
+                }
+                $subscription_data['metadata[coupon_code]'] = $coupon_code;
+            } else {
+                // User typed a code that doesn't validate — hard fail rather than silently
+                // creating a full-price subscription.
+                throw new Exception('Coupon "' . $coupon_code . '" is not valid.');
+            }
+        }
 
         $subscription_response = property_theme_stripe_api_call('POST', '/v1/subscriptions', $subscription_data, STRIPE_SECRET_KEY);
 

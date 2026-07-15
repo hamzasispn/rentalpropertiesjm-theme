@@ -326,6 +326,11 @@ function property_search_api(WP_REST_Request $request)
             // Thumbnail – return false as null so JSON stays clean
             $thumbnail = get_the_post_thumbnail_url($post_id, 'medium');
 
+            // Coordinates for map markers on the archive page.
+            $coords_out = function_exists('property_theme_get_property_coords')
+                ? property_theme_get_property_coords($post_id)
+                : array('lat' => null, 'lng' => null);
+
             $properties[] = array(
                 'id'                 => $post_id,
                 'title'              => get_the_title(),
@@ -346,6 +351,8 @@ function property_search_api(WP_REST_Request $request)
                 'author_profile_url' => get_author_posts_url($author_id),
                 'author_avatar'      => get_avatar_url($author_id, array('size' => 96)),
                 'gallery'            => $gallery,
+                'lat'                => !empty($coords_out['lat']) ? floatval($coords_out['lat']) : null,
+                'lng'                => !empty($coords_out['lng']) ? floatval($coords_out['lng']) : null,
             );
         }
     }
