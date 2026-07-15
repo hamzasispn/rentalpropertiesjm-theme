@@ -982,12 +982,12 @@ if (isset($_GET['action']) && $_GET['action'] === 'delete' && isset($_GET['prope
                                                             <span x-text="amenity.title"></span>
                                                         </label>
                                                         <select
-                                                            :value="valueOf(amenity.title)"
+                                                            :value="getVal(amenity.title)"
                                                             @change="setValue(amenity.title, $event.target.value)"
                                                             class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm text-slate-900 bg-white focus:ring-2 focus:ring-[var(--primary-color)]/30 focus:border-[var(--primary-color)]">
                                                             <option value="">— Not applicable —</option>
                                                             <template x-for="opt in (amenity.options || [])" :key="opt">
-                                                                <option :value="opt" x-text="opt" :selected="valueOf(amenity.title) === opt"></option>
+                                                                <option :value="opt" x-text="opt" :selected="getVal(amenity.title) === opt"></option>
                                                             </template>
                                                         </select>
                                                     </div>
@@ -1003,7 +1003,7 @@ if (isset($_GET['action']) && $_GET['action'] === 'delete' && isset($_GET['prope
                                                             <span x-text="amenity.title"></span>
                                                         </label>
                                                         <input type="text"
-                                                            :value="valueOf(amenity.title)"
+                                                            :value="getVal(amenity.title)"
                                                             @input="setValue(amenity.title, $event.target.value)"
                                                             :placeholder="'e.g. ' + amenity.title"
                                                             class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm text-slate-900 focus:ring-2 focus:ring-[var(--primary-color)]/30 focus:border-[var(--primary-color)]">
@@ -1110,8 +1110,11 @@ if (isset($_GET['action']) && $_GET['action'] === 'delete' && isset($_GET['prope
                             this.values = { ...this.values };
                         },
 
-                        // Select / text helpers
-                        valueOf(title) {
+                        // Select / text helpers. Renamed from `valueOf` because that name
+                        // collides with Object.prototype.valueOf — Alpine's expression
+                        // evaluator sometimes resolves the prototype method (which returns
+                        // `this`) causing text inputs to display "[object Object]".
+                        getVal(title) {
                             const v = this.values[this._key(title)];
                             return v ? v.value : '';
                         },
