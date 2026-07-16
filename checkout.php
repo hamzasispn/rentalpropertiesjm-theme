@@ -36,14 +36,20 @@ if (!$plan) {
         <a href="<?php echo home_url('/pricing'); ?>"
             class="text-blue-600 hover:text-blue-700 font-medium mb-8 inline-block">← Back to Pricing</a>
 
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <!-- x-data hoisted to the grid so BOTH the form (left) and the Order
+             Summary sidebar (right, incl. coupon field + discount + finalTotal)
+             live inside the same Alpine scope. Previously the sidebar was
+             outside the form and every `coupon.*` binding evaluated to undefined —
+             which is why the coupon UI never showed up. -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8"
+             x-data="checkoutForm(<?php echo $plan_id; ?>)">
             <!-- Checkout Form -->
             <div class="md:col-span-2">
                 <div class="bg-white rounded-lg shadow p-8">
                     <h1 class="text-3xl font-bold text-slate-900 mb-2">Complete Your Subscription</h1>
                     <p class="text-slate-600 mb-8">Secure payment powered by Stripe</p>
 
-                    <form id="checkout-form" x-data="checkoutForm(<?php echo $plan_id; ?>)" @submit.prevent="submit()"
+                    <form id="checkout-form" @submit.prevent="submit()"
                         class="space-y-6">
                         <!-- Contact Info -->
                         <div>
