@@ -41,7 +41,11 @@ $text_secondary = get_option('mytheme_color_text_secondary');
     <?php
     $logo = get_option('mytheme_logo');
     ?>
-    <?php if (!is_page([8, 26, 28])): ?>
+    <?php if (
+        !is_page([8, 26, 28])
+        && !is_page_template('dashboard.php')
+        && !is_page_template('page-my-account.php')
+    ): ?>
         <?php get_template_part('template-parts/header/component', 'header', array('logo' => $logo)); ?>
     <?php endif; ?>
 
