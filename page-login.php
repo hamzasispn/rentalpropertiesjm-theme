@@ -97,6 +97,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['login_submit'])) {
     }
 }
 $logo = get_option('mytheme_logo');
+
+// UX toggle at the top of the form. Just intent — the actual redirect is
+// still role-based (an agent typing on the "User" tab still lands on
+// /dashboard/ because they have a subscription).
+$intent = isset($_GET['as']) && $_GET['as'] === 'agent' ? 'agent' : 'user';
+
 get_header();
 ?>
 
@@ -105,12 +111,40 @@ get_header();
         <!-- Card -->
         <div class="bg-white rounded-lg shadow-lg p-8">
             <!-- Header -->
-            <div class="text-center mb-8">
+            <div class="text-center mb-6">
                 <div class="flex items-center w-[50%] justify-center mx-auto mb-4">
                     <img src="<?= esc_url($logo); ?>" alt="Logo" class="h-[7.5vw] sm:h-[5vw] lg:h-[60px] object-contain">
                 </div>
                 <h1 class="text-3xl font-bold text-slate-900">Welcome Back</h1>
-                <p class="text-slate-600 mt-2">Sign in to your Rental Properties JM account</p>
+                <p class="text-slate-600 mt-2">
+                    <?= $intent === 'agent'
+                        ? 'Sign in to manage your listings and subscription.'
+                        : 'Sign in to view your saved properties and searches.'; ?>
+                </p>
+            </div>
+
+            <!-- Role toggle: User / Agent — cosmetic + steers the register link -->
+            <div class="grid grid-cols-2 gap-1 bg-slate-100 rounded-xl p-1 mb-6">
+                <a href="<?= esc_url(add_query_arg('as', 'user', remove_query_arg('as'))); ?>"
+                   class="text-center py-2.5 rounded-lg font-semibold text-sm transition
+                          <?= $intent === 'user' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'; ?>">
+                    <span class="inline-flex items-center gap-1.5">
+                        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                        </svg>
+                        User
+                    </span>
+                </a>
+                <a href="<?= esc_url(add_query_arg('as', 'agent', remove_query_arg('as'))); ?>"
+                   class="text-center py-2.5 rounded-lg font-semibold text-sm transition
+                          <?= $intent === 'agent' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'; ?>">
+                    <span class="inline-flex items-center gap-1.5">
+                        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M3 21h18M5 21V7l7-4 7 4v14M9 9h.01M15 9h.01M9 13h.01M15 13h.01M9 17h.01M15 17h.01"/>
+                        </svg>
+                        Agent / Realtor
+                    </span>
+                </a>
             </div>
 
             <!-- Notice Message -->
@@ -176,7 +210,13 @@ get_header();
 
             <!-- Signup Link -->
             <div class="text-center mt-6 pt-6 border-t border-slate-200">
-                <p class="text-slate-600">Don't have an account? <a href="<?php echo home_url('/register'); ?>" class="text-[var(--primary-color)] hover:underline font-semibold">Create one now</a></p>
+                <p class="text-slate-600">
+                    Don't have an account?
+                    <a href="<?php echo esc_url(add_query_arg('as', $intent, home_url('/register'))); ?>"
+                       class="text-[var(--primary-color)] hover:underline font-semibold">
+                        <?= $intent === 'agent' ? 'Register as an agent' : 'Create one now'; ?>
+                    </a>
+                </p>
             </div>
         </div>
     </div>

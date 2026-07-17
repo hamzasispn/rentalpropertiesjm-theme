@@ -48,8 +48,21 @@ function pt_get_agent_dashboard_url() {
 }
 
 function pt_get_user_home_url($user_id) {
-    return pt_user_is_agent($user_id) ? pt_get_agent_dashboard_url() : pt_get_member_dashboard_url();
+    if (pt_user_is_agent($user_id)) return pt_get_agent_dashboard_url();
+    // Agents-in-waiting: they registered on the "I'm an Agent" tab but
+    // haven't paid for a plan yet. Send them to /pricing/ so the funnel
+    // completes; the flag clears itself once they subscribe.
+    if ((int) $user_id > 0 && get_user_meta((int) $user_id, '_pt_wants_agent', true)) {
+        return home_url('/pricing');
+    }
+    return pt_get_member_dashboard_url();
 }
+
+// When a user's subscription becomes active, the "wants agent" marker has
+// done its job — drop it so future logins go straight to /dashboard/.
+add_action('property_theme_subscription_activated', function ($user_id) {
+    if ((int) $user_id > 0) delete_user_meta((int) $user_id, '_pt_wants_agent');
+});
 
 /**
  * Auto-create the /my-account/ page once, wired to the member dashboard
