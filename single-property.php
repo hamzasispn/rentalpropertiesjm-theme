@@ -89,9 +89,13 @@ while (have_posts()):
                     <div class="flex flex-col md:flex-row md:items-end gap-[2.765vw] md:gap-[0.833vw]">
                         <p
                             class="text-[3.765vw] md:text-[0.833vw] font-inter text-[var(--primary-color)] flex items-center gap-[2.824vw] md:gap-[0.625vw]">
-                            <svg class="md:w-[0.938vw] md:h-[0.938vw] w-[4vw] h-[4vw]" viewBox="0 0 24 24"
-                                xmlns="http://www.w3.org/2000/svg" fill="currentColor">
-                                <path d="M12 2C7.589 2 4 5.589 4 9.995C4 15.44 11.056 21.68 11.357 21.943a1 1 0 0 0 1.286 0C12.944 21.68 20 15.44 20 9.995C20 5.589 16.411 2 12 2zm0 11a3 3 0 1 1 0-6a3 3 0 0 1 0 6z"/>
+                            <!-- Same pin used by the Google Maps marker below —
+                                 teardrop with white dot, tinted with primary. -->
+                            <svg class="md:w-[1vw] md:h-[1.3vw] w-[4.5vw] h-[5.85vw] shrink-0"
+                                 viewBox="0 0 40 52" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M20 0C9 0 0 8.7 0 19.5c0 14.5 20 32.5 20 32.5s20-18 20-32.5C40 8.7 31 0 20 0z"
+                                      fill="currentColor"/>
+                                <circle cx="20" cy="19" r="7" fill="#fff"/>
                             </svg>
                             <?= esc_html($full_address['address']); ?>
                         </p>

@@ -3,7 +3,9 @@
     "allow": [
       "Bash(xargs grep *)",
       "Bash(grep -rln \"register_taxonomy.*bedroom\\\\|register_taxonomy.*bathroom\" \"c:/laragon/www/rentalpropertiesjm/wp-content/\" 2>/dev/null | head -20)",
-      "Read(//c/laragon/www/rentalpropertiesjm/wp-content/**)"
+      "Read(//c/laragon/www/rentalpropertiesjm/wp-content/**)",
+      "Bash(find \"c:/laragon/www/rentalpropertiesjm/wp-content/themes/property_listing\" -name \"property-page-full.png\" 2>/dev/null; find \"C:/\" -name \"property-page-full.png\" 2>/dev/null | head -5)",
+      "Read(//c//**)"
     ]
   }
 }
