@@ -741,10 +741,12 @@ function initPropertyMap() {
         return;
     }
 
-    const pinSvg = (color) => 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(
-        `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 52" width="40" height="52">
-            <path d="M20 0C9 0 0 8.7 0 19.5c0 14.5 20 32.5 20 32.5s20-18 20-32.5C40 8.7 31 0 20 0z" fill="${color}"/>
-            <circle cx="20" cy="19" r="7" fill="#fff"/>
+    // Client-supplied 📍 pin: red circular head + gray stem.
+    const pinSvg = () => 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(
+        `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 60">
+            <path fill="#95a5a5" d="M33 32.72v21.39a3 3 0 0 1-.43 1.55l-1.71 2.85a1 1 0 0 1-1.72 0l-1.71-2.85a3 3 0 0 1-.43-1.55V32.72z"/>
+            <path fill="#c03a2b" d="M46 17a15.98 15.98 0 1 1-6.44-12.84A16 16 0 0 1 46 17"/>
+            <path fill="#e64c3c" d="M40 8a17 17 0 0 1-17 17 16.85 16.85 0 0 1-7.79-1.89A16.009 16.009 0 0 1 39.56 4.16 16.7 16.7 0 0 1 40 8"/>
         </svg>`
     );
 
@@ -777,9 +779,11 @@ function initPropertyMap() {
                 map,
                 title: areaName,
                 icon: {
-                    url: pinSvg(primary),
-                    scaledSize: new google.maps.Size(40, 52),
-                    anchor: new google.maps.Point(20, 52),
+                    // 60×60 viewBox; pin tip sits at (~30, ~59) in the SVG.
+                    // Scale to 48×48 → anchor tip at (24, 47).
+                    url: pinSvg(),
+                    scaledSize: new google.maps.Size(48, 48),
+                    anchor: new google.maps.Point(24, 47),
                 },
             });
 
