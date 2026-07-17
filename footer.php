@@ -6,7 +6,7 @@
 
 $logo_url     = get_option('mytheme_logo');
 $social_links = get_option('mytheme_social_links', array());
-$archive_url  = home_url('/property/');
+$archive_url  = get_post_type_archive_link('property') ?: home_url('/properties/');
 
 // Parishes with a live property count. One SQL scan instead of 14 queries.
 $parishes = get_jamaica_cities();
@@ -49,16 +49,16 @@ foreach ($rows as $r) $parish_counts[$r->city] = (int) $r->c;
                     $url   = add_query_arg('prop_city', rawurlencode($name), $archive_url);
                     ?>
                     <a href="<?= esc_url($url); ?>"
-                       class="group flex items-start justify-between gap-3 py-2 border-b border-slate-800/50 hover:border-slate-600 transition">
+                       class="group flex items-start justify-between gap-3 py-2 border-b border-slate-800/50 hover:border-slate-500 transition">
                         <div class="min-w-0">
-                            <p class="text-white text-sm font-medium group-hover:text-[var(--primary-color)] transition truncate">
+                            <p class="text-slate-200 text-sm font-medium group-hover:text-white transition truncate">
                                 Properties in <?= esc_html($name); ?>
                             </p>
                             <p class="text-slate-500 text-xs mt-0.5">
                                 <?= $count > 0 ? esc_html($count) . ' ' . _n('home', 'homes', $count) : 'Explore'; ?>
                             </p>
                         </div>
-                        <svg class="w-4 h-4 text-slate-600 shrink-0 mt-1 group-hover:text-[var(--primary-color)] group-hover:translate-x-0.5 transition" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <svg class="w-4 h-4 text-slate-600 shrink-0 mt-1 group-hover:text-white group-hover:translate-x-0.5 transition" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
                         </svg>
                     </a>

@@ -726,15 +726,25 @@ $listing_statuses_archive = get_terms(array('taxonomy' => 'property_listing_stat
             setupTomSelect() {
                 const self = this;
                 setTimeout(() => {
-                    new TomSelect('#city-select', {
-                        placeholder: 'Select a city...',
+                    const ts = new TomSelect('#city-select', {
+                        placeholder: 'Any parish',
                         allowEmptyOption: true,
                         maxOptions: null,
                         onChange: (value) => {
+                            // Keep Alpine's filter state in sync so any code
+                            // reading filters.city (map, results, save-search)
+                            // sees the current parish.
+                            self.filters.city = value || '';
                             self.resetLocationSuggestions();
                             self.applyFilters();
                         }
                     });
+                    // If we arrived from a footer link (?prop_city=Kingston),
+                    // TomSelect ignores the underlying <select>'s x-model value —
+                    // push it in so the pill shows "Kingston" instead of "Any parish".
+                    if (self.filters.city) {
+                        ts.setValue(self.filters.city, /* silent = */ true);
+                    }
                 }, 100);
             },
 
