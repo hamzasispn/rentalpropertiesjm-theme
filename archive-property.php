@@ -6,6 +6,18 @@ get_header();
 
 $cities_data = get_jamaica_cities();
 
+// How many search presets does the current user already have? Used to
+// conditionally show a "View all your search presets" shortcut in the
+// filter row.
+$pt_saved_search_count = 0;
+$pt_member_home_url    = '';
+if (is_user_logged_in() && function_exists('pt_get_saved_searches')) {
+    $pt_saved_search_count = count(pt_get_saved_searches(get_current_user_id()));
+    $pt_member_home_url    = function_exists('pt_get_member_dashboard_url')
+        ? pt_get_member_dashboard_url()
+        : home_url('/my-account/');
+}
+
 $filter_params = array(
     'search' => sanitize_text_field($_GET['search'] ?? ''),
     'property_type' => sanitize_text_field($_GET['property_type'] ?? ''),
@@ -282,6 +294,20 @@ $listing_statuses_archive = get_terms(array('taxonomy' => 'property_listing_stat
                             <span x-text="totalResults" class="font-bold text-slate-900"></span>
                             <span>homes</span>
                         </span>
+
+                        <?php if ($pt_saved_search_count > 0): ?>
+                        <!-- Shortcut to the user's saved-search presets in their dashboard -->
+                        <a href="<?= esc_url(trailingslashit($pt_member_home_url) . '#saved-searches'); ?>"
+                           class="hidden md:inline-flex items-center gap-1.5 px-3 py-2 border border-slate-200 rounded-full text-sm font-medium bg-white text-slate-700 hover:border-[var(--primary-color)] hover:text-[var(--primary-color)] transition group">
+                            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                            </svg>
+                            <span>View your search presets</span>
+                            <span class="px-1.5 py-0.5 rounded-full text-[10px] font-bold leading-none bg-slate-100 text-slate-700 group-hover:bg-[var(--primary-color)] group-hover:text-white transition">
+                                <?= (int) $pt_saved_search_count; ?>
+                            </span>
+                        </a>
+                        <?php endif; ?>
 
                         <!-- Save search button + inline naming popover -->
                         <div class="relative" @click.outside="showSaveSearch = false">
