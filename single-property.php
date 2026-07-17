@@ -89,43 +89,70 @@ while (have_posts()):
                     <div class="flex flex-col md:flex-row md:items-end gap-[2.765vw] md:gap-[0.833vw]">
                         <p
                             class="text-[3.765vw] md:text-[0.833vw] font-inter text-[var(--primary-color)] flex items-center gap-[2.824vw] md:gap-[0.625vw]">
-                            <svg class="md:w-[0.833vw] md:h-[0.833vw] w-[3.765vw] h-[3.765vw]" viewBox="0 0 16 16"
-                                xmlns="http://www.w3.org/2000/svg" fill="none">
-                                <path
-                                    d="M9.66732 6.00004C9.66732 6.44207 9.49172 6.86599 9.17916 7.17855C8.8666 7.49111 8.44268 7.66671 8.00065 7.66671C7.55862 7.66671 7.1347 7.49111 6.82214 7.17855C6.50958 6.86599 6.33398 6.44207 6.33398 6.00004C6.33398 5.55801 6.50958 5.13409 6.82214 4.82153C7.1347 4.50897 7.55862 4.33337 8.00065 4.33337C8.44268 4.33337 8.8666 4.50897 9.17916 4.82153C9.49172 5.13409 9.66732 5.55801 9.66732 6.00004Z"
-                                    stroke="#132364" />
-                                <path
-                                    d="M8.83897 11.6627C8.61379 11.8794 8.31345 12.0004 8.00097 12.0004C7.68849 12.0004 7.38815 11.8794 7.16297 11.6627C5.10364 9.66737 2.3443 7.43871 3.68964 4.20271C4.4183 2.45271 6.16497 1.33337 8.00097 1.33337C9.83697 1.33337 11.5843 2.45337 12.3123 4.20271C13.6563 7.43404 10.9036 9.67404 8.83897 11.6627Z"
-                                    stroke="#132364" />
-                                <path d="M12 13.3334C12 14.07 10.2093 14.6667 8 14.6667C5.79067 14.6667 4 14.07 4 13.3334"
-                                    stroke="#132364" stroke-linecap="round" />
+                            <svg class="md:w-[0.938vw] md:h-[0.938vw] w-[4vw] h-[4vw]" viewBox="0 0 24 24"
+                                xmlns="http://www.w3.org/2000/svg" fill="currentColor">
+                                <path d="M12 2C7.589 2 4 5.589 4 9.995C4 15.44 11.056 21.68 11.357 21.943a1 1 0 0 0 1.286 0C12.944 21.68 20 15.44 20 9.995C20 5.589 16.411 2 12 2zm0 11a3 3 0 1 1 0-6a3 3 0 0 1 0 6z"/>
                             </svg>
                             <?= esc_html($full_address['address']); ?>
                         </p>
-                        <?php
-                        $maps_query = (!empty($coords['lat']) && !empty($coords['lng']))
-                            ? $coords['lat'] . ',' . $coords['lng']
-                            : $full_address['address'];
-                        $maps_url = 'https://www.google.com/maps/search/?api=1&query=' . rawurlencode($maps_query);
-                        ?>
-                        <a href="<?= esc_url($maps_url); ?>" target="_blank" rel="noopener"
-                            class="text-[var(--primary-color)] hover:underline font-inter md:text-[0.729vw] text-[3.294vw] font-medium capitalize inline-flex items-center gap-1">
-                            See on the map
-                            <svg class="md:w-[0.729vw] md:h-[0.729vw] w-[3vw] h-[3vw]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M14 3h7v7M10 14L21 3M21 14v7H3V3h7"/>
-                            </svg>
-                        </a>
                     </div>
                 </div>
-                <div
-                    class="priceDetails text-right w-full md:w-auto md:bg-transparent bg-[var(--primary-color)] md:p-0 p-[3.765vw] rounded-[16px]">
-                    <h4
-                        class="md:text-[1.875vw] text-[11.471vw] md:text-black/90 text-white md:mb-[0.833vw] mb-none font-inter font-bold">
-                        $ <?= esc_html($formatted_price); ?></h4>
-                    <h6
-                        class="md:text-[0.833vw] text-[3.765vw] md:text-black/90 text-white font-inter text-right font-bold">
-                        <?= esc_html($area) ?> <span class="font-light md:text-gray-800 text-gray-300">/ sqft</span>
-                    </h6>
+                <div class="flex items-center gap-[3.765vw] md:gap-[1vw] w-full md:w-auto">
+                    <!-- Save (heart) button — mirrors card save behavior -->
+                    <button type="button"
+                        x-data="{ saved: false, propId: <?= (int) $property_id ?> }"
+                        x-init="saved = !!(window.ptIsPropertySaved && window.ptIsPropertySaved(propId));
+                                window.addEventListener('saved-properties-changed', () => {
+                                    saved = !!(window.ptIsPropertySaved && window.ptIsPropertySaved(propId));
+                                })"
+                        @click="window.ptToggleSavedProperty && window.ptToggleSavedProperty(propId).then(() => {
+                            saved = !!(window.ptIsPropertySaved && window.ptIsPropertySaved(propId));
+                        })"
+                        :aria-label="saved ? 'Remove from saved' : 'Save this property'"
+                        :class="saved ? 'text-white' : 'bg-white text-slate-700 border-slate-200 hover:border-slate-300'"
+                        :style="saved ? 'background:var(--primary-color);border-color:var(--primary-color);' : ''"
+                        class="hidden md:inline-flex items-center gap-[0.417vw] rounded-full border shadow-sm px-[1vw] py-[0.5vw] text-[0.833vw] font-medium transition">
+                        <svg class="w-[1vw] h-[1vw]"
+                             viewBox="0 0 24 24"
+                             :fill="saved ? 'currentColor' : 'none'"
+                             stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"/>
+                        </svg>
+                        <span x-text="saved ? 'Saved' : 'Save'"></span>
+                    </button>
+
+                    <div
+                        class="priceDetails text-right w-full md:w-auto md:bg-transparent bg-[var(--primary-color)] md:p-0 p-[3.765vw] rounded-[16px] relative">
+                        <!-- Mobile heart overlay (floats top-right on the price card) -->
+                        <button type="button"
+                            x-data="{ saved: false, propId: <?= (int) $property_id ?> }"
+                            x-init="saved = !!(window.ptIsPropertySaved && window.ptIsPropertySaved(propId));
+                                    window.addEventListener('saved-properties-changed', () => {
+                                        saved = !!(window.ptIsPropertySaved && window.ptIsPropertySaved(propId));
+                                    })"
+                            @click="window.ptToggleSavedProperty && window.ptToggleSavedProperty(propId).then(() => {
+                                saved = !!(window.ptIsPropertySaved && window.ptIsPropertySaved(propId));
+                            })"
+                            :aria-label="saved ? 'Remove from saved' : 'Save this property'"
+                            :class="saved ? 'bg-white text-[var(--primary-color)]' : 'bg-white/20 text-white'"
+                            class="md:hidden absolute top-[3.765vw] right-[3.765vw] w-[10vw] h-[10vw] rounded-full flex items-center justify-center transition">
+                            <svg class="w-[5vw] h-[5vw]"
+                                 viewBox="0 0 24 24"
+                                 :fill="saved ? 'currentColor' : 'none'"
+                                 stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round"
+                                    d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"/>
+                            </svg>
+                        </button>
+                        <h4
+                            class="md:text-[1.875vw] text-[11.471vw] md:text-black/90 text-white md:mb-[0.833vw] mb-none font-inter font-bold">
+                            $ <?= esc_html($formatted_price); ?></h4>
+                        <h6
+                            class="md:text-[0.833vw] text-[3.765vw] md:text-black/90 text-white font-inter text-right font-bold">
+                            <?= esc_html($area) ?> <span class="font-light md:text-gray-800 text-gray-300">/ sqft</span>
+                        </h6>
+                    </div>
                 </div>
             </div>
 

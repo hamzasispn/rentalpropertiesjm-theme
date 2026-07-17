@@ -282,6 +282,49 @@ $listing_statuses_archive = get_terms(array('taxonomy' => 'property_listing_stat
                             <span x-text="totalResults" class="font-bold text-slate-900"></span>
                             <span>homes</span>
                         </span>
+
+                        <!-- Save search button + inline naming popover -->
+                        <div class="relative" @click.outside="showSaveSearch = false">
+                            <button type="button"
+                                @click="openSaveSearchDialog()"
+                                class="inline-flex items-center gap-1.5 px-3 py-2 border border-slate-200 rounded-full text-sm font-medium bg-white text-slate-700 hover:border-[var(--primary-color)] hover:text-[var(--primary-color)] transition">
+                                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"/>
+                                </svg>
+                                Save search
+                            </button>
+
+                            <div x-show="showSaveSearch" x-transition x-cloak
+                                 class="absolute right-0 top-full mt-2 w-80 bg-white border border-slate-200 rounded-xl shadow-xl z-40 p-4">
+                                <h4 class="font-semibold text-slate-900 mb-1">Save this search</h4>
+                                <p class="text-xs text-slate-500 mb-3">We'll remember these filters so you can jump back to them next time.</p>
+
+                                <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1">Name</label>
+                                <input type="text" x-model="saveSearchLabel" placeholder="e.g. 3-bed houses in Kingston"
+                                       class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-[var(--primary-color)]/30 focus:border-[var(--primary-color)] outline-none mb-3">
+
+                                <label class="flex items-start gap-2 mb-4 cursor-pointer select-none">
+                                    <input type="checkbox" x-model="saveSearchWeekly" class="mt-0.5 rounded text-[var(--primary-color)]">
+                                    <span class="text-sm text-slate-700">
+                                        Email me weekly when new listings match
+                                        <span class="block text-xs text-slate-400 mt-0.5">One digest per week per search — no spam.</span>
+                                    </span>
+                                </label>
+
+                                <div class="flex items-center gap-2 justify-end">
+                                    <button type="button" @click="showSaveSearch = false"
+                                        class="text-sm text-slate-500 px-3 py-1.5 hover:text-slate-700">Cancel</button>
+                                    <button type="button" @click="submitSaveSearch()" :disabled="savingSearch"
+                                        class="text-sm text-white font-semibold px-4 py-2 rounded-lg disabled:opacity-60"
+                                        style="background:var(--primary-color);"
+                                        x-text="savingSearch ? 'Saving…' : 'Save search'"></button>
+                                </div>
+
+                                <p x-show="saveSearchError" x-text="saveSearchError" class="mt-2 text-xs text-red-600"></p>
+                                <p x-show="saveSearchSuccess" class="mt-2 text-xs text-green-600">Saved — you can find it in your dashboard.</p>
+                            </div>
+                        </div>
+
                         <button type="button" @click="clearFilters()"
                             class="text-sm text-slate-500 hover:text-red-600 underline-offset-2 hover:underline transition">
                             Clear all
@@ -439,6 +482,14 @@ $listing_statuses_archive = get_terms(array('taxonomy' => 'property_listing_stat
             currentPage: 1,
             totalResults: 0,
             totalPages: 1,
+
+            // Save search popover
+            showSaveSearch: false,
+            saveSearchLabel: '',
+            saveSearchWeekly: true,
+            savingSearch: false,
+            saveSearchError: '',
+            saveSearchSuccess: false,
 
             // Map state
             map: null,
@@ -796,6 +847,64 @@ $listing_statuses_archive = get_terms(array('taxonomy' => 'property_listing_stat
                         console.error('Error fetching properties:', error);
                         this.loading = false;
                     });
+            },
+
+            // Called from the "Save search" button in the filter row.
+            // Guests get bounced to the auth modal — we never silently drop the save.
+            openSaveSearchDialog() {
+                if (!window.wpUser || !window.wpUser.isLoggedIn) {
+                    window.dispatchEvent(new CustomEvent('open-auth-modal', { detail: { mode: 'login' } }));
+                    return;
+                }
+                this.saveSearchError = '';
+                this.saveSearchSuccess = false;
+                // Auto-fill a reasonable default label from active filters.
+                if (!this.saveSearchLabel) {
+                    const bits = [];
+                    if (this.filters.listingStatus) bits.push(this.filters.listingStatus === 'rent' ? 'Rent' : 'Buy');
+                    if (this.filters.beds)  bits.push(this.filters.beds + '+ bed');
+                    if (this.filters.city)  bits.push(this.filters.city);
+                    if (this.filters.location) bits.push(this.filters.location);
+                    this.saveSearchLabel = bits.length ? bits.join(' · ') : 'My search';
+                }
+                this.showSaveSearch = true;
+            },
+
+            async submitSaveSearch() {
+                if (!this.saveSearchLabel.trim()) {
+                    this.saveSearchError = 'Give this search a name so you can find it later.';
+                    return;
+                }
+                this.savingSearch = true;
+                this.saveSearchError = '';
+                const criteria = {
+                    search:         this.filters.search || '',
+                    property_type:  (this.filters.types || []).join(','),
+                    listing_status: this.filters.listingStatus || '',
+                    city:           this.filters.city || '',
+                    location:       this.filters.location || '',
+                    beds:           this.filters.beds || 0,
+                    baths:          this.filters.baths || 0,
+                    price_min:      this.filters.priceMin || 0,
+                    price_max:      this.filters.priceMax || 0,
+                    area_min:       this.filters.areaMin || 0,
+                    area_max:       this.filters.areaMax || 0,
+                    featured:       this.filters.featured ? '1' : '',
+                    currency:       this.selectedCurrency || 'usd',
+                    keyword:        this.filters.keyword || '',
+                };
+                try {
+                    const res = await window.ptSaveSearch(this.saveSearchLabel.trim(), criteria, this.saveSearchWeekly);
+                    if (res && res.success) {
+                        this.saveSearchSuccess = true;
+                        setTimeout(() => { this.showSaveSearch = false; this.saveSearchSuccess = false; }, 1600);
+                    } else {
+                        this.saveSearchError = 'Could not save. Please try again.';
+                    }
+                } catch (e) {
+                    this.saveSearchError = 'Network error. Please try again.';
+                }
+                this.savingSearch = false;
             },
 
             clearFilters() {
