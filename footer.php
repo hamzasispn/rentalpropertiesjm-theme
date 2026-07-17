@@ -142,7 +142,10 @@ foreach ($rows as $r) $parish_counts[$r->city] = (int) $r->c;
             </div>
 
             <!-- Language / currency + social -->
-            <div class="flex items-center gap-4 flex-wrap">
+            <div class="flex items-center gap-4 flex-wrap"
+                 x-data="footerPrefs()" x-init="init()">
+
+                <!-- Language (placeholder — no i18n yet, kept for design parity) -->
                 <button type="button"
                         class="inline-flex items-center gap-1.5 text-xs text-white hover:bg-slate-800 px-3 py-1.5 rounded-full border border-slate-700 transition">
                     <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -151,13 +154,30 @@ foreach ($rows as $r) $parish_counts[$r->city] = (int) $r->c;
                     </svg>
                     English (JM)
                 </button>
-                <button type="button"
-                        class="inline-flex items-center gap-1.5 text-xs text-white hover:bg-slate-800 px-3 py-1.5 rounded-full border border-slate-700 transition">
-                    <span class="font-semibold">USD</span>
-                    <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
-                    </svg>
-                </button>
+
+                <!-- Currency dropdown — real -->
+                <div class="relative" @click.outside="showCurrency = false">
+                    <button type="button" @click="showCurrency = !showCurrency"
+                            class="inline-flex items-center gap-1.5 text-xs text-white hover:bg-slate-800 px-3 py-1.5 rounded-full border border-slate-700 transition">
+                        <span class="font-semibold" x-text="currency.toUpperCase()"></span>
+                        <svg class="w-3 h-3 transition" :class="showCurrency && 'rotate-180'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+                        </svg>
+                    </button>
+                    <div x-show="showCurrency" x-transition x-cloak
+                         class="absolute bottom-full right-0 mb-2 w-40 bg-slate-800 border border-slate-700 rounded-xl shadow-xl p-1 z-30">
+                        <template x-for="opt in currencyOptions" :key="opt.code">
+                            <button type="button" @click="selectCurrency(opt.code)"
+                                    :class="currency === opt.code ? 'bg-slate-700 text-white' : 'text-slate-300 hover:bg-slate-700/60'"
+                                    class="w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs">
+                                <span x-text="opt.label"></span>
+                                <svg x-show="currency === opt.code" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+                                </svg>
+                            </button>
+                        </template>
+                    </div>
+                </div>
 
                 <?php if (!empty($social_links) && is_array($social_links)): ?>
                     <div class="flex items-center gap-2 md:ml-2">
@@ -175,6 +195,49 @@ foreach ($rows as $r) $parish_counts[$r->city] = (int) $r->c;
 
     </div>
 </footer>
+
+<script>
+/**
+ * Footer preferences — currency dropdown.
+ *
+ * Persists choice in localStorage, syncs the URL's `currency` param (so
+ * archive/single pages read it), and broadcasts `pt-currency-changed` in
+ * case other components want to react without a reload.
+ */
+function footerPrefs() {
+    return {
+        showCurrency: false,
+        currency: 'usd',
+        currencyOptions: [
+            { code: 'usd', label: 'USD — US Dollar' },
+            { code: 'jmd', label: 'JMD — Jamaican Dollar' },
+        ],
+        init() {
+            const url = new URL(window.location.href);
+            const fromUrl = (url.searchParams.get('currency') || '').toLowerCase();
+            const fromLs  = (localStorage.getItem('pt_currency') || '').toLowerCase();
+            const valid   = c => c === 'usd' || c === 'jmd';
+            this.currency = valid(fromUrl) ? fromUrl : (valid(fromLs) ? fromLs : 'usd');
+            if (this.currency !== fromLs) localStorage.setItem('pt_currency', this.currency);
+        },
+        selectCurrency(code) {
+            if (code === this.currency) { this.showCurrency = false; return; }
+            this.currency = code;
+            this.showCurrency = false;
+            localStorage.setItem('pt_currency', code);
+            window.dispatchEvent(new CustomEvent('pt-currency-changed', { detail: { currency: code } }));
+
+            // Reload with the currency in the URL so server-rendered pages
+            // (single, checkout) pick it up too. Archive Alpine watches the
+            // event above and will re-render without needing this reload,
+            // but a reload keeps behavior identical on every page.
+            const url = new URL(window.location.href);
+            url.searchParams.set('currency', code);
+            window.location.href = url.toString();
+        },
+    };
+}
+</script>
 
 <?php wp_footer(); ?>
 </body>
