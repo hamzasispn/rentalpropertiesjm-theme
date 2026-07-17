@@ -41,41 +41,37 @@
         </div>
 
 
-        <!-- Top-right stack: Save heart + Featured badge -->
-        <div class="absolute top-4 right-4 z-20 flex flex-col items-end gap-2">
+        <!-- Save button — alone in top-right, standard placement -->
+        <button type="button"
+            x-data="{ saved: false }"
+            x-init="saved = !!(window.ptIsPropertySaved && window.ptIsPropertySaved(property.id));
+                    window.addEventListener('saved-properties-changed', () => {
+                        saved = !!(window.ptIsPropertySaved && window.ptIsPropertySaved(property.id));
+                    })"
+            @click.stop.prevent="window.ptToggleSavedProperty && window.ptToggleSavedProperty(property.id).then(() => {
+                saved = !!(window.ptIsPropertySaved && window.ptIsPropertySaved(property.id));
+            })"
+            :aria-label="saved ? 'Remove from saved' : 'Save property'"
+            :class="saved
+                ? 'bg-white text-[var(--primary-color)]'
+                : 'bg-black/40 text-white hover:bg-black/60'"
+            class="absolute top-4 right-4 z-20 w-9 h-9 md:w-10 md:h-10 rounded-full shadow-md flex items-center justify-center transition backdrop-blur-sm">
+            <svg class="w-4 h-4 md:w-5 md:h-5"
+                 viewBox="0 0 24 24"
+                 :fill="saved ? 'currentColor' : 'none'"
+                 stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round"
+                      d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"/>
+            </svg>
+        </button>
 
-            <!-- Save (heart) button — logged out opens auth modal -->
-            <button type="button"
-                x-data="{ saved: false }"
-                x-init="saved = !!(window.ptIsPropertySaved && window.ptIsPropertySaved(property.id));
-                        window.addEventListener('saved-properties-changed', () => {
-                            saved = !!(window.ptIsPropertySaved && window.ptIsPropertySaved(property.id));
-                        })"
-                @click.stop.prevent="window.ptToggleSavedProperty && window.ptToggleSavedProperty(property.id).then(() => {
-                    saved = !!(window.ptIsPropertySaved && window.ptIsPropertySaved(property.id));
-                })"
-                :aria-label="saved ? 'Remove from saved' : 'Save property'"
-                :class="saved
-                    ? 'bg-white text-[var(--primary-color)]'
-                    : 'bg-black/40 text-white hover:bg-black/60'"
-                class="w-9 h-9 md:w-10 md:h-10 rounded-full shadow-md flex items-center justify-center transition backdrop-blur-sm">
-                <svg class="w-4 h-4 md:w-5 md:h-5"
-                     viewBox="0 0 24 24"
-                     :fill="saved ? 'currentColor' : 'none'"
-                     stroke="currentColor" stroke-width="2">
-                    <path stroke-linecap="round" stroke-linejoin="round"
-                          d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"/>
-                </svg>
-            </button>
-
-            <!-- Featured Badge -->
-            <div x-show="property.featured"
-                class="bg-gradient-to-r from-red-700 to-red-500 text-white px-3 py-1 rounded-full text-[3.294vw] md:text-[0.729vw] font-bold shadow-lg flex gap-1 items-center font-inter">
-                <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M6 1L8.5 4.5L12 5L8.5 7.5L6 11L3.5 7.5L0 5L3.5 4.5L6 1Z" fill="white" />
-                </svg>
-                Super Hot
-            </div>
+        <!-- Featured "Super Hot" badge — top-left (image gallery counter moves below it) -->
+        <div x-show="property.featured"
+            class="absolute top-4 left-4 z-10 bg-gradient-to-r from-red-700 to-red-500 text-white px-3 py-1 rounded-full text-[3.294vw] md:text-[0.729vw] font-bold shadow-lg flex gap-1 items-center font-inter">
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M6 1L8.5 4.5L12 5L8.5 7.5L6 11L3.5 7.5L0 5L3.5 4.5L6 1Z" fill="white" />
+            </svg>
+            Super Hot
         </div>
 
         <!-- Listing Status Badge (Buy / Rent) -->
@@ -86,7 +82,8 @@
         </div>
 
         <div x-show="property.gallery && property.gallery.length > 1"
-            class="absolute top-4 left-4 bg-black/50 text-white px-3 py-1.5 rounded-full text-sm font-bold shadow-lg flex gap-2 items-center font-inter">
+            :class="property.featured ? 'top-14' : 'top-4'"
+            class="absolute left-4 bg-black/50 text-white px-3 py-1.5 rounded-full text-sm font-bold shadow-lg flex gap-2 items-center font-inter">
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path d="M8 6C6.916 6 6 6.916 6 8C6 9.084 6.916 10 8 10C9.084 10 10 9.084 10 8C10 6.916 9.084 6 8 6Z"
                     fill="white" />
