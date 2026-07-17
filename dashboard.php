@@ -12,6 +12,15 @@ if (!is_user_logged_in()) {
     exit;
 }
 
+// Members (no active subscription plan) belong on /my-account/, not here.
+// This dashboard is the realtor cockpit — properties, billing, analytics.
+if (function_exists('pt_user_is_agent') && !pt_user_is_agent(get_current_user_id())) {
+    wp_redirect(function_exists('pt_get_member_dashboard_url')
+        ? pt_get_member_dashboard_url()
+        : home_url('/my-account/'));
+    exit;
+}
+
 // Personalised page — never let a browser, proxy, or page-cache plugin serve a stale copy.
 // This was causing plan upgrades/downgrades to look "stuck" until the user cleared cookies/cache.
 nocache_headers();
@@ -92,22 +101,6 @@ $subscription = property_theme_get_user_subscription($user_id) ?? array();
                     <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6M9 8h6M5 21V5a2 2 0 012-2h10a2 2 0 012 2v16l-3-2-2 2-2-2-2 2-2-2-3 2z"/>
                 </svg>
                 Invoices
-            </a>
-            <a href="#saved-properties" @click="activateTab('saved-properties', true)"
-                :class="{ 'bg-slate-800 font-semibold': activeTab === 'saved-properties' }"
-                class="nav-link px-4 py-3 rounded-lg hover:bg-slate-800 transition flex items-center gap-3">
-                <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"/>
-                </svg>
-                Saved Properties
-            </a>
-            <a href="#saved-searches" @click="activateTab('saved-searches', true)"
-                :class="{ 'bg-slate-800 font-semibold': activeTab === 'saved-searches' }"
-                class="nav-link px-4 py-3 rounded-lg hover:bg-slate-800 transition flex items-center gap-3">
-                <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
-                </svg>
-                Saved Searches
             </a>
             <a href="#settings" @click="activateTab('settings', true)"
                 :class="{ 'bg-slate-800 font-semibold': activeTab === 'settings' }"
@@ -517,122 +510,6 @@ $subscription = property_theme_get_user_subscription($user_id) ?? array();
                                     </template>
                                 </tbody>
                             </table>
-                        </div>
-                    </template>
-                </div>
-            </div>
-
-            <!-- Saved Properties Tab -->
-            <div id="saved-properties" x-show="activeTab === 'saved-properties'" x-transition
-                 x-data="savedPropertiesTab()" x-init="load()"
-                 class="tab-content space-y-6">
-                <div class="flex justify-between items-start">
-                    <div>
-                        <h1 class="text-3xl font-bold text-slate-900">Saved Properties</h1>
-                        <p class="text-slate-600 mt-1">Properties you've bookmarked for later.</p>
-                    </div>
-                </div>
-
-                <div x-show="loading" class="bg-white rounded-lg shadow p-12 text-center text-slate-500">
-                    Loading…
-                </div>
-
-                <div x-show="!loading && items.length === 0" class="bg-white rounded-lg shadow p-12 text-center">
-                    <div class="w-14 h-14 mx-auto mb-4 rounded-full bg-slate-100 flex items-center justify-center">
-                        <svg class="w-7 h-7 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"/>
-                        </svg>
-                    </div>
-                    <h3 class="text-lg font-semibold text-slate-900">No saved properties yet</h3>
-                    <p class="text-slate-500 mt-1">Tap the save icon on any property to bookmark it here.</p>
-                    <a href="<?= esc_url(home_url('/property/')); ?>" class="inline-block mt-4 px-5 py-2 rounded-lg text-white font-semibold" style="background:var(--primary-color);">Browse listings</a>
-                </div>
-
-                <div x-show="!loading && items.length > 0" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
-                    <template x-for="item in items" :key="item.id">
-                        <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden flex flex-col">
-                            <a :href="item.permalink" class="block relative h-48 bg-slate-100">
-                                <img :src="item.thumbnail" :alt="item.title" class="w-full h-full object-cover">
-                            </a>
-                            <div class="p-4 flex-1 flex flex-col">
-                                <div class="flex items-start justify-between gap-3">
-                                    <a :href="item.permalink" class="font-semibold text-slate-900 line-clamp-2 hover:text-[var(--primary-color)]" x-text="item.title"></a>
-                                    <span class="text-[var(--primary-color)] font-bold whitespace-nowrap" x-text="'$' + Number(item.price).toLocaleString()"></span>
-                                </div>
-                                <p class="text-sm text-slate-500 mt-1 line-clamp-1" x-text="item.address"></p>
-                                <div class="flex items-center gap-3 mt-3 text-xs text-slate-600">
-                                    <span x-show="item.bedrooms" x-text="item.bedrooms + ' Beds'"></span>
-                                    <span x-show="item.bathrooms" x-text="item.bathrooms + ' Baths'"></span>
-                                    <span x-show="item.area" x-text="item.area + ' sqft'"></span>
-                                </div>
-                                <div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between">
-                                    <a :href="item.permalink" class="text-sm font-semibold text-[var(--primary-color)]">View →</a>
-                                    <button type="button" @click="remove(item.id)"
-                                        class="text-sm text-slate-400 hover:text-red-500 inline-flex items-center gap-1">
-                                        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"/></svg>
-                                        Remove
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    </template>
-                </div>
-            </div>
-
-            <!-- Saved Searches Tab -->
-            <div id="saved-searches" x-show="activeTab === 'saved-searches'" x-transition
-                 x-data="savedSearchesTab()" x-init="load()"
-                 class="tab-content space-y-6">
-                <div class="flex justify-between items-start">
-                    <div>
-                        <h1 class="text-3xl font-bold text-slate-900">Saved Searches</h1>
-                        <p class="text-slate-600 mt-1">Your search presets — reopen them anytime, or get weekly emails on new matches.</p>
-                    </div>
-                    <a href="<?= esc_url(home_url('/property/')); ?>"
-                       class="px-4 py-2 rounded-lg text-white font-semibold text-sm"
-                       style="background:var(--primary-color);">+ New search</a>
-                </div>
-
-                <div x-show="loading" class="bg-white rounded-lg shadow p-12 text-center text-slate-500">
-                    Loading…
-                </div>
-
-                <div x-show="!loading && items.length === 0" class="bg-white rounded-lg shadow p-12 text-center">
-                    <div class="w-14 h-14 mx-auto mb-4 rounded-full bg-slate-100 flex items-center justify-center">
-                        <svg class="w-7 h-7 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
-                        </svg>
-                    </div>
-                    <h3 class="text-lg font-semibold text-slate-900">No saved searches yet</h3>
-                    <p class="text-slate-500 mt-1">Run a search on the properties page and hit "Save this search".</p>
-                </div>
-
-                <div x-show="!loading && items.length > 0" class="bg-white rounded-lg shadow divide-y divide-slate-100">
-                    <template x-for="item in items" :key="item.id">
-                        <div class="p-5 flex items-center gap-4 flex-wrap">
-                            <div class="flex-1 min-w-0">
-                                <h3 class="text-lg font-semibold text-slate-900 truncate" x-text="item.label"></h3>
-                                <p class="text-sm text-slate-500 mt-0.5" x-text="describeCriteria(item.criteria)"></p>
-                            </div>
-
-                            <!-- Weekly toggle -->
-                            <label class="inline-flex items-center gap-2 cursor-pointer select-none px-3 py-1.5 border border-slate-200 rounded-lg hover:bg-slate-50">
-                                <input type="checkbox" :checked="item.weekly_email"
-                                       @change="toggleWeekly(item)"
-                                       class="rounded text-[var(--primary-color)] focus:ring-[var(--primary-color)]/30">
-                                <span class="text-sm text-slate-700">Weekly email</span>
-                            </label>
-
-                            <a :href="buildSearchUrl(item.criteria)"
-                               class="px-3 py-1.5 rounded-lg text-white text-sm font-semibold"
-                               style="background:var(--primary-color);">Run</a>
-
-                            <button type="button" @click="remove(item.id)"
-                                    class="text-slate-400 hover:text-red-500 p-1.5" title="Delete">
-                                <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M1 7h22M9 7V4a1 1 0 011-1h4a1 1 0 011 1v3"/>
-                                </svg>
-                            </button>
                         </div>
                     </template>
                 </div>
@@ -1186,109 +1063,5 @@ function unmountUpdateCard() {
     });
 </script>
 
-<!-- Saved properties + saved searches: Alpine tab components -->
-<script>
-function savedPropertiesTab() {
-    return {
-        loading: true,
-        items: [],
-        async load() {
-            this.loading = true;
-            try {
-                const res = await fetch(window.wpUser.restRoot + '/user/saved-properties', {
-                    headers: { 'X-WP-Nonce': window.wpUser.nonce },
-                    credentials: 'same-origin',
-                });
-                const data = await res.json();
-                this.items = (data && data.items) || [];
-            } catch (e) { this.items = []; }
-            this.loading = false;
-        },
-        async remove(id) {
-            const before = this.items;
-            this.items = this.items.filter(x => Number(x.id) !== Number(id));
-            const res = await window.ptToggleSavedProperty(id);
-            if (!res || res.state === 'error') this.items = before;
-        },
-    };
-}
-
-function savedSearchesTab() {
-    return {
-        loading: true,
-        items: [],
-        async load() {
-            this.loading = true;
-            try {
-                const res = await fetch(window.wpUser.restRoot + '/user/saved-searches', {
-                    headers: { 'X-WP-Nonce': window.wpUser.nonce },
-                    credentials: 'same-origin',
-                });
-                const data = await res.json();
-                this.items = (data && data.items) || [];
-            } catch (e) { this.items = []; }
-            this.loading = false;
-        },
-        async remove(id) {
-            if (!confirm('Delete this saved search?')) return;
-            const before = this.items;
-            this.items = this.items.filter(x => x.id !== id);
-            const res = await fetch(window.wpUser.restRoot + '/user/saved-searches/' + encodeURIComponent(id), {
-                method: 'DELETE',
-                headers: { 'X-WP-Nonce': window.wpUser.nonce },
-                credentials: 'same-origin',
-            });
-            if (!res.ok) this.items = before;
-        },
-        async toggleWeekly(item) {
-            const nextVal = !item.weekly_email;
-            item.weekly_email = nextVal;
-            const res = await fetch(window.wpUser.restRoot + '/user/saved-searches/' + encodeURIComponent(item.id), {
-                method: 'PATCH',
-                headers: { 'Content-Type': 'application/json', 'X-WP-Nonce': window.wpUser.nonce },
-                credentials: 'same-origin',
-                body: JSON.stringify({ weekly_email: nextVal }),
-            });
-            if (!res.ok) item.weekly_email = !nextVal;
-        },
-        describeCriteria(c) {
-            if (!c) return 'All properties';
-            const parts = [];
-            if (c.listing_status) parts.push(c.listing_status === 'rent' ? 'For Rent' : 'For Sale');
-            if (c.city) parts.push(c.city);
-            if (c.location) parts.push(c.location);
-            if (c.property_type) parts.push(c.property_type);
-            if (c.beds) parts.push(c.beds + '+ Beds');
-            if (c.baths) parts.push(c.baths + '+ Baths');
-            if (c.price_min || c.price_max) {
-                const cur = (c.currency || 'usd').toUpperCase();
-                const mn = c.price_min ? Number(c.price_min).toLocaleString() : '0';
-                const mx = c.price_max ? Number(c.price_max).toLocaleString() : '∞';
-                parts.push(cur + ' ' + mn + ' – ' + mx);
-            }
-            if (c.featured) parts.push('Featured only');
-            if (c.search) parts.push('"' + c.search + '"');
-            return parts.length ? parts.join(' · ') : 'All properties';
-        },
-        buildSearchUrl(c) {
-            const base = '<?= esc_url(home_url('/property/')); ?>';
-            const map = {
-                search: 'search', property_type: 'property_type', listing_status: 'listing_status',
-                city: 'prop_city', location: 'location', beds: 'beds', baths: 'baths',
-                price_min: 'price_min', price_max: 'price_max', area_min: 'area_min',
-                area_max: 'area_max', featured: 'featured', currency: 'currency', keyword: 'keyword',
-            };
-            const params = new URLSearchParams();
-            for (const key of Object.keys(map)) {
-                if (c && c[key] !== undefined && c[key] !== '' && c[key] !== 0 && c[key] !== '0') {
-                    params.set(map[key], c[key]);
-                }
-            }
-            const qs = params.toString();
-            return qs ? (base + '?' + qs) : base;
-        },
-    };
-}
-</script>
 
 <?php get_footer(); ?>

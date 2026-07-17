@@ -4,13 +4,22 @@
  * Login page template
  */
 
+// Role-based home: agents (paid subscription) → /dashboard/,
+// members → /my-account/. Falls back to a hard-coded URL if the helper
+// isn't loaded yet during theme upgrade.
+$default_redirect = function ($uid = 0) {
+    if (function_exists('pt_get_user_home_url')) return pt_get_user_home_url($uid);
+    if ($uid && function_exists('pt_user_is_agent') && pt_user_is_agent($uid)) return home_url('/dashboard/');
+    return home_url('/my-account/');
+};
+
 if (is_user_logged_in()) {
-    wp_redirect(home_url('/dashboard'));
+    wp_redirect($default_redirect(get_current_user_id()));
     exit;
 }
 
 // Only honor a redirect_to that lives on this site to prevent open-redirect abuse.
-$redirect_to = home_url('/dashboard');
+$redirect_to = $default_redirect();
 if (!empty($_GET['redirect_to'])) {
     $candidate = esc_url_raw(wp_unslash($_GET['redirect_to']));
     $safe      = wp_validate_redirect($candidate, $redirect_to);
@@ -79,7 +88,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['login_submit'])) {
         } else {
             // Reset on success.
             delete_transient($throttle_key);
-            wp_safe_redirect($redirect_to);
+            // If no explicit ?redirect_to was passed, land the user on the
+            // right home for their role instead of the pre-signon default.
+            $target = empty($_GET['redirect_to']) ? $default_redirect($user->ID) : $redirect_to;
+            wp_safe_redirect($target);
             exit;
         }
     }

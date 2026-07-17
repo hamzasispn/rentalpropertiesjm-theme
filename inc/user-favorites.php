@@ -15,6 +15,70 @@ if (!defined('PT_SAVED_PROPS_META'))  define('PT_SAVED_PROPS_META',  '_pt_saved_
 if (!defined('PT_SAVED_SEARCH_META')) define('PT_SAVED_SEARCH_META', '_pt_saved_searches');
 
 /* ────────────────────────────────────────────────────────────
+ *  Role split: members vs. agents
+ *
+ *  Members  = subscribers with no active subscription plan.
+ *             Land on /my-account/ (saved-items dashboard).
+ *  Agents   = users with an active subscription plan.
+ *             Land on /dashboard/ (full realtor dashboard).
+ *
+ *  The auth-modal register form always creates a member; agents still
+ *  register through /register/ where they pick a plan.
+ * ──────────────────────────────────────────────────────────── */
+
+function pt_user_is_agent($user_id) {
+    $uid = (int) $user_id;
+    if ($uid <= 0) return false;
+    if (function_exists('property_theme_get_user_subscription')) {
+        $sub = property_theme_get_user_subscription($uid);
+        if (!empty($sub)) return true;
+    }
+    // Fallback for admins/editors so they still land somewhere useful.
+    return user_can($uid, 'edit_others_posts');
+}
+
+function pt_get_member_dashboard_url() {
+    $page = get_page_by_path('my-account');
+    return $page ? get_permalink($page) : home_url('/my-account/');
+}
+
+function pt_get_agent_dashboard_url() {
+    $page = get_page_by_path('dashboard');
+    return $page ? get_permalink($page) : home_url('/dashboard/');
+}
+
+function pt_get_user_home_url($user_id) {
+    return pt_user_is_agent($user_id) ? pt_get_agent_dashboard_url() : pt_get_member_dashboard_url();
+}
+
+/**
+ * Auto-create the /my-account/ page once, wired to the member dashboard
+ * template. Runs at most once per install (guarded by an option flag).
+ */
+add_action('init', function () {
+    if (wp_doing_ajax() || wp_doing_cron() || defined('REST_REQUEST')) return;
+    if (get_option('pt_my_account_page_id')) return;
+
+    $existing = get_page_by_path('my-account');
+    if ($existing) {
+        update_option('pt_my_account_page_id', (int) $existing->ID);
+        update_post_meta($existing->ID, '_wp_page_template', 'page-my-account.php');
+        return;
+    }
+    $page_id = wp_insert_post(array(
+        'post_title'   => 'My Account',
+        'post_name'    => 'my-account',
+        'post_status'  => 'publish',
+        'post_type'    => 'page',
+        'post_content' => '',
+    ));
+    if ($page_id && !is_wp_error($page_id)) {
+        update_post_meta($page_id, '_wp_page_template', 'page-my-account.php');
+        update_option('pt_my_account_page_id', (int) $page_id);
+    }
+}, 20);
+
+/* ────────────────────────────────────────────────────────────
  *  Helpers
  * ──────────────────────────────────────────────────────────── */
 
@@ -235,7 +299,10 @@ function pt_rest_login($request) {
     if (is_wp_error($user)) {
         return new WP_REST_Response(array('success' => false, 'message' => 'Invalid email or password.'), 401);
     }
-    return array('success' => true);
+    return array(
+        'success'  => true,
+        'redirect' => pt_get_user_home_url($user->ID),
+    );
 }
 
 function pt_rest_register($request) {
@@ -259,12 +326,20 @@ function pt_rest_register($request) {
     if (is_wp_error($uid)) {
         return new WP_REST_Response(array('success' => false, 'message' => 'Could not create account.'), 400);
     }
+    // Popup signup always creates a plain member (subscriber). Agents go
+    // through /register/ where they also pick a plan.
+    $u = new WP_User($uid);
+    $u->set_role('subscriber');
+
     if ($name) {
         wp_update_user(array('ID' => $uid, 'display_name' => $name, 'first_name' => $name));
     }
     wp_set_current_user($uid);
     wp_set_auth_cookie($uid, true, is_ssl());
-    return array('success' => true);
+    return array(
+        'success'  => true,
+        'redirect' => pt_get_member_dashboard_url(),
+    );
 }
 
 /* ────────────────────────────────────────────────────────────
@@ -273,14 +348,16 @@ function pt_rest_register($request) {
 
 add_action('wp_head', function () {
     $uid = get_current_user_id();
-    $dashboard_page = get_page_by_path('dashboard');
     $state = array(
         'isLoggedIn'      => is_user_logged_in(),
+        'isAgent'         => $uid ? pt_user_is_agent($uid) : false,
         'nonce'           => wp_create_nonce('wp_rest'),
         'restRoot'        => esc_url_raw(rest_url('property-theme/v1')),
         'loginUrl'        => wp_login_url(),
         'registerUrl'     => wp_registration_url(),
-        'dashboardUrl'    => $dashboard_page ? get_permalink($dashboard_page) : home_url('/dashboard/'),
+        'dashboardUrl'    => $uid ? pt_get_user_home_url($uid) : pt_get_member_dashboard_url(),
+        'memberHomeUrl'   => pt_get_member_dashboard_url(),
+        'agentHomeUrl'    => pt_get_agent_dashboard_url(),
         'savedProperties' => $uid ? pt_get_saved_properties($uid) : array(),
     );
     echo '<script id="pt-user-state">window.wpUser = ' . wp_json_encode($state) . ';</script>' . "\n";

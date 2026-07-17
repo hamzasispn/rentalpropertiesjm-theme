@@ -169,8 +169,9 @@ function authModal() {
                     this.loading = false;
                     return;
                 }
-                // Reload so wpUser + savedProperties reflect the new auth state
-                window.location.reload();
+                // Redirect to the member dashboard by default. Server may
+                // return a specific URL (agents landing on /dashboard/).
+                window.location.href = data.redirect || (window.wpUser && window.wpUser.memberHomeUrl) || '/my-account/';
             } catch (e) {
                 this.error = 'Network error. Please try again.';
                 this.loading = false;
