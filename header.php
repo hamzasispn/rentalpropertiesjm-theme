@@ -48,7 +48,13 @@ $text_secondary = get_option('mytheme_color_text_secondary');
 
     <?php if (is_front_page()): ?>
         <?php get_template_part('template-parts/section', 'hero'); ?>
-    <?php elseif (!is_page([8, 26, 28]) && !is_singular('property') && !is_404()): ?>
+    <?php elseif (
+        !is_page([8, 26, 28])
+        && !is_singular('property')
+        && !is_404()
+        && !is_page_template('dashboard.php')
+        && !is_page_template('page-my-account.php')
+    ): ?>
             <?php get_template_part('template-parts/breadcrum/breadcrum'); ?>
     <?php endif; ?>
 

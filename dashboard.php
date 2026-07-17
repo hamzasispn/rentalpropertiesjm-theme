@@ -1063,5 +1063,10 @@ function unmountUpdateCard() {
     });
 </script>
 
-
-<?php get_footer(); ?>
+<?php
+// Dashboard has its own chrome (sidebar + topbar) — the site footer's
+// parish grid / link columns would just be noise here.
+wp_footer();
+?>
+</body>
+</html>

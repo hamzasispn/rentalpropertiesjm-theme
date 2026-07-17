@@ -168,9 +168,22 @@ $search_count = count(function_exists('pt_get_saved_searches') ? pt_get_saved_se
             <section id="saved-properties" x-show="activeTab === 'saved-properties'" x-transition
                      x-data="savedPropertiesTab()" x-init="load()"
                      class="space-y-6">
-                <div>
-                    <h1 class="text-3xl font-bold text-slate-900">Saved Properties</h1>
-                    <p class="text-slate-500 mt-1">Homes you've bookmarked for later.</p>
+                <div class="flex items-start justify-between gap-4 flex-wrap">
+                    <div>
+                        <h1 class="text-3xl font-bold text-slate-900">Saved Properties</h1>
+                        <p class="text-slate-500 mt-1">Homes you've bookmarked for later.</p>
+                    </div>
+                    <!-- Cross-link so users don't hunt for their search presets -->
+                    <a href="#saved-searches"
+                       class="group inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-slate-200 bg-white hover:border-[var(--primary-color)] hover:shadow-sm transition text-sm font-semibold text-slate-700 hover:text-[var(--primary-color)]">
+                        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                        </svg>
+                        View your saved searches
+                        <svg class="w-4 h-4 group-hover:translate-x-0.5 transition" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
+                        </svg>
+                    </a>
                 </div>
 
                 <div x-show="loading" class="bg-white rounded-2xl border border-slate-200 p-12 text-center text-slate-500">Loading…</div>
@@ -321,10 +334,16 @@ function memberAccount() {
     return {
         activeTab: 'overview',
         initTabs() {
-            const hash = (window.location.hash || '').replace('#', '');
-            if (hash && document.getElementById(hash)) {
-                this.activeTab = hash;
-            }
+            const setFromHash = () => {
+                const hash = (window.location.hash || '').replace('#', '');
+                if (hash && document.getElementById(hash)) {
+                    this.activeTab = hash;
+                }
+            };
+            setFromHash();
+            // React to same-page anchor clicks (e.g. the shortcut inside
+            // Saved Properties that links to Saved Searches).
+            window.addEventListener('hashchange', setFromHash);
         },
         activateTab(name, pushHash) {
             this.activeTab = name;
@@ -428,4 +447,10 @@ function savedSearchesTab() {
 }
 </script>
 
-<?php get_footer(); ?>
+<?php
+// Personal dashboard has its own chrome — skip the site footer's parish
+// grid / link columns which would compete with the sidebar here.
+wp_footer();
+?>
+</body>
+</html>
