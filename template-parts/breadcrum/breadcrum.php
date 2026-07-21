@@ -50,12 +50,11 @@ if (is_archive()) {
     <!-- ── Content ─────────────────────────────────────────────────────── -->
     <div class="relative max-w-[90%] mx-auto pt-[24vw] pb-[10vw] md:pt-[15vw] md:pb-[7vw] lg:pt-44 lg:pb-24">
 
-        <!-- Back-to-home pill — visible on every inner page so users always
-             have a one-tap way out. -->
+        <!-- Compact back-to-home pill on every inner page -->
         <?php if (!is_front_page()): ?>
         <a href="<?php echo esc_url(home_url('/')); ?>"
-           class="inline-flex items-center gap-2 px-4 py-2 mb-5 md:mb-7 rounded-full bg-white/15 hover:bg-white/25 backdrop-blur-sm text-white text-[3.2vw] md:text-[0.85vw] font-semibold transition">
-            <svg class="w-[3.5vw] h-[3.5vw] md:w-[0.9vw] md:h-[0.9vw]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+           class="inline-flex items-center gap-1 px-2.5 py-1 mb-4 md:mb-5 rounded-full bg-white/15 hover:bg-white/25 backdrop-blur-sm text-white text-[2.6vw] md:text-[0.7vw] font-medium transition">
+            <svg class="w-[2.8vw] h-[2.8vw] md:w-[0.72vw] md:h-[0.72vw]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/>
             </svg>
             Back to home

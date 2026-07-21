@@ -7,9 +7,9 @@ $logo = $args['logo'] ?? '';
     <div class="hidden lg:block bg-white rounded-br-[24px] absolute top-0 left-0 w-[21.51vw] h-full -z-10"></div>
     
     <!-- Top navigation bar -->
-    <nav class="w-[90%] lg:w-[80%] mx-auto flex flex-wrap items-center justify-between py-[1.875vw] lg:py-[1.615vw]">
-        <!-- Logo (bigger per client feedback) -->
-        <div class="w-[40%] sm:w-[25%] lg:w-[13vw] flex-shrink-0">
+    <nav class="w-[90%] lg:w-[90%] mx-auto flex flex-wrap items-center justify-between py-[1.875vw] lg:py-[1.615vw]">
+        <!-- Logo (16% of nav width on desktop, larger on mobile) -->
+        <div class="w-[40%] sm:w-[25%] lg:w-[16%] flex-shrink-0">
             <a href="<?= home_url(); ?>">
                 <?php if ($logo): ?>
                     <img src="<?php echo esc_url($logo); ?>" alt="Logo" class="h-[9vw] sm:h-[6vw] lg:h-[80px] object-contain">

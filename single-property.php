@@ -78,18 +78,18 @@ while (have_posts()):
     <section class="propertyBanner">
         <div class="md:w-[80%] w-[90%] mx-auto md:pt-[9.938vw] pt-[34.824vw] flex md:flex-col flex-col-reverse">
 
-            <!-- Back to properties pill so users always have a one-tap way out -->
-            <div class="mb-[4vw] md:mb-[1vw] flex items-center gap-2 flex-wrap">
+            <!-- Back to properties + Home pills — kept compact -->
+            <div class="mb-[3vw] md:mb-[0.75vw] flex items-center gap-1.5 flex-wrap">
                 <a href="<?= esc_url(get_post_type_archive_link('property') ?: home_url('/properties/')); ?>"
-                   class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-800 text-[3.2vw] md:text-[0.85vw] font-semibold transition">
-                    <svg class="w-[3.5vw] h-[3.5vw] md:w-[0.9vw] md:h-[0.9vw]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                   class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 text-[2.6vw] md:text-[0.7vw] font-medium transition">
+                    <svg class="w-[2.8vw] h-[2.8vw] md:w-[0.72vw] md:h-[0.72vw]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/>
                     </svg>
                     Back to properties
                 </a>
                 <a href="<?= esc_url(home_url('/')); ?>"
-                   class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-800 text-[3.2vw] md:text-[0.85vw] font-semibold transition">
-                    <svg class="w-[3.5vw] h-[3.5vw] md:w-[0.9vw] md:h-[0.9vw]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                   class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 text-[2.6vw] md:text-[0.7vw] font-medium transition">
+                    <svg class="w-[2.8vw] h-[2.8vw] md:w-[0.72vw] md:h-[0.72vw]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3"/>
                     </svg>
                     Home
@@ -429,27 +429,27 @@ while (have_posts()):
                         <?php foreach ($amenities_data as $index => $group): ?>
 
                             <!-- Group: title on top, then clean 2-column list. No vertical divider line. -->
-                            <div x-show="showAll || <?= $index ?> === 0" class="mb-[6vw] md:mb-[1.5vw] last:mb-0"
+                            <div x-show="showAll || <?= $index ?> === 0" class="mb-[5vw] md:mb-[1.25vw] last:mb-0"
                                 x-transition>
 
-                                <h3 class="text-black font-semibold text-[3.765vw] md:text-[0.938vw] font-inter mb-[2.5vw] md:mb-[0.625vw]">
+                                <h3 class="text-black font-semibold text-[3.294vw] md:text-[0.833vw] font-inter mb-[2vw] md:mb-[0.5vw]">
                                     <?= esc_html($group['title']); ?>
                                 </h3>
 
-                                <ul class="grid grid-cols-1 md:grid-cols-2 gap-y-[2vw] md:gap-y-[0.625vw] gap-x-[3vw] md:gap-x-[1.25vw]">
+                                <ul class="grid grid-cols-1 md:grid-cols-2 gap-y-[1.5vw] md:gap-y-[0.42vw] gap-x-[3vw] md:gap-x-[1.25vw]">
                                     <?php foreach ($group['amenities'] as $amenity): ?>
                                         <?php $amenity_value = isset($amenity['value']) ? trim((string) $amenity['value']) : ''; ?>
-                                        <li class="flex items-center gap-[2vw] md:gap-[0.625vw]">
+                                        <li class="flex items-center gap-[1.5vw] md:gap-[0.5vw]">
                                             <?php if (!empty($amenity['icon'])): ?>
                                                 <img src="<?= esc_url($amenity['icon']); ?>"
                                                     alt="<?= esc_attr($amenity['title']); ?>"
-                                                    class="w-[4vw] h-[4vw] md:w-[1vw] md:h-[1vw] object-contain shrink-0">
+                                                    class="w-[3.5vw] h-[3.5vw] md:w-[0.85vw] md:h-[0.85vw] object-contain shrink-0">
                                             <?php else: ?>
-                                                <svg class="w-[4vw] h-[4vw] md:w-[1vw] md:h-[1vw] shrink-0" style="color:var(--primary-color);" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                                <svg class="w-[3.5vw] h-[3.5vw] md:w-[0.85vw] md:h-[0.85vw] shrink-0" style="color:var(--primary-color);" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                                                     <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
                                                 </svg>
                                             <?php endif; ?>
-                                            <span class="text-black/80 font-medium text-[3vw] md:text-[0.833vw] font-inter">
+                                            <span class="text-black/80 font-medium text-[2.824vw] md:text-[0.729vw] font-inter">
                                                 <?= esc_html($amenity['title']); ?><?php if ($amenity_value !== ''): ?>: <strong class="text-black"><?= esc_html($amenity_value); ?></strong><?php endif; ?>
                                             </span>
                                         </li>
@@ -500,11 +500,11 @@ while (have_posts()):
                         $directions_url = 'https://www.google.com/maps/dir/?api=1&destination='
                             . rawurlencode($geocode_query);
                         ?>
-                        <!-- Get directions — promoted to a filled pill button so it's easy to spot -->
+                        <!-- Get directions — compact filled pill -->
                         <a href="<?= esc_url($directions_url); ?>" target="_blank" rel="noopener"
-                            class="inline-flex items-center gap-1.5 text-white text-[3vw] md:text-[0.833vw] font-semibold rounded-full px-[4vw] md:px-[1.2vw] py-[1.8vw] md:py-[0.5vw] shadow-md hover:shadow-lg hover:opacity-95 transition"
+                            class="inline-flex items-center gap-1 text-white text-[2.6vw] md:text-[0.7vw] font-medium rounded-full px-2.5 py-1 hover:opacity-90 transition"
                             style="background:var(--primary-color);">
-                            <svg class="w-[3.5vw] h-[3.5vw] md:w-[0.95vw] md:h-[0.95vw]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <svg class="w-[2.8vw] h-[2.8vw] md:w-[0.72vw] md:h-[0.72vw]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M12 2C7.589 2 4 5.589 4 9.995 4 15.44 11.056 21.68 11.357 21.943a1 1 0 001.286 0C12.944 21.68 20 15.44 20 9.995 20 5.589 16.411 2 12 2zm0 11a3 3 0 110-6 3 3 0 010 6z"/>
                             </svg>
                             Get directions
