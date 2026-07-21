@@ -17,8 +17,8 @@
                 $has_children = !empty($children);
                 ?>
                 <div class="relative" x-data="{ open: false }" @mouseenter="open = true" @mouseleave="open = false">
-                    <a href="<?= esc_url($item->url); ?>" 
-                       class="text-[0.833vw] font-medium <?php echo is_singular('property') ? 'text-[var(--primary-color)]' : 'text-white'; ?>  flex items-center gap-[0.4vw]">
+                    <a href="<?= esc_url($item->url); ?>"
+                       class="text-[1.05vw] font-semibold <?php echo is_singular('property') ? 'text-[var(--primary-color)]' : 'text-white'; ?>  flex items-center gap-[0.4vw]">
                         <?= esc_html($item->title); ?>
                         <?php if ($has_children): ?>
                             <svg class="w-[0.5vw] h-[0.5vw] transition-transform" :style="open && 'transform: rotate(180deg)'" fill="currentColor" viewBox="0 0 20 20">

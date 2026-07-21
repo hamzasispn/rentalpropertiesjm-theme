@@ -1,25 +1,23 @@
 <?php
 /**
- * Main template file for the property listing theme
  * Template Name: About Page
  *
- * Simple content-only layout per client:
- *   - Plain "Who We Are" heading (no eyebrow, no italic, theme font)
- *   - Four paragraphs of copy exactly as provided
- *   - "Why Property Owners and Buyers Trust Us?" kept below
+ * Both sections use the same container width so the top prose and the
+ * bottom "Why Choose Us" block share the same left/right edges — no more
+ * misaligned rails that made the page look pushed to the right.
  */
 get_header();
 ?>
 
-<!-- Who We Are -->
+<!-- Who We Are — same width + left edge as the section below -->
 <section class="bg-slate-50">
-    <div class="max-w-[880px] mx-auto px-6 md:px-8 py-16 md:py-24">
+    <div class="w-[90%] max-w-6xl mx-auto py-16 md:py-24">
 
-        <h2 class="font-bold text-slate-900 text-3xl md:text-4xl mb-8">
+        <h2 class="font-bold text-slate-900 text-3xl md:text-4xl mb-8 text-left">
             Who We Are
         </h2>
 
-        <div class="space-y-5 text-slate-700 text-base md:text-lg leading-relaxed">
+        <div class="space-y-5 text-slate-700 text-base md:text-lg leading-relaxed max-w-3xl text-left font-inter">
             <p>
                 RentalPropertiesJM is the smarter way to connect property with people. We bring
                 landlords, sellers, renters, and buyers together in one dedicated space — built
@@ -53,7 +51,8 @@ get_header();
     </div>
 </section>
 
-<!-- Why Choose Us Section (kept on /about only) -->
-<?php get_template_part('template-parts/sections/section', 'why-choose-us'); ?>
+<div class="w-[90%] max-w-6xl mx-auto">
+    <?php get_template_part('template-parts/sections/section', 'why-choose-us'); ?>
+</div>
 
 <?php get_footer(); ?>

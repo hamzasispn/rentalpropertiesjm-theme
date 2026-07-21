@@ -34,6 +34,24 @@ $user    = wp_get_current_user();
 $archive = get_post_type_archive_link('property') ?: home_url('/properties/');
 $saved_count = count(function_exists('pt_get_saved_properties') ? pt_get_saved_properties($current_user_id) : array());
 $search_count = count(function_exists('pt_get_saved_searches') ? pt_get_saved_searches($current_user_id) : array());
+
+// Load subscription plans for the "Become a Realtor" tab so we can list
+// them inline instead of bouncing the user to /pricing/.
+$plan_posts = get_posts(array(
+    'post_type'   => 'subscription_plan',
+    'post_status' => 'publish',
+    'numberposts' => -1,
+    'orderby'     => 'meta_value_num',
+    'meta_key'    => '_plan_price',
+    'order'       => 'ASC',
+));
+$realtor_plans = array();
+if (function_exists('property_theme_get_plan')) {
+    foreach ($plan_posts as $p) {
+        $plan = property_theme_get_plan($p->ID);
+        if ($plan) $realtor_plans[] = $plan;
+    }
+}
 ?>
 
 <div class="min-h-screen bg-slate-50 flex member-account" x-data="memberAccount()" x-init="initTabs()">
@@ -73,6 +91,19 @@ $search_count = count(function_exists('pt_get_saved_searches') ? pt_get_saved_se
                 </svg>
                 Saved Searches
             </a>
+
+            <!-- Upsell tab — highlighted so a member sees the upgrade path -->
+            <a href="#become-realtor" @click="activateTab('become-realtor', true)"
+                :class="activeTab === 'become-realtor'
+                    ? 'bg-white text-slate-900 font-semibold'
+                    : 'text-white hover:bg-slate-800'"
+                class="px-4 py-2.5 rounded-lg transition flex items-center gap-3 border border-white/15 mt-3">
+                <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M3 21h18M5 21V7l7-4 7 4v14M9 9h.01M15 9h.01M9 13h.01M15 13h.01"/>
+                </svg>
+                Become a Realtor
+            </a>
+
             <a href="#settings" @click="activateTab('settings', true)"
                 :class="{ 'bg-slate-800 font-semibold': activeTab === 'settings' }"
                 class="px-4 py-2.5 rounded-lg hover:bg-slate-800 transition flex items-center gap-3">
@@ -161,6 +192,31 @@ $search_count = count(function_exists('pt_get_saved_searches') ? pt_get_saved_se
                         Browse properties
                         <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
                     </a>
+                </div>
+
+                <!-- Become a Realtor CTA — same as the sidebar item, keeps the upgrade path visible on entry -->
+                <div class="rounded-2xl p-6 md:p-8 border relative overflow-hidden"
+                     style="background:linear-gradient(135deg, var(--primary-color) 0%, color-mix(in srgb, var(--primary-color) 78%, #000) 100%); border-color:transparent;">
+                    <div class="absolute -top-8 -right-8 w-40 h-40 rounded-full opacity-10 bg-white"></div>
+                    <div class="relative flex items-start justify-between gap-6 flex-wrap">
+                        <div class="max-w-xl">
+                            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/15 text-white text-xs font-bold uppercase tracking-wide mb-3">
+                                <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                                </svg>
+                                Upgrade
+                            </span>
+                            <h3 class="text-white text-2xl md:text-3xl font-bold">Become a Realtor</h3>
+                            <p class="text-white/80 text-sm md:text-base mt-2">
+                                Pick a subscription and start listing your own properties on RentalPropertiesJM.
+                            </p>
+                        </div>
+                        <a href="#become-realtor" @click.prevent="activateTab('become-realtor', true)"
+                           class="inline-flex items-center gap-2 px-5 py-3 rounded-lg bg-white text-slate-900 font-semibold shadow-sm hover:shadow-lg transition">
+                            View plans
+                            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+                        </a>
+                    </div>
                 </div>
             </section>
 
@@ -281,6 +337,140 @@ $search_count = count(function_exists('pt_get_saved_searches') ? pt_get_saved_se
                 </div>
             </section>
 
+            <!-- Become a Realtor -->
+            <section id="become-realtor" x-show="activeTab === 'become-realtor'" x-transition class="space-y-6">
+                <div class="flex items-start justify-between gap-4 flex-wrap">
+                    <div>
+                        <h1 class="text-3xl font-bold text-slate-900">Become a Realtor</h1>
+                        <p class="text-slate-500 mt-1">Choose a plan to start listing your own properties.</p>
+                    </div>
+                    <a href="<?= esc_url(home_url('/pricing')); ?>"
+                       class="text-sm font-semibold text-[var(--primary-color)] inline-flex items-center gap-1 hover:gap-2 transition-all">
+                        Full pricing page
+                        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+                    </a>
+                </div>
+
+                <?php if (empty($realtor_plans)): ?>
+                    <div class="bg-white rounded-2xl border border-slate-200 p-12 text-center">
+                        <div class="w-14 h-14 mx-auto mb-4 rounded-full bg-slate-100 flex items-center justify-center">
+                            <svg class="w-7 h-7 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M3 21h18M5 21V7l7-4 7 4v14"/>
+                            </svg>
+                        </div>
+                        <h3 class="text-lg font-semibold text-slate-900">Plans coming soon</h3>
+                        <p class="text-slate-500 mt-1">Subscription plans haven't been set up yet. Check back shortly.</p>
+                    </div>
+                <?php else: ?>
+                    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+                        <?php foreach ($realtor_plans as $i => $plan):
+                            $is_featured = ($i === 1); // middle plan visually promoted
+                            $cycle_label = $plan['billing_cycle'] === 'yearly'  ? '/ yr'
+                                         : ($plan['billing_cycle'] === 'days'   ? '/ ' . intval($plan['billing_days']) . ' days'
+                                                                                 : '/ mo');
+                        ?>
+                            <div class="relative bg-white rounded-2xl p-6 flex flex-col
+                                        <?= $is_featured ? 'ring-2 shadow-lg' : 'border border-slate-200'; ?>"
+                                 <?= $is_featured ? 'style="--tw-ring-color: var(--primary-color);"' : ''; ?>>
+
+                                <?php if ($is_featured): ?>
+                                <span class="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full text-xs font-bold text-white shadow"
+                                      style="background:var(--primary-color);">Most popular</span>
+                                <?php endif; ?>
+
+                                <h3 class="text-xl font-bold text-slate-900"><?= esc_html($plan['name']); ?></h3>
+
+                                <div class="mt-4 flex items-baseline gap-1">
+                                    <span class="text-4xl font-bold text-slate-900">$<?= esc_html((string) $plan['price']); ?></span>
+                                    <span class="text-slate-500 text-sm"><?= esc_html($cycle_label); ?></span>
+                                </div>
+
+                                <ul class="mt-5 space-y-2.5 text-sm text-slate-700 flex-1">
+                                    <li class="flex items-start gap-2">
+                                        <svg class="w-4 h-4 mt-0.5 shrink-0" style="color:var(--primary-color);" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+                                        </svg>
+                                        <span>
+                                            <?= (int) $plan['max_properties'] > 0
+                                                ? esc_html($plan['max_properties']) . ' properties'
+                                                : 'Unlimited properties'; ?>
+                                        </span>
+                                    </li>
+                                    <?php if ((int) $plan['featured_limit'] > 0): ?>
+                                    <li class="flex items-start gap-2">
+                                        <svg class="w-4 h-4 mt-0.5 shrink-0" style="color:var(--primary-color);" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+                                        </svg>
+                                        <span><?= esc_html($plan['featured_limit']); ?> featured listings / month</span>
+                                    </li>
+                                    <?php endif; ?>
+                                    <?php if ((int) $plan['photo_limit'] > 0): ?>
+                                    <li class="flex items-start gap-2">
+                                        <svg class="w-4 h-4 mt-0.5 shrink-0" style="color:var(--primary-color);" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+                                        </svg>
+                                        <span>Up to <?= esc_html($plan['photo_limit']); ?> photos per listing</span>
+                                    </li>
+                                    <?php endif; ?>
+                                    <?php if ((int) $plan['video_limit'] > 0): ?>
+                                    <li class="flex items-start gap-2">
+                                        <svg class="w-4 h-4 mt-0.5 shrink-0" style="color:var(--primary-color);" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+                                        </svg>
+                                        <span>Up to <?= esc_html($plan['video_limit']); ?> videos per listing</span>
+                                    </li>
+                                    <?php endif; ?>
+                                    <?php if (!empty($plan['analytics'])): ?>
+                                    <li class="flex items-start gap-2">
+                                        <svg class="w-4 h-4 mt-0.5 shrink-0" style="color:var(--primary-color);" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+                                        </svg>
+                                        <span>Listing analytics dashboard</span>
+                                    </li>
+                                    <?php endif; ?>
+                                    <?php if (!empty($plan['enable_whatsapp'])): ?>
+                                    <li class="flex items-start gap-2">
+                                        <svg class="w-4 h-4 mt-0.5 shrink-0" style="color:var(--primary-color);" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+                                        </svg>
+                                        <span>WhatsApp lead button</span>
+                                    </li>
+                                    <?php endif; ?>
+                                    <?php if (!empty($plan['enable_google_map'])): ?>
+                                    <li class="flex items-start gap-2">
+                                        <svg class="w-4 h-4 mt-0.5 shrink-0" style="color:var(--primary-color);" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+                                        </svg>
+                                        <span>Google Maps on listings</span>
+                                    </li>
+                                    <?php endif; ?>
+                                    <?php foreach ($plan['features'] as $feat): ?>
+                                        <li class="flex items-start gap-2">
+                                            <svg class="w-4 h-4 mt-0.5 shrink-0" style="color:var(--primary-color);" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+                                            </svg>
+                                            <span><?= esc_html($feat); ?></span>
+                                        </li>
+                                    <?php endforeach; ?>
+                                </ul>
+
+                                <a href="<?= esc_url(add_query_arg('plan', $plan['id'], home_url('/checkout'))); ?>"
+                                   class="mt-6 inline-flex items-center justify-center gap-2 w-full px-4 py-3 rounded-lg font-semibold text-sm transition
+                                          <?= $is_featured
+                                              ? 'text-white hover:opacity-90'
+                                              : 'border-2 hover:text-white'; ?>"
+                                   style="<?= $is_featured
+                                              ? 'background:var(--primary-color);'
+                                              : 'border-color:var(--primary-color); color:var(--primary-color);'; ?>">
+                                    Choose <?= esc_html($plan['name']); ?>
+                                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+                                </a>
+                            </div>
+                        <?php endforeach; ?>
+                    </div>
+                <?php endif; ?>
+            </section>
+
             <!-- Settings -->
             <section id="settings" x-show="activeTab === 'settings'" x-transition class="space-y-6">
                 <div>
@@ -307,8 +497,12 @@ $search_count = count(function_exists('pt_get_saved_searches') ? pt_get_saved_se
                 </div>
 
                 <div class="bg-white rounded-2xl border border-slate-200 p-6 max-w-2xl">
-                    <h3 class="text-lg font-semibold text-slate-900 mb-2">Become a Realtor</h3>
-                    <p class="text-slate-500 text-sm mb-4">List properties on RentalPropertiesJM by picking a plan.</p>
+                    <h3 class="text-lg font-semibold text-slate-900 mb-2">Upgrade your account</h3>
+                    <p class="text-slate-500 text-sm mb-4">Pick a plan to start posting properties on RentalPropertiesJM.</p>
+                    <ol class="list-decimal list-inside space-y-1 text-sm text-slate-700 mb-4">
+                        <li>Get a listing plan</li>
+                        <li>Get a realtor plan</li>
+                    </ol>
                     <a href="<?= esc_url(home_url('/pricing')); ?>" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg font-semibold text-sm"
                        style="background:color-mix(in srgb, var(--primary-color) 10%, transparent); color:var(--primary-color);">
                         View plans →

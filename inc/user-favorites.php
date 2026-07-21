@@ -55,7 +55,9 @@ function pt_get_user_home_url($user_id) {
     if ((int) $user_id > 0 && get_user_meta((int) $user_id, '_pt_wants_agent', true)) {
         return home_url('/pricing');
     }
-    return pt_get_member_dashboard_url();
+    // Regular members land on the site home per client feedback, not on the
+    // /my-account/ page. They reach saved items via the header user badge.
+    return home_url('/');
 }
 
 // When a user's subscription becomes active, the "wants agent" marker has
@@ -351,7 +353,9 @@ function pt_rest_register($request) {
     wp_set_auth_cookie($uid, true, is_ssl());
     return array(
         'success'  => true,
-        'redirect' => pt_get_member_dashboard_url(),
+        // Members land on the site home per client feedback — not the
+        // /my-account/ page. They can reach it from the header user badge.
+        'redirect' => pt_get_user_home_url($uid),
     );
 }
 

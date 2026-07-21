@@ -115,7 +115,7 @@ $listing_statuses_archive = get_terms(array('taxonomy' => 'property_listing_stat
                     <!-- Buy / Rent / All segmented toggle -->
                     <div class="inline-flex items-center bg-slate-100 rounded-full p-1 gap-1 self-start lg:self-auto">
                         <button type="button"
-                            @click="filters.listingStatus = ''; applyFilters()"
+                            @click="filters.listingStatus = ''; buildPriceOptions(); applyFilters()"
                             :class="filters.listingStatus === ''
                                 ? 'bg-white text-[var(--primary-color)] shadow-sm'
                                 : 'text-slate-600 hover:text-slate-900'"
@@ -124,7 +124,7 @@ $listing_statuses_archive = get_terms(array('taxonomy' => 'property_listing_stat
                         </button>
                         <template x-for="status in listingStatuses" :key="status.slug">
                             <button type="button"
-                                @click="filters.listingStatus = status.slug; applyFilters()"
+                                @click="filters.listingStatus = status.slug; buildPriceOptions(); applyFilters()"
                                 :class="filters.listingStatus === status.slug
                                     ? 'bg-white text-[var(--primary-color)] shadow-sm'
                                     : 'text-slate-600 hover:text-slate-900'"
@@ -225,12 +225,14 @@ $listing_statuses_archive = get_terms(array('taxonomy' => 'property_listing_stat
                         </div>
                     </div>
 
-                    <!-- Beds chip -->
-                    <div class="relative" x-data="{ open: false }" @click.outside="open = false">
+                    <!-- Beds chip (1-5 plain, 6+ meta) -->
+                    <div class="relative" x-data="{ open: false, options: [1,2,3,4,5,6] }" @click.outside="open = false">
                         <button type="button" @click="open = !open"
                             :class="filters.beds ? 'border-[var(--primary-color)] text-[var(--primary-color)] bg-blue-50' : 'border-slate-200 text-slate-700 hover:border-slate-300'"
                             class="inline-flex items-center gap-2 px-4 py-2 border rounded-full text-sm font-medium bg-white transition">
-                            <span x-text="filters.beds ? (filters.beds + '+ Beds') : 'Beds'"></span>
+                            <span x-text="filters.beds
+                                ? (filters.beds >= 6 ? '6+ Beds' : (filters.beds + (filters.beds === 1 ? ' Bed' : ' Beds')))
+                                : 'Beds'"></span>
                             <svg class="w-4 h-4" :class="open && 'rotate-180'" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                         </button>
                         <div x-show="open" x-transition
@@ -239,22 +241,24 @@ $listing_statuses_archive = get_terms(array('taxonomy' => 'property_listing_stat
                                 @click="filters.beds = 0; applyFilters(); open = false"
                                 :class="!filters.beds ? 'bg-blue-50 text-[var(--primary-color)] font-semibold' : 'text-slate-700'"
                                 class="w-full text-left px-3 py-2 rounded-lg text-sm hover:bg-slate-50">Any</button>
-                            <template x-for="term in bedroomTerms" :key="term.term_id">
+                            <template x-for="n in options" :key="n">
                                 <button type="button"
-                                    @click="filters.beds = parseInt(term.name); applyFilters(); open = false"
-                                    :class="filters.beds === parseInt(term.name) ? 'bg-blue-50 text-[var(--primary-color)] font-semibold' : 'text-slate-700'"
+                                    @click="filters.beds = n; applyFilters(); open = false"
+                                    :class="filters.beds === n ? 'bg-blue-50 text-[var(--primary-color)] font-semibold' : 'text-slate-700'"
                                     class="w-full text-left px-3 py-2 rounded-lg text-sm hover:bg-slate-50"
-                                    x-text="term.name + '+ Beds'"></button>
+                                    x-text="n === 6 ? '6+ Beds' : (n + (n === 1 ? ' Bed' : ' Beds'))"></button>
                             </template>
                         </div>
                     </div>
 
-                    <!-- Baths chip -->
-                    <div class="relative" x-data="{ open: false }" @click.outside="open = false">
+                    <!-- Baths chip (1-5 plain, 6+ meta) -->
+                    <div class="relative" x-data="{ open: false, options: [1,2,3,4,5,6] }" @click.outside="open = false">
                         <button type="button" @click="open = !open"
                             :class="filters.baths ? 'border-[var(--primary-color)] text-[var(--primary-color)] bg-blue-50' : 'border-slate-200 text-slate-700 hover:border-slate-300'"
                             class="inline-flex items-center gap-2 px-4 py-2 border rounded-full text-sm font-medium bg-white transition">
-                            <span x-text="filters.baths ? (filters.baths + '+ Baths') : 'Baths'"></span>
+                            <span x-text="filters.baths
+                                ? (filters.baths >= 6 ? '6+ Baths' : (filters.baths + (filters.baths === 1 ? ' Bath' : ' Baths')))
+                                : 'Baths'"></span>
                             <svg class="w-4 h-4" :class="open && 'rotate-180'" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                         </button>
                         <div x-show="open" x-transition
@@ -263,12 +267,12 @@ $listing_statuses_archive = get_terms(array('taxonomy' => 'property_listing_stat
                                 @click="filters.baths = 0; applyFilters(); open = false"
                                 :class="!filters.baths ? 'bg-blue-50 text-[var(--primary-color)] font-semibold' : 'text-slate-700'"
                                 class="w-full text-left px-3 py-2 rounded-lg text-sm hover:bg-slate-50">Any</button>
-                            <template x-for="term in bathroomTerms" :key="term.term_id">
+                            <template x-for="n in options" :key="n">
                                 <button type="button"
-                                    @click="filters.baths = parseFloat(term.name); applyFilters(); open = false"
-                                    :class="filters.baths === parseFloat(term.name) ? 'bg-blue-50 text-[var(--primary-color)] font-semibold' : 'text-slate-700'"
+                                    @click="filters.baths = n; applyFilters(); open = false"
+                                    :class="filters.baths === n ? 'bg-blue-50 text-[var(--primary-color)] font-semibold' : 'text-slate-700'"
                                     class="w-full text-left px-3 py-2 rounded-lg text-sm hover:bg-slate-50"
-                                    x-text="term.name + '+ Baths'"></button>
+                                    x-text="n === 6 ? '6+ Baths' : (n + (n === 1 ? ' Bath' : ' Baths'))"></button>
                             </template>
                         </div>
                     </div>
@@ -685,7 +689,19 @@ $listing_statuses_archive = get_terms(array('taxonomy' => 'property_listing_stat
             },
 
             buildPriceOptions() {
-                const isJmd = this.selectedCurrency === 'jmd';
+                const isJmd  = this.selectedCurrency === 'jmd';
+                const isRent = this.filters.listingStatus === 'rent';
+
+                // Rent is a monthly figure — always in JMD, with tighter
+                // brackets matching realistic Jamaica rental prices.
+                const rentRanges = [
+                    { min: 0,      max: 50000,      label: 'J$0 – J$50K' },
+                    { min: 50000,  max: 100000,     label: 'J$50K – J$100K' },
+                    { min: 100000, max: 150000,     label: 'J$100K – J$150K' },
+                    { min: 150000, max: 200000,     label: 'J$150K – J$200K' },
+                    { min: 200000, max: 300000,     label: 'J$200K – J$300K' },
+                    { min: 300000, max: 9999999999, label: 'J$300K+' },
+                ];
                 const usdRanges = [
                     { min: 0,       max: 50000,      label: '$0 – $50K' },
                     { min: 50000,   max: 70000,      label: '$50K – $70K' },
@@ -708,7 +724,7 @@ $listing_statuses_archive = get_terms(array('taxonomy' => 'property_listing_stat
                     { min: 75000000,  max: 100000000,  label: 'J$75M – J$100M' },
                     { min: 100000000, max: 9999999999, label: 'J$100M+' },
                 ];
-                const ranges = isJmd ? jmdRanges : usdRanges;
+                const ranges = isRent ? rentRanges : (isJmd ? jmdRanges : usdRanges);
                 this.priceRangeOptions = ranges.map(r => ({
                     value: r.min + '_' + r.max,
                     label: r.label,

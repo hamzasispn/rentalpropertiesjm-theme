@@ -1,5 +1,5 @@
-<!-- Why Trust Us Section -->
-<div class="flex md:flex-row items-center flex-col md:gap-4 gap-8 w-[90%] mx-auto md:pt-[3.125vw] pt-[13.882vw]">
+<!-- Why Trust Us Section — width is set by its parent wrapper -->
+<div class="flex md:flex-row items-center flex-col md:gap-4 gap-8 md:pt-[3.125vw] pt-[13.882vw]">
 
     <!-- Left: Text Content -->
     <div class="flex flex-col gap-4 lg:w-1/2 w-full">

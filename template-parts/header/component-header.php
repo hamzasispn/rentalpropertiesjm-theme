@@ -8,18 +8,18 @@ $logo = $args['logo'] ?? '';
     
     <!-- Top navigation bar -->
     <nav class="w-[90%] lg:w-[80%] mx-auto flex flex-wrap items-center justify-between py-[1.875vw] lg:py-[1.615vw]">
-        <!-- Logo -->
-        <div class="w-[40%] sm:w-[25%] lg:w-[9.948vw] flex-shrink-0">
+        <!-- Logo (bigger per client feedback) -->
+        <div class="w-[40%] sm:w-[25%] lg:w-[13vw] flex-shrink-0">
             <a href="<?= home_url(); ?>">
                 <?php if ($logo): ?>
-                    <img src="<?php echo esc_url($logo); ?>" alt="Logo" class="h-[7.5vw] sm:h-[5vw] lg:h-[60px] object-contain">
+                    <img src="<?php echo esc_url($logo); ?>" alt="Logo" class="h-[9vw] sm:h-[6vw] lg:h-[80px] object-contain">
                 <?php else: ?>
                     <span class="text-[6vw] sm:text-[4vw] lg:text-2xl font-bold text-slate-900">PropertyHub</span>
                 <?php endif; ?>
             </a>
         </div>
 
-        <!-- Mobile login button (always visible in header) -->
+        <!-- Mobile login / account button (always visible) -->
         <?php if (!is_user_logged_in()): ?>
         <a href="<?= home_url('/login'); ?>" class="lg:hidden flex-shrink-0 flex items-center gap-1.5 px-3 py-2 rounded bg-[var(--primary-color)] text-white text-[3.5vw] sm:text-[2.5vw] font-bold" style="white-space:nowrap">
             <svg class="w-[4vw] h-[4vw] sm:w-[3vw] sm:h-[3vw]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -27,15 +27,22 @@ $logo = $args['logo'] ?? '';
                 <polyline points="10 17 15 12 10 7"/>
                 <line x1="15" y1="12" x2="3" y2="12"/>
             </svg>
-            Login
+            Sign in
         </a>
-        <?php else: ?>
-        <a href="<?= home_url('/dashboard'); ?>" class="lg:hidden flex-shrink-0 flex items-center gap-1.5 px-3 py-2 rounded bg-[var(--primary-color)] text-white text-[3.5vw] sm:text-[2.5vw] font-bold" style="white-space:nowrap">
-            <svg class="w-[4vw] h-[4vw] sm:w-[3vw] sm:h-[3vw]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-                <circle cx="12" cy="7" r="4"/>
-            </svg>
-            Dashboard
+        <?php else:
+            $mobile_user  = wp_get_current_user();
+            $mobile_first = strtok(trim($mobile_user->display_name ?: $mobile_user->user_login), ' ');
+            $mobile_url   = function_exists('pt_get_user_home_url')
+                ? pt_get_user_home_url($mobile_user->ID)
+                : home_url('/my-account/');
+        ?>
+        <a href="<?= esc_url($mobile_url); ?>"
+           class="lg:hidden flex-shrink-0 flex items-center gap-1.5 px-3 py-2 rounded bg-[var(--primary-color)] text-white text-[3.5vw] sm:text-[2.5vw] font-bold"
+           style="white-space:nowrap">
+            <span class="w-[5vw] h-[5vw] sm:w-[3.5vw] sm:h-[3.5vw] rounded-full bg-white text-[var(--primary-color)] flex items-center justify-center text-[3vw] sm:text-[2vw] font-bold">
+                <?= esc_html(strtoupper(mb_substr($mobile_first ?: 'U', 0, 1))); ?>
+            </span>
+            <?= esc_html($mobile_first); ?>
         </a>
         <?php endif; ?>
 

@@ -374,22 +374,42 @@ add_action('init', function () {
 function get_jamaica_cities() {
     global $cities;
 
+    // Kingston & St. Andrew are merged per client feedback — they function as
+    // one region (KSA) for real estate search purposes.
     $cities = array(
-        'Kingston'        => array('lat' => 17.9970, 'lng' => -76.7936),
-        'Saint Andrew'    => array('lat' => 18.0167, 'lng' => -76.9000),
-        'Saint Thomas'    => array('lat' => 17.9833, 'lng' => -76.3500),
-        'Portland'        => array('lat' => 18.1667, 'lng' => -76.4500),
-        'Saint Mary'      => array('lat' => 18.3500, 'lng' => -76.9167),
-        'Saint Ann'       => array('lat' => 18.2000, 'lng' => -77.4667),
-        'Trelawny'        => array('lat' => 18.3500, 'lng' => -77.6000),
-        'Saint James'     => array('lat' => 18.4667, 'lng' => -77.9167),
-        'Hanover'         => array('lat' => 18.4000, 'lng' => -78.1333),
-        'Westmoreland'    => array('lat' => 18.2500, 'lng' => -78.1333),
-        'Saint Elizabeth' => array('lat' => 18.0500, 'lng' => -77.7667),
-        'Manchester'      => array('lat' => 18.0500, 'lng' => -77.5167),
-        'Clarendon'       => array('lat' => 17.9500, 'lng' => -77.2167),
-        'Saint Catherine' => array('lat' => 17.9833, 'lng' => -76.9500),
+        'Kingston & St. Andrew' => array('lat' => 18.0069, 'lng' => -76.7970),
+        'Saint Thomas'          => array('lat' => 17.9833, 'lng' => -76.3500),
+        'Portland'              => array('lat' => 18.1667, 'lng' => -76.4500),
+        'Saint Mary'            => array('lat' => 18.3500, 'lng' => -76.9167),
+        'Saint Ann'             => array('lat' => 18.2000, 'lng' => -77.4667),
+        'Trelawny'              => array('lat' => 18.3500, 'lng' => -77.6000),
+        'Saint James'           => array('lat' => 18.4667, 'lng' => -77.9167),
+        'Hanover'               => array('lat' => 18.4000, 'lng' => -78.1333),
+        'Westmoreland'          => array('lat' => 18.2500, 'lng' => -78.1333),
+        'Saint Elizabeth'       => array('lat' => 18.0500, 'lng' => -77.7667),
+        'Manchester'            => array('lat' => 18.0500, 'lng' => -77.5167),
+        'Clarendon'             => array('lat' => 17.9500, 'lng' => -77.2167),
+        'Saint Catherine'       => array('lat' => 17.9833, 'lng' => -76.9500),
     );
 
     return $cities;
 }
+
+/**
+ * Backfill helper: any legacy listing whose _property_city is "Kingston" or
+ * "Saint Andrew" should be treated as the merged "Kingston & St. Andrew".
+ * Runs once when the theme is loaded — safe/idempotent.
+ */
+add_action('init', function () {
+    if (wp_doing_ajax() || wp_doing_cron() || defined('REST_REQUEST')) return;
+    if (get_option('pt_ksa_merged')) return;
+
+    global $wpdb;
+    $wpdb->query(
+        "UPDATE {$wpdb->postmeta}
+         SET meta_value = 'Kingston & St. Andrew'
+         WHERE meta_key = '_property_city'
+           AND meta_value IN ('Kingston', 'Saint Andrew', 'St Andrew', 'St. Andrew')"
+    );
+    update_option('pt_ksa_merged', 1);
+}, 30);

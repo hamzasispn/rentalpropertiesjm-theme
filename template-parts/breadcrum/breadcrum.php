@@ -50,6 +50,18 @@ if (is_archive()) {
     <!-- ── Content ─────────────────────────────────────────────────────── -->
     <div class="relative max-w-[90%] mx-auto pt-[24vw] pb-[10vw] md:pt-[15vw] md:pb-[7vw] lg:pt-44 lg:pb-24">
 
+        <!-- Back-to-home pill — visible on every inner page so users always
+             have a one-tap way out. -->
+        <?php if (!is_front_page()): ?>
+        <a href="<?php echo esc_url(home_url('/')); ?>"
+           class="inline-flex items-center gap-2 px-4 py-2 mb-5 md:mb-7 rounded-full bg-white/15 hover:bg-white/25 backdrop-blur-sm text-white text-[3.2vw] md:text-[0.85vw] font-semibold transition">
+            <svg class="w-[3.5vw] h-[3.5vw] md:w-[0.9vw] md:h-[0.9vw]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/>
+            </svg>
+            Back to home
+        </a>
+        <?php endif; ?>
+
         <!-- Title -->
         <h1 class="text-white font-bold tracking-tight leading-[0.95] text-[10vw] md:text-[4.2vw] max-w-[22ch]">
             <?php echo wp_kses_post($page_title); ?>
