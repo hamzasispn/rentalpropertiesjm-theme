@@ -185,7 +185,8 @@ get_header();
                 </div>
             </div>
         </div>
-        <a href="<?= home_url() ?>/login" class="w-fit btn-primary mx-auto">
+        <a href="<?= esc_url(function_exists('pt_get_list_property_url') ? pt_get_list_property_url() : home_url('/login')); ?>"
+           class="w-fit btn-primary mx-auto">
             List Your Property Today
         </a>
 

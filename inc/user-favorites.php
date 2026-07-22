@@ -47,6 +47,19 @@ function pt_get_agent_dashboard_url() {
     return $page ? get_permalink($page) : home_url('/dashboard/');
 }
 
+/**
+ * Where does "List Property Now" send this user?
+ *   - Guest              → /login/
+ *   - Member (no plan)   → /pricing/
+ *   - Agent (has plan)   → /dashboard/#add-property
+ */
+function pt_get_list_property_url() {
+    if (!is_user_logged_in()) return home_url('/login');
+    $uid = get_current_user_id();
+    if (pt_user_is_agent($uid)) return home_url('/dashboard/#add-property');
+    return home_url('/pricing');
+}
+
 function pt_get_user_home_url($user_id) {
     if (pt_user_is_agent($user_id)) return pt_get_agent_dashboard_url();
     // Agents-in-waiting: they registered on the "I'm an Agent" tab but

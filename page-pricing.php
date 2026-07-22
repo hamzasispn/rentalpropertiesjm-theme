@@ -204,7 +204,7 @@ get_header();
             Join thousands of landlords and agents who trust us to reach the right tenants and buyers.
         </p>
         <div class="flex flex-wrap items-center justify-center gap-3">
-            <a href="<?= esc_url(home_url('/register')); ?>"
+            <a href="<?= esc_url(function_exists('pt_get_list_property_url') ? pt_get_list_property_url() : home_url('/register')); ?>"
                class="inline-block bg-white font-semibold font-inter rounded-full md:px-[2vw] md:py-[0.7vw] px-[7vw] py-[3.5vw] text-[3.5vw] md:text-[0.9vw] hover:opacity-90 transition-opacity"
                style="color: var(--primary-color);">
                 Get Started Free

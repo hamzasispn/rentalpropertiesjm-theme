@@ -34,24 +34,6 @@ $user    = wp_get_current_user();
 $archive = get_post_type_archive_link('property') ?: home_url('/properties/');
 $saved_count = count(function_exists('pt_get_saved_properties') ? pt_get_saved_properties($current_user_id) : array());
 $search_count = count(function_exists('pt_get_saved_searches') ? pt_get_saved_searches($current_user_id) : array());
-
-// Load subscription plans for the "Become a Realtor" tab so we can list
-// them inline instead of bouncing the user to /pricing/.
-$plan_posts = get_posts(array(
-    'post_type'   => 'subscription_plan',
-    'post_status' => 'publish',
-    'numberposts' => -1,
-    'orderby'     => 'meta_value_num',
-    'meta_key'    => '_plan_price',
-    'order'       => 'ASC',
-));
-$realtor_plans = array();
-if (function_exists('property_theme_get_plan')) {
-    foreach ($plan_posts as $p) {
-        $plan = property_theme_get_plan($p->ID);
-        if ($plan) $realtor_plans[] = $plan;
-    }
-}
 ?>
 
 <div class="min-h-screen bg-slate-50 flex member-account" x-data="memberAccount()" x-init="initTabs()">
@@ -337,12 +319,12 @@ if (function_exists('property_theme_get_plan')) {
                 </div>
             </section>
 
-            <!-- Become a Realtor -->
+            <!-- Become a Realtor — uses the same plan-card component as home + billing -->
             <section id="become-realtor" x-show="activeTab === 'become-realtor'" x-transition class="space-y-6">
                 <div class="flex items-start justify-between gap-4 flex-wrap">
                     <div>
                         <h1 class="text-3xl font-bold text-slate-900">Become a Realtor</h1>
-                        <p class="text-slate-500 mt-1">Choose a plan to start listing your own properties.</p>
+                        <p class="text-slate-500 mt-1">Choose the right plan for your property.</p>
                     </div>
                     <a href="<?= esc_url(home_url('/pricing')); ?>"
                        class="text-sm font-semibold text-[var(--primary-color)] inline-flex items-center gap-1 hover:gap-2 transition-all">
@@ -351,124 +333,9 @@ if (function_exists('property_theme_get_plan')) {
                     </a>
                 </div>
 
-                <?php if (empty($realtor_plans)): ?>
-                    <div class="bg-white rounded-2xl border border-slate-200 p-12 text-center">
-                        <div class="w-14 h-14 mx-auto mb-4 rounded-full bg-slate-100 flex items-center justify-center">
-                            <svg class="w-7 h-7 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M3 21h18M5 21V7l7-4 7 4v14"/>
-                            </svg>
-                        </div>
-                        <h3 class="text-lg font-semibold text-slate-900">Plans coming soon</h3>
-                        <p class="text-slate-500 mt-1">Subscription plans haven't been set up yet. Check back shortly.</p>
-                    </div>
-                <?php else: ?>
-                    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
-                        <?php foreach ($realtor_plans as $i => $plan):
-                            $is_featured = ($i === 1); // middle plan visually promoted
-                            $cycle_label = $plan['billing_cycle'] === 'yearly'  ? '/ yr'
-                                         : ($plan['billing_cycle'] === 'days'   ? '/ ' . intval($plan['billing_days']) . ' days'
-                                                                                 : '/ mo');
-                        ?>
-                            <div class="relative bg-white rounded-2xl p-6 flex flex-col
-                                        <?= $is_featured ? 'ring-2 shadow-lg' : 'border border-slate-200'; ?>"
-                                 <?= $is_featured ? 'style="--tw-ring-color: var(--primary-color);"' : ''; ?>>
-
-                                <?php if ($is_featured): ?>
-                                <span class="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full text-xs font-bold text-white shadow"
-                                      style="background:var(--primary-color);">Most popular</span>
-                                <?php endif; ?>
-
-                                <h3 class="text-xl font-bold text-slate-900"><?= esc_html($plan['name']); ?></h3>
-
-                                <div class="mt-4 flex items-baseline gap-1">
-                                    <span class="text-4xl font-bold text-slate-900">$<?= esc_html((string) $plan['price']); ?></span>
-                                    <span class="text-slate-500 text-sm"><?= esc_html($cycle_label); ?></span>
-                                </div>
-
-                                <ul class="mt-5 space-y-2.5 text-sm text-slate-700 flex-1">
-                                    <li class="flex items-start gap-2">
-                                        <svg class="w-4 h-4 mt-0.5 shrink-0" style="color:var(--primary-color);" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
-                                            <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
-                                        </svg>
-                                        <span>
-                                            <?= (int) $plan['max_properties'] > 0
-                                                ? esc_html($plan['max_properties']) . ' properties'
-                                                : 'Unlimited properties'; ?>
-                                        </span>
-                                    </li>
-                                    <?php if ((int) $plan['featured_limit'] > 0): ?>
-                                    <li class="flex items-start gap-2">
-                                        <svg class="w-4 h-4 mt-0.5 shrink-0" style="color:var(--primary-color);" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
-                                            <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
-                                        </svg>
-                                        <span><?= esc_html($plan['featured_limit']); ?> featured listings / month</span>
-                                    </li>
-                                    <?php endif; ?>
-                                    <?php if ((int) $plan['photo_limit'] > 0): ?>
-                                    <li class="flex items-start gap-2">
-                                        <svg class="w-4 h-4 mt-0.5 shrink-0" style="color:var(--primary-color);" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
-                                            <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
-                                        </svg>
-                                        <span>Up to <?= esc_html($plan['photo_limit']); ?> photos per listing</span>
-                                    </li>
-                                    <?php endif; ?>
-                                    <?php if ((int) $plan['video_limit'] > 0): ?>
-                                    <li class="flex items-start gap-2">
-                                        <svg class="w-4 h-4 mt-0.5 shrink-0" style="color:var(--primary-color);" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
-                                            <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
-                                        </svg>
-                                        <span>Up to <?= esc_html($plan['video_limit']); ?> videos per listing</span>
-                                    </li>
-                                    <?php endif; ?>
-                                    <?php if (!empty($plan['analytics'])): ?>
-                                    <li class="flex items-start gap-2">
-                                        <svg class="w-4 h-4 mt-0.5 shrink-0" style="color:var(--primary-color);" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
-                                            <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
-                                        </svg>
-                                        <span>Listing analytics dashboard</span>
-                                    </li>
-                                    <?php endif; ?>
-                                    <?php if (!empty($plan['enable_whatsapp'])): ?>
-                                    <li class="flex items-start gap-2">
-                                        <svg class="w-4 h-4 mt-0.5 shrink-0" style="color:var(--primary-color);" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
-                                            <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
-                                        </svg>
-                                        <span>WhatsApp lead button</span>
-                                    </li>
-                                    <?php endif; ?>
-                                    <?php if (!empty($plan['enable_google_map'])): ?>
-                                    <li class="flex items-start gap-2">
-                                        <svg class="w-4 h-4 mt-0.5 shrink-0" style="color:var(--primary-color);" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
-                                            <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
-                                        </svg>
-                                        <span>Google Maps on listings</span>
-                                    </li>
-                                    <?php endif; ?>
-                                    <?php foreach ($plan['features'] as $feat): ?>
-                                        <li class="flex items-start gap-2">
-                                            <svg class="w-4 h-4 mt-0.5 shrink-0" style="color:var(--primary-color);" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
-                                                <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
-                                            </svg>
-                                            <span><?= esc_html($feat); ?></span>
-                                        </li>
-                                    <?php endforeach; ?>
-                                </ul>
-
-                                <a href="<?= esc_url(add_query_arg('plan', $plan['id'], home_url('/checkout'))); ?>"
-                                   class="mt-6 inline-flex items-center justify-center gap-2 w-full px-4 py-3 rounded-lg font-semibold text-sm transition
-                                          <?= $is_featured
-                                              ? 'text-white hover:opacity-90'
-                                              : 'border-2 hover:text-white'; ?>"
-                                   style="<?= $is_featured
-                                              ? 'background:var(--primary-color);'
-                                              : 'border-color:var(--primary-color); color:var(--primary-color);'; ?>">
-                                    Choose <?= esc_html($plan['name']); ?>
-                                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
-                                </a>
-                            </div>
-                        <?php endforeach; ?>
-                    </div>
-                <?php endif; ?>
+                <div class="bg-white rounded-2xl border border-slate-200 p-6 md:p-8">
+                    <?php get_template_part('template-parts/component', 'plan-card', array('subscription' => null)); ?>
+                </div>
             </section>
 
             <!-- Settings -->

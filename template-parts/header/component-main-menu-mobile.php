@@ -18,26 +18,35 @@
                 $item_id = 'menu-' . $item->ID;
                 ?>
                 <div class="mb-[2vw] sm:mb-[1.5vw]">
-                    <button class="flex items-center justify-between w-full p-[2vw] text-[4.5vw] sm:text-[3.5vw] font-semibold text-white rounded bg-[var(--primary-color)]" 
-                            @click="openItem = openItem === '<?= $item_id ?>' ? null : '<?= $item_id ?>'"
-                            :aria-expanded="openItem === '<?= $item_id ?>'">
-                        <span><?= esc_html($item->title); ?></span>
-                        <?php if ($has_children): ?>
-                            <svg class="w-[5vw] h-[5vw] sm:w-[4vw] sm:h-[4vw] transition-transform" :style="openItem === '<?= $item_id ?>' && 'transform: rotate(180deg)'" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <?php if ($has_children): ?>
+                        <!-- Parent with submenu: toggle the child list -->
+                        <button type="button"
+                                class="flex items-center justify-between w-full p-[2vw] text-[4.5vw] sm:text-[3.5vw] font-semibold text-white rounded bg-[var(--primary-color)]"
+                                @click="openItem = openItem === '<?= $item_id ?>' ? null : '<?= $item_id ?>'"
+                                :aria-expanded="openItem === '<?= $item_id ?>'">
+                            <span><?= esc_html($item->title); ?></span>
+                            <svg class="w-[5vw] h-[5vw] sm:w-[4vw] sm:h-[4vw] transition-transform"
+                                 :style="openItem === '<?= $item_id ?>' && 'transform: rotate(180deg)'"
+                                 fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"></path>
                             </svg>
-                        <?php endif; ?>
-                    </button>
+                        </button>
 
-                    <?php if ($has_children): ?>
-                    <div class="ml-[2vw] sm:ml-[1vw] border-l-2 border-gray-200 pl-[2vw] sm:pl-[1.5vw] overflow-hidden transition-all duration-200" :class="openItem === '<?= $item_id ?>' ? 'block' : 'hidden'">
-                        <?php foreach ($children as $child): ?>
-                            <a href="<?= esc_url($child->url); ?>" 
-                               class="block py-[1.8vw] sm:py-[1.2vw] px-[1.5vw] text-[3.8vw] sm:text-[3vw] text-slate-600 hover:text-slate-900 hover:bg-gray-50 rounded transition-colors">
-                                <?= esc_html($child->title); ?>
-                            </a>
-                        <?php endforeach; ?>
-                    </div>
+                        <div class="ml-[2vw] sm:ml-[1vw] border-l-2 border-gray-200 pl-[2vw] sm:pl-[1.5vw] overflow-hidden transition-all duration-200"
+                             :class="openItem === '<?= $item_id ?>' ? 'block' : 'hidden'">
+                            <?php foreach ($children as $child): ?>
+                                <a href="<?= esc_url($child->url); ?>"
+                                   class="block py-[1.8vw] sm:py-[1.2vw] px-[1.5vw] text-[3.8vw] sm:text-[3vw] text-slate-600 hover:text-slate-900 hover:bg-gray-50 rounded transition-colors">
+                                    <?= esc_html($child->title); ?>
+                                </a>
+                            <?php endforeach; ?>
+                        </div>
+                    <?php else: ?>
+                        <!-- Leaf item: navigate directly to the URL -->
+                        <a href="<?= esc_url($item->url); ?>"
+                           class="block w-full p-[2vw] text-[4.5vw] sm:text-[3.5vw] font-semibold text-white rounded bg-[var(--primary-color)]">
+                            <?= esc_html($item->title); ?>
+                        </a>
                     <?php endif; ?>
                 </div>
                 <?php

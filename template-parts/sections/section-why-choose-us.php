@@ -52,7 +52,8 @@
                 <span class="flex-1">Easy Dashboard — manage, renew, or upgrade listings anytime</span>
             </li>
         </ul>
-        <a href="<?= home_url() ?>/login" class="w-fit btn-primary mt-[1.875vw]">
+        <a href="<?= esc_url(function_exists('pt_get_list_property_url') ? pt_get_list_property_url() : home_url('/login')); ?>"
+           class="w-fit btn-primary mt-[1.875vw]">
             Start Listing Now
         </a>
     </div>

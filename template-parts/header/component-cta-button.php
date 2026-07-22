@@ -7,17 +7,10 @@
         ? property_theme_get_user_subscription($current_user->ID)
         : null;
 
-    // Where should "List Property Now" send someone?
-    //   - Not logged in → registration (agent intent so plans come next)
-    //   - Logged in without a plan → pricing (so they choose one first)
-    //   - Logged in with a plan → the Add Property section of the dashboard
-    if (!is_user_logged_in()) {
-        $list_url = home_url('/register?as=agent');
-    } elseif (!$user_subscription) {
-        $list_url = home_url('/pricing');
-    } else {
-        $list_url = home_url('/dashboard/#add-property');
-    }
+    // Guest → /login, member → /pricing, agent → /dashboard/#add-property
+    $list_url = function_exists('pt_get_list_property_url')
+        ? pt_get_list_property_url()
+        : home_url('/login');
     ?>
 
     <?php if (is_user_logged_in()): ?>
