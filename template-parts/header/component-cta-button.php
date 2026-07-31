@@ -1,13 +1,10 @@
 <div class="hidden lg:flex gap-[1vw] items-center">
 
     <?php
-    $current_user      = wp_get_current_user();
-    $is_property_page  = is_singular('property');
-    $user_subscription = is_user_logged_in()
-        ? property_theme_get_user_subscription($current_user->ID)
-        : null;
+    $current_user     = wp_get_current_user();
+    $is_property_page = is_singular('property');
 
-    // Guest → /login, member → /pricing, agent → /dashboard/#add-property
+    // Guest → /login, logged in → /dashboard/#add-property
     $list_url = function_exists('pt_get_list_property_url')
         ? pt_get_list_property_url()
         : home_url('/login');
@@ -18,10 +15,10 @@
         $display    = trim($current_user->display_name ?: $current_user->user_login);
         $first_word = strtok($display, ' ');
         $initial    = strtoupper(mb_substr($first_word ?: 'U', 0, 1));
-        // Route the badge to whichever home this user actually has.
-        $badge_url  = function_exists('pt_get_user_home_url')
-            ? pt_get_user_home_url($current_user->ID)
-            : home_url('/my-account/');
+        // Account badge → the one dashboard.
+        $badge_url  = function_exists('pt_get_dashboard_url')
+            ? pt_get_dashboard_url()
+            : home_url('/dashboard/');
         ?>
 
         <!-- Clear "you are signed in" badge with name + initial avatar -->

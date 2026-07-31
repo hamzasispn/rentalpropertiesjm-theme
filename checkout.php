@@ -11,8 +11,6 @@ if (!is_user_logged_in()) {
     exit;
 }
 
-get_header();
-
 $user_id = get_current_user_id();
 $user = wp_get_current_user();
 $plan_id = intval($_GET['plan'] ?? 0);
@@ -28,6 +26,21 @@ if (!$plan) {
     wp_redirect(home_url('/pricing'));
     exit;
 }
+
+// A $0 plan has nothing to charge for — never render a Stripe form for it.
+// Activate on the spot and send the user to the add-property form. This also
+// covers someone hand-typing /checkout?plan=<free-plan-id>.
+if (function_exists('pt_plan_is_free') && pt_plan_is_free($plan)) {
+    $activated = pt_activate_free_plan($user_id, $plan_id);
+    if (is_wp_error($activated)) {
+        wp_redirect(add_query_arg('plan_error', $activated->get_error_code(), home_url('/pricing/')));
+        exit;
+    }
+    wp_redirect(trailingslashit(pt_get_dashboard_url()) . '#add-property');
+    exit;
+}
+
+get_header();
 ?>
 
 <div class="min-h-screen bg-slate-50">

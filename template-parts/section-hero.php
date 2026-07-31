@@ -3,9 +3,15 @@ $bgImg = get_field('hero_sec_bg');
 $heroTitle = get_field('hero_sec_title');
 $heroSubtitle = get_field('hero_sec_subtitle');
 $heroDesc = get_field('hero_sec_desc');
-$ctaOne = get_field('hero_sec_cta');
 $ctaTwo = get_field('hero_sec_cta_two');
 $heroExc = get_field('hero_sec_excerpt');
+
+// Primary CTA is no longer an ACF link field — it routes on login state:
+//   guest      → /login/
+//   logged in  → /dashboard/#add-property
+$ctaOneUrl = function_exists('pt_get_list_property_url')
+    ? pt_get_list_property_url()
+    : (is_user_logged_in() ? home_url('/dashboard/#add-property') : home_url('/login'));
 ?>
 
 <section class="heroSec h-screen flex items-center bg-cover bg-center relative"
@@ -21,10 +27,8 @@ $heroExc = get_field('hero_sec_excerpt');
                 <?= $heroDesc ?>
             </div>
             <div class="flex md:flex-row flex-col items-center gap-[3.765vw] md:gap-[1.25vw] mb-[2.5vw]">
-                <?php if ($ctaOne): ?>
-                    <a href="<?= esc_url($ctaOne['url']); ?>"
-                        class="btn-primary block md:inline-block md:w-auto w-full text-center"><?= esc_html($ctaOne['title']); ?></a>
-                <?php endif; ?>
+                <a href="<?= esc_url($ctaOneUrl); ?>"
+                    class="btn-primary block md:inline-block md:w-auto w-full text-center">List Property Now</a>
                 <?php if ($ctaTwo): ?>
                     <a href="<?= esc_url($ctaTwo['url']); ?>"
                         class="btn-secondary hidden md:inline-block md:w-auto w-full text-center"><?= esc_html($ctaTwo['title']); ?></a>

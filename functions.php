@@ -225,6 +225,7 @@ require_once get_template_directory() . '/inc/property-cron.php';
 require_once get_template_directory() . '/inc/property-form-handler.php';
 require_once get_template_directory() . '/inc/amenities.php';
 require_once get_template_directory() . '/inc/user-favorites.php';
+require_once get_template_directory() . '/inc/plan-selection.php';
 
 require_once get_template_directory() . '/admin/migration-page.php';
 

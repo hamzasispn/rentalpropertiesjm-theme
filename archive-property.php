@@ -13,9 +13,9 @@ $pt_saved_search_count = 0;
 $pt_member_home_url    = '';
 if (is_user_logged_in() && function_exists('pt_get_saved_searches')) {
     $pt_saved_search_count = count(pt_get_saved_searches(get_current_user_id()));
-    $pt_member_home_url    = function_exists('pt_get_member_dashboard_url')
-        ? pt_get_member_dashboard_url()
-        : home_url('/my-account/');
+    $pt_member_home_url    = function_exists('pt_get_dashboard_url')
+        ? pt_get_dashboard_url()
+        : home_url('/dashboard/');
 }
 
 $filter_params = array(

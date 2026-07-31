@@ -5,20 +5,14 @@
  */
 
 if (is_user_logged_in()) {
-    // Route existing users to their proper home.
-    if (function_exists('pt_get_user_home_url')) {
-        wp_redirect(pt_get_user_home_url(get_current_user_id()));
-    } else {
-        wp_redirect(home_url('/my-account/'));
-    }
+    wp_redirect(function_exists('pt_get_dashboard_url')
+        ? pt_get_dashboard_url()
+        : home_url('/dashboard/'));
     exit;
 }
 
-// Chosen path for this signup: 'user' (default, saved-items dashboard) or
-// 'agent' (post-signup redirect to /pricing/ to pick a plan).
-$intent = isset($_POST['register_as']) ? sanitize_text_field($_POST['register_as'])
-        : (isset($_GET['as']) && $_GET['as'] === 'agent' ? 'agent' : 'user');
-if (!in_array($intent, array('user', 'agent'), true)) $intent = 'user';
+// There is no user/agent split any more — one account type, one dashboard.
+// Listing a property just means picking a plan at submit time.
 
 $registration_error = '';
 $registration_success = false;
@@ -80,12 +74,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['register_submit'])) {
             $user = new WP_User($user_id);
             $user->set_role('subscriber');
 
-            // Remember whether this signup intended to become an agent — the
-            // verify-email flow reads this to route them to /pricing/ next.
-            if ($intent === 'agent') {
-                update_user_meta($user_id, '_pt_wants_agent', 1);
-            }
-
             // Mark unverified and send verification email
             update_user_meta($user_id, PROPERTY_THEME_EMAIL_VERIFY_META, '0');
             property_theme_send_verification_email($user_id);
@@ -111,57 +99,17 @@ get_header();
                 </div>
                 <h1 class="text-2xl font-bold text-slate-900">Join Rental Properties JM</h1>
                 <p class="text-slate-600 mt-2">
-                    <?= $intent === 'agent'
-                        ? 'Create your agent account, then pick a listing plan.'
-                        : 'Create your account to save homes and get weekly matches.'; ?>
+                    Save homes, get weekly matches, and list your own properties — all from one account.
                 </p>
             </div>
-
-            <?php if (!$registration_success): ?>
-            <!-- Register-as toggle: cards that read like Airbnb's role picker -->
-            <div class="grid grid-cols-2 gap-2 mb-6">
-                <a href="<?= esc_url(add_query_arg('as', 'user', remove_query_arg('as'))); ?>"
-                   class="rounded-xl border-2 p-3 text-left transition
-                          <?= $intent === 'user'
-                              ? 'border-[var(--primary-color)] bg-blue-50/60'
-                              : 'border-slate-200 hover:border-slate-300 bg-white'; ?>">
-                    <div class="flex items-center gap-2 mb-1">
-                        <svg class="w-4 h-4" style="color:var(--primary-color);" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
-                        </svg>
-                        <span class="text-sm font-bold text-slate-900">I'm a User</span>
-                    </div>
-                    <p class="text-xs text-slate-500">Save homes, get alerts on new listings.</p>
-                </a>
-                <a href="<?= esc_url(add_query_arg('as', 'agent', remove_query_arg('as'))); ?>"
-                   class="rounded-xl border-2 p-3 text-left transition
-                          <?= $intent === 'agent'
-                              ? 'border-[var(--primary-color)] bg-blue-50/60'
-                              : 'border-slate-200 hover:border-slate-300 bg-white'; ?>">
-                    <div class="flex items-center gap-2 mb-1">
-                        <svg class="w-4 h-4" style="color:var(--primary-color);" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M3 21h18M5 21V7l7-4 7 4v14"/>
-                        </svg>
-                        <span class="text-sm font-bold text-slate-900">I'm an Agent</span>
-                    </div>
-                    <p class="text-xs text-slate-500">List properties, manage a subscription plan.</p>
-                </a>
-            </div>
-            <?php endif; ?>
 
             <?php if ($registration_success): ?>
                 <div class="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg text-center">
                     <p class="text-green-800 font-semibold">Account created — check your inbox!</p>
                     <p class="text-green-700 text-sm mt-2">We've sent a verification link to your email. Click it to activate your account before signing in.</p>
-                    <?php if ($intent === 'agent'): ?>
-                        <p class="text-green-700 text-sm mt-2"><strong>Next step:</strong> after verifying, pick a listing plan so you can start posting properties.</p>
-                    <?php endif; ?>
                     <p class="text-green-700 text-xs mt-3">Didn't get it? Check spam, or use the "Resend verification email" link on the login page.</p>
                     <div class="mt-4 flex flex-wrap gap-2 justify-center">
                         <a href="<?php echo esc_url(home_url('/login')); ?>" class="inline-block px-4 py-2 bg-[var(--primary-color)] text-white rounded-lg font-semibold">Go to Login</a>
-                        <?php if ($intent === 'agent'): ?>
-                            <a href="<?php echo esc_url(home_url('/pricing')); ?>" class="inline-block px-4 py-2 border border-[var(--primary-color)] text-[var(--primary-color)] rounded-lg font-semibold hover:bg-blue-50">View plans</a>
-                        <?php endif; ?>
                     </div>
                 </div>
             <?php else: ?>
@@ -175,7 +123,6 @@ get_header();
                 <!-- Registration Form -->
                 <form method="POST" class="space-y-4">
                     <?php wp_nonce_field('register_nonce', 'register_nonce'); ?>
-                    <input type="hidden" name="register_as" value="<?= esc_attr($intent); ?>">
 
                     <div class="grid grid-cols-2 gap-4">
                         <div>

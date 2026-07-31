@@ -44,7 +44,6 @@ $text_secondary = get_option('mytheme_color_text_secondary');
     <?php if (
         !is_page([8, 26, 28])
         && !is_page_template('dashboard.php')
-        && !is_page_template('page-my-account.php')
     ): ?>
         <?php get_template_part('template-parts/header/component', 'header', array('logo' => $logo)); ?>
     <?php endif; ?>
@@ -57,7 +56,6 @@ $text_secondary = get_option('mytheme_color_text_secondary');
         && !is_singular('property')
         && !is_404()
         && !is_page_template('dashboard.php')
-        && !is_page_template('page-my-account.php')
     ): ?>
             <?php get_template_part('template-parts/breadcrum/breadcrum'); ?>
     <?php endif; ?>

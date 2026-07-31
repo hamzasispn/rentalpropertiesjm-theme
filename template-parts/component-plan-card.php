@@ -94,6 +94,14 @@ $render_cta = function ($plan, $stats, $variant = 'outline-primary') {
             . '</button>';
     }
 
+    // Free plans never touch Stripe — activate straight away and drop the
+    // user on the add-property form.
+    if (function_exists('pt_plan_is_free') && pt_plan_is_free($plan)) {
+        $href = esc_url(pt_get_free_plan_activation_url($plan['id']));
+        $attr = $variant_attrs[$variant] ?? $variant_attrs['outline-primary'];
+        return '<a href="' . $href . '" class="' . esc_attr($base) . '" ' . $attr . '>Start Free</a>';
+    }
+
     $href = esc_url(home_url('/checkout?plan=' . $plan['id']));
     $attr = $variant_attrs[$variant] ?? $variant_attrs['outline-primary'];
     return '<a href="' . $href . '" class="' . esc_attr($base) . '" ' . $attr . '>Choose Plan</a>';

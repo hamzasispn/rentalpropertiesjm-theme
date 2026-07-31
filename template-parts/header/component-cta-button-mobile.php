@@ -7,19 +7,16 @@
     </a>
 
     <?php
-    $current_user      = wp_get_current_user();
-    $user_subscription = is_user_logged_in()
-        ? property_theme_get_user_subscription($current_user->ID)
-        : null;
+    $current_user = wp_get_current_user();
 
-    // Guest → /login, member → /pricing, agent → /dashboard/#add-property
+    // Guest → /login, logged in → /dashboard/#add-property
     $list_url = function_exists('pt_get_list_property_url')
         ? pt_get_list_property_url()
         : home_url('/login');
 
-    $profile_url = is_user_logged_in() && function_exists('pt_get_user_home_url')
-        ? pt_get_user_home_url($current_user->ID)
-        : home_url('/my-account/');
+    $profile_url = function_exists('pt_get_dashboard_url')
+        ? pt_get_dashboard_url()
+        : home_url('/dashboard/');
 
     if (is_user_logged_in()):
     ?>

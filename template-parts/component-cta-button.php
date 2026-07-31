@@ -8,10 +8,13 @@
         </svg>
     </a>
     <?php
-    $current_user = wp_get_current_user();
-    $user_subscription = property_theme_get_user_subscription($current_user->ID);
+    // Guest → /login, logged in → /dashboard/#add-property. No plan check:
+    // the plan is chosen from a popup when the listing is submitted.
+    $list_url = function_exists('pt_get_list_property_url')
+        ? pt_get_list_property_url()
+        : home_url('/login');
     if (is_user_logged_in()): ?>
-        <a href="<?= home_url('/dashboard') ?>"
+        <a href="<?= esc_url(function_exists('pt_get_dashboard_url') ? pt_get_dashboard_url() : home_url('/dashboard')) ?>"
             class="<?php echo is_singular('property') ? 'bg-[var(--primary-color)]' : 'bg-white/15'; ?> w-[2.604vw] h-[2.604vw] flex items-center justify-center rounded-[0.625vw]">
             <svg class="w-[0.938vw] h-[0.938vw]" viewBox="0 0 20 19" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path
@@ -19,11 +22,7 @@
                     fill="white" />
             </svg>
         </a>
-        <a href="<?php if (!$user_subscription) {
-            echo home_url('/pricing');
-        } else {
-            echo home_url('/dashboard/#add-property');
-        } ?>"
+        <a href="<?= esc_url($list_url); ?>"
             class="btn-primary">List
             Property Now</a>
     <?php else: ?>

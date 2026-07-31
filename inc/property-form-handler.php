@@ -52,6 +52,22 @@ function property_theme_handle_property_form_submission() {
         }
     }
 
+    // ── Plan gate (authoritative) ─────────────────────────────────────────
+    // The add-property form opens a plan popup before letting Submit through,
+    // but that is only UI. Re-check here so a crafted POST can't create a
+    // listing without an active plan or beyond the plan's cap.
+    if (function_exists('pt_user_can_submit_property') && !pt_user_can_submit_property($user_id, $is_edit)) {
+        $has_plan = (bool) property_theme_get_user_subscription($user_id);
+        set_transient('property_form_errors_' . $user_id, array(
+            $has_plan
+                ? 'You have used all the listings included in your plan. Upgrade to add more.'
+                : 'Choose a plan before submitting your listing.'
+        ), 30);
+        error_log('[property_listing][handler] plan gate blocked user ' . $user_id);
+        wp_safe_redirect(add_query_arg('error', 1, home_url('/pricing/')));
+        exit;
+    }
+
     // Plan-driven media limits (used by the gallery uploader below)
     $plan_photo_limit = 10;
     $plan_video_limit = 2;

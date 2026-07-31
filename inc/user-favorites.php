@@ -15,15 +15,16 @@ if (!defined('PT_SAVED_PROPS_META'))  define('PT_SAVED_PROPS_META',  '_pt_saved_
 if (!defined('PT_SAVED_SEARCH_META')) define('PT_SAVED_SEARCH_META', '_pt_saved_searches');
 
 /* ────────────────────────────────────────────────────────────
- *  Role split: members vs. agents
+ *  One dashboard for everyone
  *
- *  Members  = subscribers with no active subscription plan.
- *             Land on /my-account/ (saved-items dashboard).
- *  Agents   = users with an active subscription plan.
- *             Land on /dashboard/ (full realtor dashboard).
+ *  There is no member/agent split any more. Every logged-in user lands
+ *  on /dashboard/, which carries saved properties, saved searches, their
+ *  listings, and the add-property form. A subscription plan no longer
+ *  decides *where* you go — it only decides which tabs are available
+ *  once you're there (billing, analytics, invoices).
  *
- *  The auth-modal register form always creates a member; agents still
- *  register through /register/ where they pick a plan.
+ *  pt_user_is_agent() survives purely as a "does this user have an active
+ *  plan?" predicate for those tab checks. It is no longer a routing gate.
  * ──────────────────────────────────────────────────────────── */
 
 function pt_user_is_agent($user_id) {
@@ -33,77 +34,56 @@ function pt_user_is_agent($user_id) {
         $sub = property_theme_get_user_subscription($uid);
         if (!empty($sub)) return true;
     }
-    // Fallback for admins/editors so they still land somewhere useful.
+    // Admins/editors always see the full dashboard.
     return user_can($uid, 'edit_others_posts');
 }
 
-function pt_get_member_dashboard_url() {
-    $page = get_page_by_path('my-account');
-    return $page ? get_permalink($page) : home_url('/my-account/');
-}
-
-function pt_get_agent_dashboard_url() {
+/**
+ * The one and only dashboard URL.
+ */
+function pt_get_dashboard_url() {
     $page = get_page_by_path('dashboard');
     return $page ? get_permalink($page) : home_url('/dashboard/');
 }
 
+// Back-compat aliases — both "homes" are the same place now. Kept so any
+// template still calling the old names keeps working.
+function pt_get_member_dashboard_url() { return pt_get_dashboard_url(); }
+function pt_get_agent_dashboard_url()  { return pt_get_dashboard_url(); }
+
 /**
  * Where does "List Property Now" send this user?
- *   - Guest              → /login/
- *   - Member (no plan)   → /pricing/
- *   - Agent (has plan)   → /dashboard/#add-property
+ *   - Guest      → /login/
+ *   - Logged in  → /dashboard/#add-property
+ *
+ * No plan check: the form is open to every logged-in user, and the plan
+ * is chosen from a popup at submit time.
  */
 function pt_get_list_property_url() {
     if (!is_user_logged_in()) return home_url('/login');
-    $uid = get_current_user_id();
-    if (pt_user_is_agent($uid)) return home_url('/dashboard/#add-property');
-    return home_url('/pricing');
+    return trailingslashit(pt_get_dashboard_url()) . '#add-property';
 }
 
 function pt_get_user_home_url($user_id) {
-    if (pt_user_is_agent($user_id)) return pt_get_agent_dashboard_url();
-    // Agents-in-waiting: they registered on the "I'm an Agent" tab but
-    // haven't paid for a plan yet. Send them to /pricing/ so the funnel
-    // completes; the flag clears itself once they subscribe.
-    if ((int) $user_id > 0 && get_user_meta((int) $user_id, '_pt_wants_agent', true)) {
-        return home_url('/pricing');
-    }
-    // Regular members land on the site home per client feedback, not on the
-    // /my-account/ page. They reach saved items via the header user badge.
-    return home_url('/');
+    return pt_get_dashboard_url();
 }
 
-// When a user's subscription becomes active, the "wants agent" marker has
-// done its job — drop it so future logins go straight to /dashboard/.
-add_action('property_theme_subscription_activated', function ($user_id) {
-    if ((int) $user_id > 0) delete_user_meta((int) $user_id, '_pt_wants_agent');
-});
-
 /**
- * Auto-create the /my-account/ page once, wired to the member dashboard
- * template. Runs at most once per install (guarded by an option flag).
+ * One-time cleanup of the retired /my-account/ page.
+ *
+ * The member dashboard was merged into /dashboard/, so the auto-created
+ * page and its template are gone. Trash the page (rather than force-delete)
+ * so nothing is irrecoverable, then flag the job done.
  */
 add_action('init', function () {
     if (wp_doing_ajax() || wp_doing_cron() || defined('REST_REQUEST')) return;
-    if (get_option('pt_my_account_page_id')) return;
+    if (get_option('pt_my_account_page_removed')) return;
 
-    $existing = get_page_by_path('my-account');
-    if ($existing) {
-        update_option('pt_my_account_page_id', (int) $existing->ID);
-        update_post_meta($existing->ID, '_wp_page_template', 'page-my-account.php');
-        return;
-    }
-    $page_id = wp_insert_post(array(
-        'post_title'   => 'My Account',
-        'post_name'    => 'my-account',
-        'post_status'  => 'publish',
-        'post_type'    => 'page',
-        'post_content' => '',
-    ));
-    if ($page_id && !is_wp_error($page_id)) {
-        update_post_meta($page_id, '_wp_page_template', 'page-my-account.php');
-        update_option('pt_my_account_page_id', (int) $page_id);
-    }
+    $page = get_page_by_path('my-account');
+    if ($page) wp_trash_post($page->ID);
+
+    delete_option('pt_my_account_page_id');
+    update_option('pt_my_account_page_removed', 1);
 }, 20);
 
 /* ────────────────────────────────────────────────────────────
@@ -366,8 +346,6 @@ function pt_rest_register($request) {
     wp_set_auth_cookie($uid, true, is_ssl());
     return array(
         'success'  => true,
-        // Members land on the site home per client feedback — not the
-        // /my-account/ page. They can reach it from the header user badge.
         'redirect' => pt_get_user_home_url($uid),
     );
 }
@@ -385,9 +363,11 @@ add_action('wp_head', function () {
         'restRoot'        => esc_url_raw(rest_url('property-theme/v1')),
         'loginUrl'        => wp_login_url(),
         'registerUrl'     => wp_registration_url(),
-        'dashboardUrl'    => $uid ? pt_get_user_home_url($uid) : pt_get_member_dashboard_url(),
-        'memberHomeUrl'   => pt_get_member_dashboard_url(),
-        'agentHomeUrl'    => pt_get_agent_dashboard_url(),
+        'dashboardUrl'    => pt_get_dashboard_url(),
+        // Legacy keys — every user shares one dashboard now. Kept so older
+        // cached JS bundles keep resolving to a real URL.
+        'memberHomeUrl'   => pt_get_dashboard_url(),
+        'agentHomeUrl'    => pt_get_dashboard_url(),
         'savedProperties' => $uid ? pt_get_saved_properties($uid) : array(),
     );
     echo '<script id="pt-user-state">window.wpUser = ' . wp_json_encode($state) . ';</script>' . "\n";

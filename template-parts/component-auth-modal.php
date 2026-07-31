@@ -171,7 +171,7 @@ function authModal() {
                 }
                 // Redirect to the member dashboard by default. Server may
                 // return a specific URL (agents landing on /dashboard/).
-                window.location.href = data.redirect || (window.wpUser && window.wpUser.memberHomeUrl) || '/my-account/';
+                window.location.href = data.redirect || (window.wpUser && window.wpUser.dashboardUrl) || '/dashboard/';
             } catch (e) {
                 this.error = 'Network error. Please try again.';
                 this.loading = false;

@@ -5,7 +5,13 @@
       "Bash(grep -rln \"register_taxonomy.*bedroom\\\\|register_taxonomy.*bathroom\" \"c:/laragon/www/rentalpropertiesjm/wp-content/\" 2>/dev/null | head -20)",
       "Read(//c/laragon/www/rentalpropertiesjm/wp-content/**)",
       "Bash(find \"c:/laragon/www/rentalpropertiesjm/wp-content/themes/property_listing\" -name \"property-page-full.png\" 2>/dev/null; find \"C:/\" -name \"property-page-full.png\" 2>/dev/null | head -5)",
-      "Read(//c//**)"
+      "Read(//c//**)",
+      "Bash(grep -n \"function invoicesTab\\\\|^    }$\\\\|^}$\\\\|</script>\\\\|wp_footer\" dashboard.php)",
+      "Bash(php -l dashboard.php)",
+      "Bash(php -l inc/plan-selection.php)",
+      "Bash(php -l inc/user-favorites.php)",
+      "Bash(php -l functions.php)",
+      "PowerShell($php = Get-ChildItem -Path \"C:\\\\laragon\\\\bin\\\\php\" -Filter \"php.exe\" -Recurse -ErrorAction SilentlyContinue | Select-Object -First 1; if \\($php\\) { $php.FullName } else { \"not found\" })"
     ]
   }
 }

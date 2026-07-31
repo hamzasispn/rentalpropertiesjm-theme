@@ -12,7 +12,9 @@ if (!is_user_logged_in()) {
 $current_user      = wp_get_current_user();
 $user_subscription = property_theme_get_user_subscription($current_user->ID);
 
-if ($user_subscription) {
+// The form is open to every logged-in user — no plan required to fill it in.
+// The plan is chosen from a popup when Submit is pressed (see the modal at the
+// bottom of this file) and re-checked server-side in property-form-handler.php.
 
 $is_edit     = isset($_GET['property_id']) && intval($_GET['property_id']) > 0;
 $property_id = $is_edit ? intval($_GET['property_id']) : 0;
@@ -23,11 +25,13 @@ if ($is_edit && (!$property || $property->post_author != $current_user->ID || $p
 }
 
 // ── Pull plan limits & feature flags ──────────────────────────────────────
-$plan             = property_theme_get_plan($user_subscription->package_id);
-$plan_photo_limit = $plan['photo_limit']       ?? 10;
-$plan_video_limit = $plan['video_limit']        ?? 2;
-$plan_whatsapp    = $plan['enable_whatsapp']    ?? false;
-$plan_google_map  = $plan['enable_google_map']  ?? false;
+// Without a plan we fall back to conservative defaults so the form still
+// renders; the real limits apply once a plan is picked at submit time.
+$plan             = $user_subscription ? property_theme_get_plan($user_subscription->package_id) : null;
+$plan_photo_limit = $plan['photo_limit']      ?? 10;
+$plan_video_limit = $plan['video_limit']      ?? 2;
+$plan_whatsapp    = $plan['enable_whatsapp']  ?? false;
+$plan_google_map  = $plan['enable_google_map'] ?? false;
 
 // ── Auto-deactivated draft detection ─────────────────────────────────────
 // True when the listing being edited was drafted by the plan-cap enforcement
@@ -48,7 +52,7 @@ if ($is_edit && $property) {
 // CTA after each successful submission so they can rapid-fire add without
 // hunting for the add-property link again. Also gives a live X/Y counter.
 $plan_max_properties = intval($plan['max_properties'] ?? 0);
-$is_multi_plan       = $plan_max_properties === 0 || $plan_max_properties > 1;
+$is_multi_plan       = $plan && ($plan_max_properties === 0 || $plan_max_properties > 1);
 
 global $wpdb;
 $existing_property_count = (int) $wpdb->get_var($wpdb->prepare(
@@ -57,10 +61,16 @@ $existing_property_count = (int) $wpdb->get_var($wpdb->prepare(
      AND post_status IN ('publish', 'pending', 'draft')",
     $current_user->ID
 ));
-$remaining_slots = $plan_max_properties === 0
+$remaining_slots = ($plan && $plan_max_properties === 0)
     ? PHP_INT_MAX
     : max(0, $plan_max_properties - $existing_property_count);
 $can_add_more    = $is_multi_plan && ($remaining_slots > 0 || current_user_can('manage_options'));
+
+// ── Submit-time plan gate ────────────────────────────────────────────────
+// True when this submit can go straight through. False means the plan popup
+// intercepts the Submit button. Editing an existing listing never re-charges.
+$needs_plan_choice = !pt_user_can_submit_property($current_user->ID, $is_edit);
+$selectable_plans  = $needs_plan_choice ? pt_get_plans_for_modal($current_user->ID) : array();
 
 // ── Existing property data ────────────────────────────────────────────────
 $property_data = array(
@@ -599,6 +609,17 @@ if (isset($_GET['action']) && $_GET['action'] === 'delete' && isset($_GET['prope
               class="grid grid-cols-1 lg:grid-cols-3 gap-8"
               @submit="
                   if (!validate()) { $event.preventDefault(); $event.stopImmediatePropagation(); return; }
+                  <?php if ($needs_plan_choice): ?>
+                  /* No active plan (or no slots left) — the listing can't be
+                     submitted yet. Hold the submit and open the plan popup.
+                     stopImmediatePropagation also keeps the loading overlay
+                     (which listens on window) from flashing. */
+                  if (!window.ptPlanChosen) {
+                      $event.preventDefault(); $event.stopImmediatePropagation();
+                      window.dispatchEvent(new CustomEvent('pt-open-plan-modal'));
+                      return;
+                  }
+                  <?php endif; ?>
                   /* setTimeout(0) defers the disable until AFTER the browser has
                      serialized form data — disabling earlier excludes the submit
                      button's name=value from POST (W3C: disabled controls aren't
@@ -1711,16 +1732,146 @@ document.addEventListener('DOMContentLoaded', function () {
 <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAUPkXXwkGt0xC5ongE7-62nzz6l7D3Nf4&libraries=places,marker&v=beta" async></script>
 <?php endif; ?>
 
-<?php
-} else {
-?>
-<div class="max-w-3xl mx-auto my-12 p-6 bg-white rounded-lg shadow text-center">
-    <h2 class="text-2xl font-bold mb-4">No Active Subscription</h2>
-    <p class="mb-6">You must have an active subscription to create properties.</p>
-    <a href="<?php echo home_url('/pricing'); ?>"
-       class="inline-block px-6 py-3 bg-[var(--primary-color)] text-white rounded-lg hover:bg-blue-700 font-semibold">
-        View Pricing Plans
-    </a>
+<?php if ($needs_plan_choice): ?>
+<!-- ═══════════════ Plan selection popup ═══════════════
+     Opens when Submit is pressed and the user has no active plan (or has
+     used up their listing slots). Free plans activate in place and the form
+     posts immediately; paid plans hand off to /checkout/. -->
+<div x-data="planModal()" x-on:pt-open-plan-modal.window="open()" x-cloak>
+    <div x-show="isOpen" x-transition.opacity
+         class="fixed inset-0 z-[10000] bg-slate-900/70 flex items-start justify-center overflow-y-auto p-4 sm:p-8"
+         @click.self="close()">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-3xl my-auto"
+             x-transition:enter="transition ease-out duration-200"
+             x-transition:enter-start="opacity-0 scale-95"
+             x-transition:enter-end="opacity-100 scale-100">
+
+            <div class="flex items-start justify-between gap-4 p-6 border-b border-slate-200">
+                <div>
+                    <h2 class="text-2xl font-bold text-slate-900">Choose a plan to publish</h2>
+                    <p class="text-slate-500 text-sm mt-1">
+                        <?php echo $user_subscription
+                            ? 'You\'ve used all the listings on your current plan. Pick a bigger one to keep going.'
+                            : 'Your listing details are ready — pick a plan to submit it.'; ?>
+                    </p>
+                </div>
+                <button type="button" @click="close()" class="text-slate-400 hover:text-slate-600 p-1 shrink-0" aria-label="Close">
+                    <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
+
+            <div x-show="error" x-cloak class="mx-6 mt-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700" x-text="error"></div>
+
+            <div class="p-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                <?php foreach ($selectable_plans as $sp):
+                    $sp_free     = pt_plan_is_free($sp);
+                    $sp_listings = empty($sp['max_properties'])
+                        ? 'Unlimited listings'
+                        : (($sp['max_properties'] == 1) ? '1 listing' : 'Up to ' . (int) $sp['max_properties'] . ' listings');
+                ?>
+                <div class="border border-slate-200 rounded-xl p-5 flex flex-col hover:border-[var(--primary-color)] transition">
+                    <h3 class="font-bold text-slate-900"><?php echo esc_html($sp['name']); ?></h3>
+                    <p class="text-3xl font-extrabold text-slate-900 mt-2">
+                        <?php echo $sp_free ? 'Free' : '$' . number_format((float) $sp['price']); ?>
+                    </p>
+                    <p class="text-sm text-slate-500 mt-1"><?php echo esc_html($sp_listings); ?></p>
+                    <p class="text-xs text-slate-400 mt-1">
+                        <?php echo (int) ($sp['photo_limit'] ?? 0); ?> photos ·
+                        <?php echo (int) ($sp['video_limit'] ?? 0); ?> videos
+                    </p>
+
+                    <div class="mt-auto pt-4">
+                        <?php if ($sp_free): ?>
+                        <button type="button" @click="chooseFree(<?php echo (int) $sp['id']; ?>)"
+                                :disabled="busy"
+                                class="w-full py-2.5 rounded-lg text-white font-semibold text-sm disabled:opacity-60"
+                                style="background: var(--primary-color);">
+                            <span x-text="busy === <?php echo (int) $sp['id']; ?> ? 'Activating…' : 'Start free'"></span>
+                        </button>
+                        <?php else: ?>
+                        <button type="button" @click="choosePaid(<?php echo (int) $sp['id']; ?>)"
+                                :disabled="busy"
+                                class="w-full py-2.5 rounded-lg font-semibold text-sm border disabled:opacity-60"
+                                style="border-color: var(--primary-color); color: var(--primary-color);">
+                            Continue to payment
+                        </button>
+                        <?php endif; ?>
+                    </div>
+                </div>
+                <?php endforeach; ?>
+
+                <?php if (empty($selectable_plans)): ?>
+                <div class="col-span-full text-center py-6">
+                    <p class="text-slate-600">
+                        <?php echo $user_subscription
+                            ? 'You\'re already on our largest plan and every listing slot is in use. Remove or unpublish a listing to free up space.'
+                            : 'No plans are available right now. Please contact support.'; ?>
+                    </p>
+                    <?php if ($user_subscription): ?>
+                    <a href="<?php echo esc_url(trailingslashit(pt_get_dashboard_url()) . '#properties'); ?>"
+                       class="inline-block mt-4 px-5 py-2 rounded-lg text-white font-semibold text-sm"
+                       style="background: var(--primary-color);">Manage my listings</a>
+                    <?php endif; ?>
+                </div>
+                <?php endif; ?>
+            </div>
+
+            <p class="px-6 pb-6 text-xs text-slate-400">
+                Paid plans open the secure checkout. Your listing details on this page are not saved yet —
+                you'll re-enter them after payment.
+            </p>
+        </div>
+    </div>
 </div>
-<?php
+
+<script>
+function planModal() {
+    return {
+        isOpen: false,
+        busy: null,
+        error: '',
+        open()  { this.error = ''; this.isOpen = true; document.body.style.overflow = 'hidden'; },
+        close() { if (this.busy) return; this.isOpen = false; document.body.style.overflow = ''; },
+
+        // Free plan: activate, flip the gate, then let the form post normally.
+        async chooseFree(planId) {
+            if (this.busy) return;
+            this.busy = planId;
+            this.error = '';
+            try {
+                const body = new URLSearchParams({
+                    action: 'pt_activate_free_plan',
+                    plan_id: planId,
+                    nonce: '<?php echo esc_js(wp_create_nonce('pt_plan_modal')); ?>',
+                });
+                const res  = await fetch('<?php echo esc_url_raw(admin_url('admin-ajax.php')); ?>', {
+                    method: 'POST', credentials: 'same-origin', body,
+                });
+                const data = await res.json();
+                if (!res.ok || !data.success) {
+                    throw new Error((data && data.data && data.data.message) || 'Could not activate that plan.');
+                }
+
+                window.ptPlanChosen = true;
+                this.isOpen = false;
+                document.body.style.overflow = '';
+                document.querySelector('form[method=POST] button[name=submit_property]')
+                    ?.closest('form')?.requestSubmit();
+            } catch (e) {
+                this.error = e.message || 'Something went wrong. Please try again.';
+                this.busy  = null;
+            }
+        },
+
+        // Paid plan: hand off to checkout.
+        choosePaid(planId) {
+            if (this.busy) return;
+            this.busy = planId;
+            window.location.href = '<?php echo esc_url_raw(home_url('/checkout')); ?>?plan=' + encodeURIComponent(planId);
+        },
+    };
 }
+</script>
+<?php endif; ?>

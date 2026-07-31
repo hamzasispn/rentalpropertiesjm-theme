@@ -32,9 +32,9 @@ $logo = $args['logo'] ?? '';
         <?php else:
             $mobile_user  = wp_get_current_user();
             $mobile_first = strtok(trim($mobile_user->display_name ?: $mobile_user->user_login), ' ');
-            $mobile_url   = function_exists('pt_get_user_home_url')
-                ? pt_get_user_home_url($mobile_user->ID)
-                : home_url('/my-account/');
+            $mobile_url   = function_exists('pt_get_dashboard_url')
+                ? pt_get_dashboard_url()
+                : home_url('/dashboard/');
         ?>
         <a href="<?= esc_url($mobile_url); ?>"
            class="lg:hidden flex-shrink-0 flex items-center gap-1.5 px-3 py-2 rounded bg-[var(--primary-color)] text-white text-[3.5vw] sm:text-[2.5vw] font-bold"
