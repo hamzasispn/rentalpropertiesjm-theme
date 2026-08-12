@@ -430,8 +430,11 @@ function property_theme_cancel_stripe_subscription($subscription_id, $at_period_
             return new WP_Error('not_found', 'Subscription not found');
         }
 
-        if (!$subscription->stripe_subscription_id) {
-            return new WP_Error('invalid', 'No Stripe subscription ID found');
+        // Free / locally-created plans never reached Stripe, so there is no
+        // remote object to cancel. Cancel them in the database instead —
+        // erroring out here is what produced "No Stripe subscription ID found".
+        if (empty($subscription->stripe_subscription_id)) {
+            return property_theme_cancel_local_subscription($subscription, $at_period_end);
         }
 
         $cancel_data = array(
@@ -502,6 +505,18 @@ function property_theme_update_subscription_plan($subscription_id, $new_plan_id,
 
         if (!$subscription) {
             return new WP_Error('not_found', 'Subscription not found');
+        }
+
+        // Every Stripe call below needs a real subscription id. A free/local
+        // plan has none, and passing an empty one makes Stripe reply
+        // "You passed an empty string for 'subscription'". Callers must route
+        // local subscriptions through checkout instead — the REST endpoint
+        // does exactly that; this is the backstop for any other caller.
+        if (empty($subscription->stripe_subscription_id)) {
+            return new WP_Error(
+                'local_subscription',
+                'This plan has no Stripe subscription behind it. Complete checkout to upgrade.'
+            );
         }
 
         $plan = property_theme_get_plan($new_plan_id);

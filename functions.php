@@ -224,6 +224,7 @@ require_once get_template_directory() . '/inc/email-verification.php';
 require_once get_template_directory() . '/inc/property-cron.php';
 require_once get_template_directory() . '/inc/property-form-handler.php';
 require_once get_template_directory() . '/inc/amenities.php';
+require_once get_template_directory() . '/inc/license.php';
 require_once get_template_directory() . '/inc/user-favorites.php';
 require_once get_template_directory() . '/inc/plan-selection.php';
 

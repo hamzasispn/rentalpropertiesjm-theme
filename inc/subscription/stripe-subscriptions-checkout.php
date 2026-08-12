@@ -289,6 +289,48 @@ function property_theme_update_subscription_plan_endpoint($request)
         return new WP_Error('invalid_plan', 'Invalid plan', array('status' => 400));
     }
 
+    // ── Local (free) subscription ─────────────────────────────────────────
+    // There is no Stripe subscription to modify, so the Stripe path would call
+    // /v1/subscription_items?subscription= with an empty id — the source of
+    // "You passed an empty string for 'subscription'".
+    if (function_exists('pt_subscription_is_local') && pt_subscription_is_local($subscription)) {
+
+        // Free → paid needs a real Stripe subscription, which only checkout can
+        // create. Tell the front-end to send them there; checkout supersedes
+        // the free row on success.
+        if (!pt_plan_is_free($new_plan)) {
+            return array(
+                'success'  => true,
+                'redirect' => home_url('/checkout?plan=' . $new_plan_id),
+                'message'  => 'Redirecting to checkout to complete your upgrade…',
+            );
+        }
+
+        // Free → free is just a swap in our own table.
+        $swapped = $wpdb->update(
+            $wpdb->prefix . 'user_subscriptions',
+            array(
+                'package_id'  => $new_plan_id,
+                'expiry_date' => property_theme_calculate_expiry_date(
+                    $new_plan['billing_cycle'],
+                    $new_plan['billing_days']
+                ),
+            ),
+            array('id' => $subscription_id)
+        );
+
+        if ($swapped === false) {
+            return new WP_Error('db_error', 'Could not change your plan. Please try again.', array('status' => 500));
+        }
+
+        property_theme_enforce_property_limit($user_id, intval($new_plan['max_properties'] ?? 0));
+
+        return array(
+            'success' => true,
+            'message' => 'Subscription plan updated successfully',
+        );
+    }
+
     $result = property_theme_update_subscription_plan($subscription_id, $new_plan_id, $billing_cycle, $prorate);
 
     if (is_wp_error($result)) {

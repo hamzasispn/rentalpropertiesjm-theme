@@ -11,7 +11,9 @@
       "Bash(php -l inc/plan-selection.php)",
       "Bash(php -l inc/user-favorites.php)",
       "Bash(php -l functions.php)",
-      "PowerShell($php = Get-ChildItem -Path \"C:\\\\laragon\\\\bin\\\\php\" -Filter \"php.exe\" -Recurse -ErrorAction SilentlyContinue | Select-Object -First 1; if \\($php\\) { $php.FullName } else { \"not found\" })"
+      "PowerShell($php = Get-ChildItem -Path \"C:\\\\laragon\\\\bin\\\\php\" -Filter \"php.exe\" -Recurse -ErrorAction SilentlyContinue | Select-Object -First 1; if \\($php\\) { $php.FullName } else { \"not found\" })",
+      "PowerShell(& \"C:\\\\laragon\\\\bin\\\\php\\\\php-8.3.16-Win32-vs16-x64\\\\php.exe\" -l \"inc\\\\license.php\")",
+      "PowerShell(& \"C:\\\\laragon\\\\bin\\\\php\\\\php-8.3.16-Win32-vs16-x64\\\\php.exe\" -l \"functions.php\")"
     ]
   }
 }

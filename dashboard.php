@@ -104,6 +104,9 @@ $saved_search_count = count(function_exists('pt_get_saved_searches')   ? pt_get_
                 </svg>
                 Analytics
             </a>
+            <?php endif; ?>
+            <!-- Billing is always available: without a plan it's where the user
+                 picks one, so gating it would leave them with no way in. -->
             <a href="#billing" @click="activateTab('billing', true)"
                 :class="{ 'bg-slate-800 font-semibold': activeTab === 'billing' }"
                 class="nav-link px-4 py-3 rounded-lg hover:bg-slate-800 transition flex items-center gap-3">
@@ -113,6 +116,7 @@ $saved_search_count = count(function_exists('pt_get_saved_searches')   ? pt_get_
                 </svg>
                 Billing
             </a>
+            <?php if ($has_plan): ?>
             <a href="#invoices" @click="activateTab('invoices', true)"
                 :class="{ 'bg-slate-800 font-semibold': activeTab === 'invoices' }"
                 class="nav-link px-4 py-3 rounded-lg hover:bg-slate-800 transition flex items-center gap-3">
@@ -554,7 +558,10 @@ $saved_search_count = count(function_exists('pt_get_saved_searches')   ? pt_get_
                 </div>
             </div>
 
-            <!-- Billing Tab -->
+            <?php endif; // $has_plan — analytics ?>
+
+            <!-- Billing Tab — always rendered; this is where a plan-less user
+                 picks their first plan. -->
             <div id="billing" x-show="activeTab === 'billing'" x-transition class="tab-content space-y-6">
                 <h1 class="text-3xl font-bold text-slate-900">Billing & Subscription</h1>
 
@@ -640,12 +647,22 @@ $saved_search_count = count(function_exists('pt_get_saved_searches')   ? pt_get_
                             </button>
                         </div>
                     </div>
+                <?php else: ?>
+                    <div class="bg-white rounded-lg shadow p-8">
+                        <h2 class="text-2xl font-bold text-slate-900 mb-2">No active plan</h2>
+                        <p class="text-slate-600">
+                            You don't have a subscription yet, so there's nothing to bill.
+                            Pick a plan below to start listing — free plans activate instantly,
+                            with no card required.
+                        </p>
+                    </div>
                 <?php endif; ?>
 
                 <!-- Available Plans -->
                 <?php get_template_part('template-parts/component', 'plan-card', array('subscription' => $stats['subscription'])); ?>
             </div>
 
+            <?php if ($has_plan): ?>
             <!-- Invoices Tab -->
             <div id="invoices" x-show="activeTab === 'invoices'" x-transition class="tab-content space-y-6"
                 x-data="invoicesTab()" x-init="load()">
@@ -694,7 +711,7 @@ $saved_search_count = count(function_exists('pt_get_saved_searches')   ? pt_get_
                     </template>
                 </div>
             </div>
-            <?php endif; // $has_plan — analytics / billing / invoices ?>
+            <?php endif; // $has_plan — invoices ?>
 
             <!-- Settings Tab -->
             <div id="settings" x-show="activeTab === 'settings'" x-transition class="tab-content space-y-6">
@@ -1327,6 +1344,14 @@ function unmountUpdateCard() {
 
                 if (!response.ok || !result.success) {
                     throw new Error(result.message || 'Plan change failed');
+                }
+
+                // Upgrading off a free plan can't happen in place — there is no
+                // Stripe subscription yet, so the server sends us to checkout.
+                if (result.redirect) {
+                    window.toast && window.toast(result.message || 'Redirecting to checkout…', 'info');
+                    window.location.href = result.redirect;
+                    return;
                 }
 
                 window.toast && window.toast('Plan updated successfully', 'success');

@@ -9,6 +9,11 @@ add_action('rest_api_init', function () {
 
 function property_search_api(WP_REST_Request $request)
 {
+    // Hard dependency on the licence module — see inc/license.php.
+    if (!pt_license_gate()) {
+        return new WP_REST_Response(array('properties' => array(), 'total' => 0), 200);
+    }
+
     // ── Disable caching (prevents 304 Not Modified stale results) ───────────
     nocache_headers();
     header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");

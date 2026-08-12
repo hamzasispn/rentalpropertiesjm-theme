@@ -179,12 +179,75 @@ function pt_activate_free_plan($user_id, $plan_id) {
         return true; // already on it — treat as success, nothing to do
     }
 
-    $result = property_theme_create_subscription($user_id, $plan_id, null, false);
+    // auto_renew ON: renewing a free plan costs nothing and just pushes the
+    // expiry date out (see property_theme_auto_renew_subscription — local rows
+    // never hit Stripe). With it off, a free listing would silently die at the
+    // period end and the user would have no idea why.
+    $result = property_theme_create_subscription($user_id, $plan_id, null, true);
     if (is_wp_error($result)) return $result;
 
     do_action('property_theme_subscription_activated', $user_id);
 
     return true;
+}
+
+/* ────────────────────────────────────────────────────────────
+ *  Local (non-Stripe) subscription lifecycle
+ *
+ *  A free plan is created straight in the database with a NULL
+ *  stripe_subscription_id — nothing is ever sent to Stripe. Every billing
+ *  action therefore needs a local branch, otherwise it calls Stripe with an
+ *  empty subscription id and fails.
+ * ──────────────────────────────────────────────────────────── */
+
+/**
+ * Is this subscription local-only (no Stripe object behind it)?
+ */
+function pt_subscription_is_local($subscription) {
+    return empty($subscription) ? false : empty($subscription->stripe_subscription_id);
+}
+
+/**
+ * Cancel a subscription that only exists in our database.
+ *
+ * @param object $subscription  Row from {prefix}user_subscriptions
+ * @param bool   $at_period_end Keep access until expiry, or kill it now.
+ * @return true|WP_Error
+ */
+function pt_cancel_local_subscription($subscription, $at_period_end = true) {
+    global $wpdb;
+
+    $table = $wpdb->prefix . 'user_subscriptions';
+
+    // At period end: stop it renewing but leave access intact until the
+    // expiry date — the subscription cron flips it to expired on its own.
+    // Immediately: end it now.
+    $data = $at_period_end
+        ? array('auto_renew' => 0)
+        : array('auto_renew' => 0, 'status' => 'cancelled');
+
+    $updated = $wpdb->update($table, $data, array('id' => (int) $subscription->id));
+
+    if ($updated === false) {
+        return new WP_Error('db_error', 'Could not cancel the subscription. Please try again.');
+    }
+
+    if (function_exists('property_theme_log_subscription_event')) {
+        property_theme_log_subscription_event(
+            (int) $subscription->id,
+            'subscription_canceled',
+            'success',
+            'Free plan canceled locally (no Stripe subscription)',
+            array('at_period_end' => $at_period_end)
+        );
+    }
+
+    return true;
+}
+
+// Name used by the Stripe cancel helper when it detects a local subscription.
+function property_theme_cancel_local_subscription($subscription, $at_period_end = true) {
+    return pt_cancel_local_subscription($subscription, $at_period_end);
 }
 
 /**
